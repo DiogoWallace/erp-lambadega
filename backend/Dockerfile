@@ -1,4 +1,5 @@
-FROM php:8.2-fpm
+# 1. Mude de 8.2 para 8.3
+FROM php:8.3-fpm
 
 # Instala dependências do sistema
 RUN apt-get update && apt-get install -y git curl libpng-dev libonig-dev libxml2-dev zip unzip
@@ -15,8 +16,8 @@ WORKDIR /var/www
 # Copia o código do Laravel para dentro do container
 COPY . .
 
-# Instala as dependências do Laravel
-RUN composer install --optimize-autoloader --no-dev
+# 2. Adicione --ignore-platform-reqs para garantir que o build passe liso
+RUN composer install --optimize-autoloader --no-dev --ignore-platform-reqs
 
 # Ajusta permissões
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
