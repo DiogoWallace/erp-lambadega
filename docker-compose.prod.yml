@@ -5,7 +5,7 @@ services:
     environment:
       MYSQL_DATABASE: erp_db
       MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_PASSWORD: secretpassword
+      MYSQL_PASSWORD: Dw00922948
       MYSQL_USER: erp_user
     volumes:
       - erp_db_data:/var/lib/mysql
