@@ -36,9 +36,12 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
+      - "443:443" # Já deixe a 443 pronta para o HTTPS
     volumes:
       - ./backend/public:/var/www/public
       - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./certbot/www:/var/www/certbot # ADICIONE ESTA LINHA
+      - ./certbot/conf:/etc/letsencrypt # ADICIONE ESTA LINHA TAMBÉM
     depends_on:
       - backend
 
