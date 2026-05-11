@@ -16,6 +16,7 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     volumes:
+      - ./backend/.env:/var/www/.env
       - storage_data:/var/www/storage/app/public
     depends_on:
       - db
