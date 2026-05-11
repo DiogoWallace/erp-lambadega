@@ -43,5 +43,5 @@ services:
       - backend
 
 volumes:
-  db_data:
+  erp_db_data:
   storage_data:
