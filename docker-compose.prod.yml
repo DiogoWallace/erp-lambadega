@@ -3,7 +3,7 @@ services:
     image: mysql:8.0
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: realize_pilates_db
+      MYSQL_DATABASE: erp_db
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_PASSWORD: secretpassword
       MYSQL_USER: erp_user
