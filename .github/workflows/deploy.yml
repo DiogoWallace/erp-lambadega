@@ -25,8 +25,8 @@ jobs:
             # 2. Reconstrói os containers do Laravel e Next.js com o código novo
             docker compose -f docker-compose.prod.yml up -d --build
             
-            # 3. Roda as migrations do banco e limpa o cache (forçando aceitação em produção)
-            docker compose exec -T backend php artisan migrate --force
-            docker compose exec -T backend php artisan config:cache
-            docker compose exec -T backend php artisan route:cache
-            docker compose exec -T backend php artisan view:cache
+            # 3. Roda as migrations do banco e limpa o cache
+            docker compose -f docker-compose.prod.yml exec -T backend php artisan migrate --force
+            docker compose -f docker-compose.prod.yml exec -T backend php artisan config:cache
+            docker compose -f docker-compose.prod.yml exec -T backend php artisan route:cache
+            docker compose -f docker-compose.prod.yml exec -T backend php artisan view:cache
