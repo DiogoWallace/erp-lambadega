@@ -31,19 +31,16 @@ jobs:
             git checkout dev
             git pull origin dev
 
-            cat > backend/.env.dev <<ENV
-            APP_ENV=local
-            APP_DEBUG=true
-            APP_KEY=${{ secrets.DEV_APP_KEY }}
-            APP_URL=${{ secrets.DEV_APP_URL }}
-
-            DB_CONNECTION=mysql
-            DB_HOST=db_dev
-            DB_PORT=3306
-            DB_DATABASE=erp_db_dev
-            DB_USERNAME=erp_user
-            DB_PASSWORD=${{ secrets.DEV_DB_PASSWORD }}
-            ENV
+            printf 'APP_ENV=local\n' > backend/.env.dev
+            printf 'APP_DEBUG=true\n' >> backend/.env.dev
+            printf 'APP_KEY=%s\n' '${{ secrets.DEV_APP_KEY }}' >> backend/.env.dev
+            printf 'APP_URL=%s\n' '${{ secrets.DEV_APP_URL }}' >> backend/.env.dev
+            printf 'DB_CONNECTION=mysql\n' >> backend/.env.dev
+            printf 'DB_HOST=db_dev\n' >> backend/.env.dev
+            printf 'DB_PORT=3306\n' >> backend/.env.dev
+            printf 'DB_DATABASE=erp_db_dev\n' >> backend/.env.dev
+            printf 'DB_USERNAME=erp_user\n' >> backend/.env.dev
+            printf 'DB_PASSWORD=%s\n' '${{ secrets.DEV_DB_PASSWORD }}' >> backend/.env.dev
 
             export DEV_DB_ROOT_PASSWORD=${{ secrets.DEV_DB_ROOT_PASSWORD }}
             export DEV_DB_PASSWORD=${{ secrets.DEV_DB_PASSWORD }}
@@ -57,11 +54,18 @@ jobs:
 
             docker compose -f /var/www/erp/docker-compose.prod.yml exec -T webserver nginx -s reload
 
+            echo "Verificando saúde do backend_dev..."
             for i in $(seq 1 12); do
-              curl -sf --resolve "api-dev.inovabi.com:443:127.0.0.1" "https://api-dev.inovabi.com/up" && break
+              if docker exec backend_dev php artisan about --only=environment > /dev/null 2>&1; then
+                echo "Backend dev está saudável."
+                break
+              fi
               echo "Aguardando backend_dev... tentativa $i/12"
               sleep 5
+              if [ "$i" -eq 12 ]; then
+                echo "Health check falhou"
+                exit 1
+              fi
             done
-            curl -sf --resolve "api-dev.inovabi.com:443:127.0.0.1" "https://api-dev.inovabi.com/up" || (echo "Health check falhou" && exit 1)
 
             echo "Deploy de dev concluído com sucesso."
