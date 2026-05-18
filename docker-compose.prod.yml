@@ -11,6 +11,12 @@ services:
       MYSQL_USER: erp_user
     volumes:
       - erp_prod_db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   backend:
     build:
@@ -21,7 +27,8 @@ services:
       - ./backend/.env:/var/www/.env
       - storage_prod:/var/www/storage/app/public
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   frontend:
     build:
