@@ -1,0 +1,43 @@
+services:
+  db_dev:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: erp_db_dev
+      MYSQL_ROOT_PASSWORD: ${DEV_DB_ROOT_PASSWORD}
+      MYSQL_PASSWORD: ${DEV_DB_PASSWORD}
+      MYSQL_USER: erp_user
+    volumes:
+      - erp_db_dev_data:/var/lib/mysql
+
+  backend_dev:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend_dev
+    restart: unless-stopped
+    volumes:
+      - ./backend/.env.dev:/var/www/.env
+      - storage_dev_data:/var/www/storage/app/public
+    depends_on:
+      - db_dev
+
+  frontend_dev:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: https://api-dev.inovabi.com
+    container_name: frontend_dev
+    restart: unless-stopped
+    depends_on:
+      - backend_dev
+
+volumes:
+  erp_db_dev_data:
+  storage_dev_data:
+
+networks:
+  default:
+    external: true
+    name: erp_shared
