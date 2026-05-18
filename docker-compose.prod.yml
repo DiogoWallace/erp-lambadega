@@ -25,9 +25,9 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: https://api.inovabi.com
     restart: unless-stopped
-    ports:
-      - "3000:3000"
     depends_on:
       - backend
 
@@ -36,12 +36,12 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
-      - "443:443" # Já deixe a 443 pronta para o HTTPS
+      - "443:443"
     volumes:
       - ./backend/public:/var/www/public
       - ./nginx/conf.d:/etc/nginx/conf.d
-      - ./certbot/www:/var/www/certbot # ADICIONE ESTA LINHA
-      - ./certbot/conf:/etc/letsencrypt # ADICIONE ESTA LINHA TAMBÉM
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
     depends_on:
       - backend
 
