@@ -14,9 +14,11 @@ fi
 echo "==> Criando diretórios do Certbot..."
 mkdir -p ./certbot/conf ./certbot/www
 
-echo "==> Iniciando nginx em modo HTTP-only para validação ACME..."
-cp nginx/conf.d/bootstrap.conf nginx/conf.d/default.conf.ssl_bak 2>/dev/null || true
-cp nginx/conf.d/bootstrap.conf /tmp/nginx_active.conf
+echo "==> Ativando config HTTP-only para validação ACME..."
+cp nginx/conf.d/default.conf nginx/conf.d/default.conf.ssl_bak
+cp nginx/conf.d/bootstrap.conf nginx/conf.d/default.conf
+
+echo "==> Iniciando nginx em modo HTTP-only..."
 docker compose -f docker-compose.prod.yml up -d webserver
 
 echo "==> Aguardando nginx subir..."
@@ -34,7 +36,8 @@ docker run --rm \
   --no-eff-email
 
 echo "==> Restaurando config SSL completa..."
-git checkout nginx/conf.d/default.conf
+cp nginx/conf.d/default.conf.ssl_bak nginx/conf.d/default.conf
+rm nginx/conf.d/default.conf.ssl_bak
 
 echo "==> Recarregando nginx com SSL..."
 docker compose -f docker-compose.prod.yml exec -T webserver nginx -s reload
