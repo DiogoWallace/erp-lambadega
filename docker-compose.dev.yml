@@ -1,6 +1,7 @@
 services:
   db_dev:
     image: mysql:8.0
+    container_name: db_dev
     restart: unless-stopped
     environment:
       MYSQL_DATABASE: erp_db_dev
