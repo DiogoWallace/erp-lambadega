@@ -1,0 +1,58 @@
+name: Deploy Dev para Hostinger VPS
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Executando deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            # Clona o repositório de dev caso ainda não exista
+            if [ ! -d /var/www/erp-dev ]; then
+              git clone -b dev https://github.com/Sr-Ryuk/erp-lambadega /var/www/erp-dev
+            fi
+
+            cd /var/www/erp-dev
+
+            git fetch origin
+            git checkout dev
+            git pull origin dev
+
+            # Cria o .env de dev a partir dos secrets injetados
+            cat > backend/.env.dev <<ENV
+            APP_ENV=local
+            APP_DEBUG=true
+            APP_KEY=${{ secrets.DEV_APP_KEY }}
+            APP_URL=${{ secrets.DEV_APP_URL }}
+
+            DB_CONNECTION=mysql
+            DB_HOST=db_dev
+            DB_PORT=3306
+            DB_DATABASE=erp_db_dev
+            DB_USERNAME=erp_user
+            DB_PASSWORD=${{ secrets.DEV_DB_PASSWORD }}
+            ENV
+
+            # Exporta variáveis para o docker compose ler
+            export DEV_DB_ROOT_PASSWORD=${{ secrets.DEV_DB_ROOT_PASSWORD }}
+            export DEV_DB_PASSWORD=${{ secrets.DEV_DB_PASSWORD }}
+
+            docker compose -f docker-compose.dev.yml up -d --build
+
+            docker exec backend_dev php artisan migrate --force
+            docker exec backend_dev php artisan config:cache
+            docker exec backend_dev php artisan route:cache
+            docker exec backend_dev php artisan view:cache
+
+            # Recarrega o nginx de prod para reconhecer os novos containers
+            docker compose -f /var/www/erp/docker-compose.prod.yml exec -T webserver nginx -s reload
