@@ -58,10 +58,10 @@ jobs:
             docker compose -f /var/www/erp/docker-compose.prod.yml exec -T webserver nginx -s reload
 
             for i in $(seq 1 12); do
-              curl -sf "https://api-dev.inovabi.com/up" && break
+              curl -sf --resolve "api-dev.inovabi.com:443:127.0.0.1" "https://api-dev.inovabi.com/up" && break
               echo "Aguardando backend_dev... tentativa $i/12"
               sleep 5
             done
-            curl -sf "https://api-dev.inovabi.com/up" || (echo "Health check falhou" && exit 1)
+            curl -sf --resolve "api-dev.inovabi.com:443:127.0.0.1" "https://api-dev.inovabi.com/up" || (echo "Health check falhou" && exit 1)
 
             echo "Deploy de dev concluído com sucesso."
