@@ -3,13 +3,10 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 
-FROM base AS dev
-COPY . .
-EXPOSE 3000
-CMD ["npm", "run", "dev"]
-
 FROM base AS builder
 COPY . .
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 RUN npm run build
 
 FROM base AS prod
