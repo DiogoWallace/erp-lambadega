@@ -4,8 +4,8 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_DATABASE: erp_db
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_PASSWORD: Dw00922948
+      MYSQL_ROOT_PASSWORD: ${PROD_DB_ROOT_PASSWORD}
+      MYSQL_PASSWORD: ${PROD_DB_PASSWORD}
       MYSQL_USER: erp_user
     volumes:
       - erp_db_data:/var/lib/mysql
@@ -26,7 +26,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: https://api.inovabi.com
+        NEXT_PUBLIC_API_URL: ${PROD_NEXT_PUBLIC_API_URL}
     restart: unless-stopped
     depends_on:
       - backend
