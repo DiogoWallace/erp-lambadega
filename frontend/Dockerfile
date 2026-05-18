@@ -2,14 +2,14 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Copia e instala as dependências
 COPY package*.json ./
 RUN npm install
 
-# Copia o resto do código
 COPY . .
 
-# Compila o Next.js para produção
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 RUN npm run build
 
 EXPOSE 3000
