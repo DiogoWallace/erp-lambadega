@@ -3,7 +3,7 @@ name: Deploy para Hostinger VPS
 on:
   push:
     branches:
-      - main # O deploy roda automaticamente ao atualizar a main
+      - main
 
 jobs:
   deploy:
@@ -18,14 +18,33 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             cd /var/www/erp
-            
-            # 1. Puxa as novidades do GitHub
+
             git pull origin main
-            
-            # 2. Reconstrói os containers do Laravel e Next.js com o código novo
+
+            # Gera o .env para o docker-compose ler as variáveis de banco e build
+            cat > .env <<ENV
+            PROD_DB_ROOT_PASSWORD=${{ secrets.PROD_DB_ROOT_PASSWORD }}
+            PROD_DB_PASSWORD=${{ secrets.PROD_DB_PASSWORD }}
+            PROD_NEXT_PUBLIC_API_URL=${{ secrets.PROD_NEXT_PUBLIC_API_URL }}
+            ENV
+
+            # Gera o .env do Laravel
+            cat > backend/.env <<ENV
+            APP_ENV=production
+            APP_DEBUG=false
+            APP_KEY=${{ secrets.PROD_APP_KEY }}
+            APP_URL=${{ secrets.PROD_APP_URL }}
+
+            DB_CONNECTION=mysql
+            DB_HOST=db
+            DB_PORT=3306
+            DB_DATABASE=erp_db
+            DB_USERNAME=erp_user
+            DB_PASSWORD=${{ secrets.PROD_DB_PASSWORD }}
+            ENV
+
             docker compose -f docker-compose.prod.yml up -d --build
-            
-            # 3. Roda as migrations do banco e limpa o cache
+
             docker compose -f docker-compose.prod.yml exec -T backend php artisan migrate --force
             docker compose -f docker-compose.prod.yml exec -T backend php artisan config:cache
             docker compose -f docker-compose.prod.yml exec -T backend php artisan route:cache
