@@ -16,6 +16,8 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          request_pty: true
+          command_timeout: 20m
           script: |
             set -e
 
