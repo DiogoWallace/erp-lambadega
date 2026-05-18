@@ -1,89 +1,65 @@
-name: Deploy Dev
+name: Deploy Dev para Hostinger VPS
 
 on:
   push:
-    branches: [dev]
+    branches:
+      - dev
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy via SSH
+      - name: Executando deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
-        env:
-          DEV_APP_KEY: ${{ secrets.DEV_APP_KEY }}
-          DEV_DB_ROOT_PASSWORD: ${{ secrets.DEV_DB_ROOT_PASSWORD }}
-          DEV_DB_PASSWORD: ${{ secrets.DEV_DB_PASSWORD }}
-          DEV_APP_URL: ${{ secrets.DEV_APP_URL }}
-          DEV_NEXT_PUBLIC_API_URL: ${{ secrets.DEV_NEXT_PUBLIC_API_URL }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: DEV_APP_KEY,DEV_DB_ROOT_PASSWORD,DEV_DB_PASSWORD,DEV_APP_URL,DEV_NEXT_PUBLIC_API_URL
           script: |
             set -e
+
+            if [ ! -d /var/www/erp-dev ]; then
+              git clone -b dev https://github.com/Sr-Ryuk/erp-lambadega /var/www/erp-dev
+            fi
+
             cd /var/www/erp-dev
 
+            git fetch origin
+            git checkout dev
             git pull origin dev
 
-            # Gera o .env raiz para o docker compose (credenciais do MySQL)
-            cat > .env << EOF
-            DB_ROOT_PASSWORD=${DEV_DB_ROOT_PASSWORD}
-            DB_PASSWORD=${DEV_DB_PASSWORD}
-            EOF
-
-            # Gera o .env do backend (Laravel)
-            cat > backend/.env << EOF
-            APP_NAME=Laravel
-            APP_ENV=development
-            APP_KEY=${DEV_APP_KEY}
+            cat > backend/.env.dev <<ENV
+            APP_ENV=local
             APP_DEBUG=true
-            APP_URL=${DEV_APP_URL}
+            APP_KEY=${{ secrets.DEV_APP_KEY }}
+            APP_URL=${{ secrets.DEV_APP_URL }}
 
             DB_CONNECTION=mysql
-            DB_HOST=db
+            DB_HOST=db_dev
             DB_PORT=3306
-            DB_DATABASE=erp_dev_db
-            DB_USERNAME=erp_dev_user
-            DB_PASSWORD=${DEV_DB_PASSWORD}
+            DB_DATABASE=erp_db_dev
+            DB_USERNAME=erp_user
+            DB_PASSWORD=${{ secrets.DEV_DB_PASSWORD }}
+            ENV
 
-            SESSION_DRIVER=database
-            SESSION_LIFETIME=120
-            SESSION_ENCRYPT=false
-            SESSION_PATH=/
-            SESSION_DOMAIN=null
+            export DEV_DB_ROOT_PASSWORD=${{ secrets.DEV_DB_ROOT_PASSWORD }}
+            export DEV_DB_PASSWORD=${{ secrets.DEV_DB_PASSWORD }}
 
-            BROADCAST_CONNECTION=log
-            FILESYSTEM_DISK=local
-            QUEUE_CONNECTION=database
-            CACHE_STORE=database
-
-            LOG_CHANNEL=stack
-            LOG_LEVEL=debug
-            EOF
-
-            # Gera o .env do frontend (Next.js)
-            cat > frontend/.env.local << EOF
-            NEXT_PUBLIC_API_URL=${DEV_NEXT_PUBLIC_API_URL}
-            EOF
-
-            # Sobe os containers
             docker compose -f docker-compose.dev.yml up -d --build
 
-            # Pós-deploy Laravel
-            docker compose -f docker-compose.dev.yml exec -T backend php artisan migrate --force
-            docker compose -f docker-compose.dev.yml exec -T backend php artisan config:cache
-            docker compose -f docker-compose.dev.yml exec -T backend php artisan route:cache
-            docker compose -f docker-compose.dev.yml exec -T backend php artisan view:cache
+            docker exec backend_dev php artisan migrate --force
+            docker exec backend_dev php artisan config:cache
+            docker exec backend_dev php artisan route:cache
+            docker exec backend_dev php artisan view:cache
 
-            # Health check (porta 8081 = API Laravel no nginx)
+            docker compose -f /var/www/erp/docker-compose.prod.yml exec -T webserver nginx -s reload
+
             for i in $(seq 1 12); do
-              curl -sf "http://localhost:8081/up" && break
-              echo "Aguardando backend... tentativa $i/12"
+              curl -sf "https://api-dev.inovabi.com/up" && break
+              echo "Aguardando backend_dev... tentativa $i/12"
               sleep 5
             done
-            curl -sf "http://localhost:8081/up" || (echo "Health check falhou" && exit 1)
+            curl -sf "https://api-dev.inovabi.com/up" || (echo "Health check falhou" && exit 1)
 
             echo "Deploy de dev concluído com sucesso."
