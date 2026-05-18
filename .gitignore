@@ -1,0 +1,8 @@
+# Env gerado pelo CI — nunca commitar
+.env
+
+# Certbot (gerado na VPS)
+certbot/
+
+# macOS
+.DS_Store
