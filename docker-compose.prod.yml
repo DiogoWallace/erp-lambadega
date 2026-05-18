@@ -48,3 +48,7 @@ services:
 volumes:
   erp_db_data:
   storage_data:
+
+networks:
+  default:
+    name: erp_shared
