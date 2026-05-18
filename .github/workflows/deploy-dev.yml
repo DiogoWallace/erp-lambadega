@@ -1,0 +1,85 @@
+name: Deploy Dev
+
+on:
+  push:
+    branches: [dev]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          DEV_APP_KEY: ${{ secrets.DEV_APP_KEY }}
+          DEV_DB_ROOT_PASSWORD: ${{ secrets.DEV_DB_ROOT_PASSWORD }}
+          DEV_DB_PASSWORD: ${{ secrets.DEV_DB_PASSWORD }}
+          DEV_APP_URL: ${{ secrets.DEV_APP_URL }}
+          DEV_NEXT_PUBLIC_API_URL: ${{ secrets.DEV_NEXT_PUBLIC_API_URL }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: DEV_APP_KEY,DEV_DB_ROOT_PASSWORD,DEV_DB_PASSWORD,DEV_APP_URL,DEV_NEXT_PUBLIC_API_URL
+          script: |
+            set -e
+            cd /var/www/erp-dev
+
+            git pull origin dev
+
+            # Gera o .env raiz para o docker compose (credenciais do MySQL)
+            cat > .env << EOF
+            DB_ROOT_PASSWORD=${DEV_DB_ROOT_PASSWORD}
+            DB_PASSWORD=${DEV_DB_PASSWORD}
+            EOF
+
+            # Gera o .env do backend (Laravel)
+            cat > backend/.env << EOF
+            APP_NAME=Laravel
+            APP_ENV=development
+            APP_KEY=${DEV_APP_KEY}
+            APP_DEBUG=true
+            APP_URL=${DEV_APP_URL}
+
+            DB_CONNECTION=mysql
+            DB_HOST=db
+            DB_PORT=3306
+            DB_DATABASE=erp_dev_db
+            DB_USERNAME=erp_dev_user
+            DB_PASSWORD=${DEV_DB_PASSWORD}
+
+            SESSION_DRIVER=database
+            SESSION_LIFETIME=120
+            SESSION_ENCRYPT=false
+            SESSION_PATH=/
+            SESSION_DOMAIN=null
+
+            BROADCAST_CONNECTION=log
+            FILESYSTEM_DISK=local
+            QUEUE_CONNECTION=database
+            CACHE_STORE=database
+
+            LOG_CHANNEL=stack
+            LOG_LEVEL=debug
+            EOF
+
+            # Gera o .env do frontend (Next.js)
+            cat > frontend/.env.local << EOF
+            NEXT_PUBLIC_API_URL=${DEV_NEXT_PUBLIC_API_URL}
+            EOF
+
+            # Sobe os containers
+            docker compose -f docker-compose.dev.yml up -d --build
+
+            # Pós-deploy Laravel
+            docker compose -f docker-compose.dev.yml exec -T backend php artisan migrate --force
+            docker compose -f docker-compose.dev.yml exec -T backend php artisan config:cache
+            docker compose -f docker-compose.dev.yml exec -T backend php artisan route:cache
+            docker compose -f docker-compose.dev.yml exec -T backend php artisan view:cache
+
+            # Health check
+            sleep 15
+            curl -sf "${DEV_APP_URL}/up" || (echo "Health check falhou" && exit 1)
+
+            echo "Deploy de dev concluído com sucesso."
