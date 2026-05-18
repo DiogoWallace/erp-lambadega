@@ -78,8 +78,12 @@ jobs:
             docker compose -f docker-compose.dev.yml exec -T backend php artisan route:cache
             docker compose -f docker-compose.dev.yml exec -T backend php artisan view:cache
 
-            # Health check
-            sleep 15
-            curl -sf "${DEV_APP_URL}/up" || (echo "Health check falhou" && exit 1)
+            # Health check (porta 8081 = API Laravel no nginx)
+            for i in $(seq 1 12); do
+              curl -sf "http://localhost:8081/up" && break
+              echo "Aguardando backend... tentativa $i/12"
+              sleep 5
+            done
+            curl -sf "http://localhost:8081/up" || (echo "Health check falhou" && exit 1)
 
             echo "Deploy de dev concluído com sucesso."
