@@ -27,39 +27,53 @@ erp-comercial/
 │   │   ├── Models/
 │   │   │   └── Concerns/     # Traits: HasUuidV7, BelongsToEstablishment
 │   │   ├── Http/
-│   │   │   ├── Controllers/
-│   │   │   └── Requests/
-│   │   └── Providers/
+│   │   │   ├── Controllers/Api/  # Controllers de domínio (sem lógica de negócio)
+│   │   │   ├── Requests/         # Validação por módulo
+│   │   │   └── Resources/        # Transformação do output JSON
+│   │   └── Services/         # Regras de negócio e queries
 │   ├── database/
 │   │   ├── migrations/
 │   │   └── seeders/
-│   ├── config/
 │   └── routes/api.php
 │
-├── frontend/                 # Next.js
+├── frontend/                 # Next.js 16
 │   ├── app/
 │   │   ├── (dashboard)/      # Route group: rotas autenticadas
-│   │   │   ├── customers/
+│   │   │   ├── customers/    # CRUD completo
+│   │   │   ├── categories/   # CRUD completo
 │   │   │   └── dashboard/
 │   │   ├── api/auth/clear/   # Route handler para limpar cookie inválido
 │   │   ├── lib/              # api.ts, types.ts
 │   │   ├── ui/               # skeletons reutilizáveis
 │   │   └── login/
-│   └── proxy.ts              # Auth check na borda (antigo middleware)
+│   └── proxy.ts              # Auth check na borda
 │
 ├── docs/                     # Documentação do projeto
 │   ├── arquitetura/          # Visão de longo prazo, decisões técnicas
 │   ├── banco-de-dados/       # Schema por módulo
 │   ├── tutoriais/            # Como rodar e deployar
-│   └── ia/                   # Contexto pra agentes de IA
+│   └── ia/                   # Contexto para agentes de IA
 │
 ├── nginx/conf.d/             # Configurações por ambiente
-├── scripts/                  # Utilitários (setup de secrets, etc.)
-│
 ├── docker-compose.yml        # Ambiente local
 ├── docker-compose.dev.yml    # Ambiente dev (VPS)
 └── docker-compose.prod.yml   # Ambiente produção (VPS)
 ```
+
+---
+
+## Módulos implementados
+
+| Módulo | Backend | Frontend |
+|---|---|---|
+| Autenticação | login, logout, me | tela de login, cookie token |
+| Clientes | CRUD + filtros + paginação | lista, novo, editar, excluir |
+| Categorias | CRUD + subcategorias + filtros | lista, novo, editar, excluir |
+| Fornecedores | migration + model | — |
+| Produtos | migration + model | — |
+| Estoque | migration + model | — |
+| Vendas | migration + model | — |
+| Financeiro | migration + model | — |
 
 ---
 
@@ -127,13 +141,13 @@ Schema de cada módulo com colunas, índices e relacionamentos.
 
 ## Convenções
 
-- **Código e identificadores em inglês**; **comentários e documentação em PT-BR**
-- **Commits em inglês**, prefixados (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`)
-- **Branches:** `dev` é o branch ativo de desenvolvimento; `main` é o reflexo de produção
-- **PRs:** contra `dev`; merge para `main` dispara deploy de produção
-- **Migrations sempre adicionam `establishment_id`** em tabelas de domínio
-- **Models de domínio sempre usam** `HasUuidV7` + `BelongsToEstablishment`
-- **Frontend:** route group `(dashboard)/` agrupa rotas autenticadas; o `proxy.ts` faz o auth check na borda
+- **Código e identificadores em inglês**; **documentação em PT-BR**; **commits em inglês** com prefixo (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`)
+- **Branches:** `dev` é o branch ativo; PRs vão para `dev`; merge de `dev` → `main` dispara deploy de produção
+- **Arquitetura de camadas:** `Controllers/Api` (só HTTP) → `Services` (negócio) → `Resources` (output)
+- **Todo model de domínio** usa `HasUuidV7` + `BelongsToEstablishment`
+- **Migrations** sempre usam `foreignUuid`, nunca `foreignId`
+- **Ao criar módulo novo:** adicionar permissões no `RoleSeeder` — sem isso o endpoint retorna 403
+- **Frontend:** `apiFetch` para todas as chamadas em Server Components; Server Actions em `actions.ts`
 
 ---
 
