@@ -39,7 +39,7 @@ services:
     container_name: frontend_dev
     restart: unless-stopped
     environment:
-      - API_BASE_URL=https://api-dev.inovabi.com
+      - API_BASE_URL=http://webserver:8081
     depends_on:
       - backend_dev
 
