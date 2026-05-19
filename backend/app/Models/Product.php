@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToEstablishment;
+use App\Models\Concerns\HasUuidV7;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -10,23 +12,23 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable([
-    'category_id', 'supplier_id', 'name', 'description', 'brand',
+    'establishment_id', 'category_id', 'supplier_id', 'name', 'description', 'brand',
     'sku', 'barcode', 'unit', 'cost_price', 'sale_price',
     'stock_quantity', 'min_stock_quantity', 'image_path', 'is_active',
 ])]
 class Product extends Model
 {
-    use HasFactory, SoftDeletes;
+    use BelongsToEstablishment, HasFactory, HasUuidV7, SoftDeletes;
 
     protected function casts(): array
     {
         return [
-            'cost_price' => 'decimal:2',
-            'sale_price' => 'decimal:2',
-            'stock_quantity' => 'integer',
+            'cost_price'         => 'decimal:2',
+            'sale_price'         => 'decimal:2',
+            'stock_quantity'     => 'integer',
             'min_stock_quantity' => 'integer',
-            'is_active' => 'boolean',
-            'deleted_at' => 'datetime',
+            'is_active'          => 'boolean',
+            'deleted_at'         => 'datetime',
         ];
     }
 

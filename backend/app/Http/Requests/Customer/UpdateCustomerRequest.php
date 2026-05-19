@@ -14,11 +14,19 @@ class UpdateCustomerRequest extends FormRequest
 
     public function rules(): array
     {
+        $establishmentId = $this->user()->establishment_id;
+        $customerId = $this->route('customer')?->id ?? $this->route('customer');
+
         return [
             'type'                => ['sometimes', Rule::in(['individual', 'company'])],
             'name'                => ['sometimes', 'required', 'string', 'max:255'],
             'trade_name'          => ['nullable', 'string', 'max:255'],
-            'document'            => ['nullable', 'string', 'max:20', Rule::unique('customers', 'document')->ignore($this->route('customer'))],
+            'document'            => [
+                'nullable', 'string', 'max:20',
+                Rule::unique('customers', 'document')
+                    ->ignore($customerId)
+                    ->where(fn ($q) => $q->where('establishment_id', $establishmentId)),
+            ],
             'email'               => ['nullable', 'email', 'max:255'],
             'phone'               => ['nullable', 'string', 'max:20'],
             'address'             => ['nullable', 'string', 'max:255'],

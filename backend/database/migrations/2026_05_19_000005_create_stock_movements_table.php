@@ -9,11 +9,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('stock_movements', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('product_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('user_id')->constrained()->restrictOnDelete();
-            // Polimórfico: liga a orders, purchase_orders, ou ajuste manual
-            $table->nullableMorphs('reference');
+            $table->uuid('id')->primary();
+            $table->foreignUuid('establishment_id')->constrained()->cascadeOnDelete();
+            $table->foreignUuid('product_id')->constrained()->cascadeOnDelete();
+            $table->foreignUuid('user_id')->constrained()->restrictOnDelete();
+            $table->nullableUuidMorphs('reference');
             $table->enum('type', ['in', 'out', 'adjustment']);
             $table->integer('quantity');
             $table->integer('stock_before');
@@ -22,8 +22,8 @@ return new class extends Migration
             $table->string('description')->nullable();
             $table->timestamps();
 
-            $table->index(['product_id', 'created_at']);
-            $table->index('type');
+            $table->index(['establishment_id', 'product_id', 'created_at']);
+            $table->index(['establishment_id', 'type']);
         });
     }
 

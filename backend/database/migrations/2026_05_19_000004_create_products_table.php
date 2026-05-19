@@ -9,14 +9,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('products', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('category_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignId('supplier_id')->nullable()->constrained()->nullOnDelete();
+            $table->uuid('id')->primary();
+            $table->foreignUuid('establishment_id')->constrained()->cascadeOnDelete();
+            $table->foreignUuid('category_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignUuid('supplier_id')->nullable()->constrained()->nullOnDelete();
             $table->string('name');
             $table->text('description')->nullable();
             $table->string('brand')->nullable();
-            $table->string('sku')->nullable()->unique();
-            $table->string('barcode')->nullable()->unique();
+            $table->string('sku')->nullable();
+            $table->string('barcode')->nullable();
             $table->enum('unit', ['un', 'kg', 'g', 'l', 'ml', 'cx'])->default('un');
             $table->decimal('cost_price', 10, 2)->default(0);
             $table->decimal('sale_price', 10, 2)->default(0);
@@ -27,9 +28,11 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->index('category_id');
-            $table->index('supplier_id');
-            $table->index('is_active');
+            $table->unique(['establishment_id', 'sku']);
+            $table->unique(['establishment_id', 'barcode']);
+            $table->index(['establishment_id', 'category_id']);
+            $table->index(['establishment_id', 'supplier_id']);
+            $table->index(['establishment_id', 'is_active']);
             $table->index('stock_quantity');
         });
     }

@@ -9,10 +9,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('orders', function (Blueprint $table) {
-            $table->id();
-            $table->string('order_number')->unique();
-            $table->foreignId('customer_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignId('user_id')->constrained()->restrictOnDelete();
+            $table->uuid('id')->primary();
+            $table->foreignUuid('establishment_id')->constrained()->cascadeOnDelete();
+            $table->string('order_number');
+            $table->foreignUuid('customer_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignUuid('user_id')->constrained()->restrictOnDelete();
             $table->decimal('subtotal_amount', 10, 2)->default(0);
             $table->decimal('discount_amount', 10, 2)->default(0);
             $table->enum('discount_type', ['fixed', 'percentage'])->default('fixed');
@@ -24,10 +25,11 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->index('status');
-            $table->index('customer_id');
-            $table->index('user_id');
-            $table->index('created_at');
+            $table->unique(['establishment_id', 'order_number']);
+            $table->index(['establishment_id', 'status']);
+            $table->index(['establishment_id', 'customer_id']);
+            $table->index(['establishment_id', 'user_id']);
+            $table->index(['establishment_id', 'created_at']);
         });
     }
 

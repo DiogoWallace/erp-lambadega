@@ -9,11 +9,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('customers', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
+            $table->foreignUuid('establishment_id')->constrained()->cascadeOnDelete();
             $table->enum('type', ['individual', 'company'])->default('individual');
             $table->string('name');
             $table->string('trade_name')->nullable();
-            $table->string('document', 20)->nullable()->unique();
+            $table->string('document', 20)->nullable();
             $table->string('email')->nullable();
             $table->string('phone', 20)->nullable();
             $table->string('address')->nullable();
@@ -28,9 +29,10 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->index('type');
-            $table->index('is_active');
-            $table->index('city');
+            $table->unique(['establishment_id', 'document']);
+            $table->index(['establishment_id', 'type']);
+            $table->index(['establishment_id', 'is_active']);
+            $table->index(['establishment_id', 'city']);
         });
     }
 

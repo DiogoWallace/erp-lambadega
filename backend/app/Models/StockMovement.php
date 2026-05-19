@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToEstablishment;
+use App\Models\Concerns\HasUuidV7;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -9,21 +11,21 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 #[Fillable([
-    'product_id', 'user_id', 'reference_type', 'reference_id',
+    'establishment_id', 'product_id', 'user_id', 'reference_type', 'reference_id',
     'type', 'quantity', 'stock_before', 'stock_after',
     'cost_price', 'description',
 ])]
 class StockMovement extends Model
 {
-    use HasFactory;
+    use BelongsToEstablishment, HasFactory, HasUuidV7;
 
     protected function casts(): array
     {
         return [
-            'quantity' => 'integer',
+            'quantity'     => 'integer',
             'stock_before' => 'integer',
-            'stock_after' => 'integer',
-            'cost_price' => 'decimal:2',
+            'stock_after'  => 'integer',
+            'cost_price'   => 'decimal:2',
         ];
     }
 
