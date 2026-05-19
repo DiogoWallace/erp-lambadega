@@ -21,6 +21,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./backend/app:/var/www/app
+      - ./backend/bootstrap:/var/www/bootstrap
       - ./backend/routes:/var/www/routes
       - ./backend/config:/var/www/config
       - ./backend/database:/var/www/database
