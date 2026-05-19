@@ -17,10 +17,14 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(RoleSeeder::class);
 
-        $admin = User::factory()->create([
-            'name' => 'Admin',
-            'email' => 'admin@inovabi.com',
-        ]);
+        $admin = User::firstOrCreate(
+            ['email' => 'admin@inovabi.com'],
+            [
+                'name' => 'Admin',
+                'password' => 'password',
+                'is_active' => true,
+            ]
+        );
 
         $admin->assignRole('admin');
     }
