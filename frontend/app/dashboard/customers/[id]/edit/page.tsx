@@ -3,6 +3,7 @@ import { apiFetch } from '@/app/lib/api'
 import { Customer } from '@/app/lib/types'
 import { CustomerForm } from '../../customer-form'
 import { updateCustomerAction, deleteCustomerAction } from '../../actions'
+import { DeleteCustomerButton } from '../../delete-button'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -27,17 +28,7 @@ export default async function EditCustomerPage({ params }: Props) {
           <h1 className="text-2xl font-bold text-zinc-900">{customer.name}</h1>
           <p className="mt-1 text-sm text-zinc-500">Editar dados do cliente</p>
         </div>
-        <form action={boundDelete}>
-          <button
-            type="submit"
-            className="rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
-            onClick={(e) => {
-              if (!confirm('Confirma a exclusão deste cliente?')) e.preventDefault()
-            }}
-          >
-            Excluir
-          </button>
-        </form>
+        <DeleteCustomerButton action={boundDelete} />
       </div>
 
       <CustomerForm
