@@ -102,6 +102,16 @@ function FormSectionSkeleton({ cols }: { label?: boolean; cols: number }) {
   )
 }
 
+export function SidebarUserSkeleton() {
+  return (
+    <div className="px-4 py-4 border-t border-zinc-100 space-y-2">
+      <Skeleton className="h-3 w-28" />
+      <Skeleton className="h-3 w-36" />
+      <Skeleton className="h-3 w-14 mt-3" />
+    </div>
+  )
+}
+
 export function DashboardSkeleton() {
   return (
     <div className="p-8">
