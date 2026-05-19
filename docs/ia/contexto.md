@@ -1,32 +1,40 @@
 # Contexto do Projeto — ERP Comercial
 
+> Documento para orientar agentes de IA. Leia também [`docs/arquitetura/`](../arquitetura/) para decisões de longo prazo e [`docs/banco-de-dados/`](../banco-de-dados/) para schema.
+
 ## Visão Geral
 
-ERP comercial em desenvolvimento. Backend em Laravel (API REST), frontend em Next.js. Infraestrutura 100% containerizada com Docker, hospedada em uma VPS Hostinger com deploy automático via GitHub Actions.
+ERP comercial multi-tenant para varejo (lojas, restaurantes, adegas). Está sendo construído como SaaS web (Fase 1), com arquitetura preparada para evolução **hub-and-spoke** com servidores locais (Fase 2) e PDV nativo com integração de hardware (Fase 3). Ver [roadmap](../arquitetura/roadmap.md).
+
+Empresa: Inovabi. Domínio: `inovabi.com`.
 
 ---
 
 ## Stack
 
-| Camada      | Tecnologia              | Versão  |
-|-------------|-------------------------|---------|
-| Backend     | Laravel (PHP-FPM)       | 13.x    |
-| Frontend    | Next.js                 | 20 (Node)|
-| Banco       | MySQL                   | 8.0     |
-| Web server  | nginx                   | alpine  |
-| Container   | Docker + Compose        | v2      |
-| CI/CD       | GitHub Actions          | —       |
-| SSL         | Let's Encrypt (certbot) | —       |
+| Camada | Tecnologia | Versão |
+|---|---|---|
+| Backend | Laravel (PHP-FPM) | 13.x (PHP 8.4) |
+| Frontend | Next.js (App Router) | 16.x |
+| Banco | MySQL | 8.0 |
+| Auth | Laravel Sanctum (token) + Spatie Permission (RBAC) | — |
+| Identificadores | UUID v7 (sortable) em todas as tabelas | — |
+| Web server | nginx | alpine |
+| Containers | Docker + Compose v2 | — |
+| CI/CD | GitHub Actions | — |
+| SSL | Let's Encrypt (certbot) | — |
 
 ---
 
 ## Ambientes
 
-| Ambiente | Branch | Frontend              | API                      |
-|----------|--------|-----------------------|--------------------------|
-| Local    | —      | http://localhost:8000 | http://localhost:8001    |
-| Dev      | `dev`  | https://dev.inovabi.com | https://api-dev.inovabi.com |
-| Prod     | `main` | https://inovabi.com   | https://api.inovabi.com  |
+| Ambiente | Branch | Frontend | API |
+|---|---|---|---|
+| Local | qualquer | http://localhost:8000 | http://localhost:8001 |
+| Dev | `dev` | https://dev.inovabi.com | https://api-dev.inovabi.com |
+| Prod | `main` | https://inovabi.com | https://api.inovabi.com |
+
+Credenciais seedadas: `admin@inovabi.com` / `password`.
 
 ---
 
@@ -34,121 +42,246 @@ ERP comercial em desenvolvimento. Backend em Laravel (API REST), frontend em Nex
 
 ```
 erp-comercial/
-├── backend/                  # Laravel 13
+├── backend/                              Laravel 13 API
 │   ├── app/
-│   │   ├── Http/Controllers/
-│   │   └── Models/
+│   │   ├── Models/
+│   │   │   ├── Concerns/
+│   │   │   │   ├── HasUuidV7.php         UUID v7 via Str::uuid7()
+│   │   │   │   └── BelongsToEstablishment.php  global scope + creating hook
+│   │   │   ├── Establishment.php         tenant root
+│   │   │   ├── User.php                  HasUuidV7 + HasRoles + HasApiTokens
+│   │   │   ├── Customer.php / Supplier.php / Category.php / Product.php
+│   │   │   ├── Order.php / OrderItem.php / StockMovement.php
+│   │   │   ├── FinancialTransaction.php
+│   │   │   ├── Role.php / Permission.php  override Spatie p/ usar UUID
+│   │   │   └── SyncLog.php               schema da Fase 2
+│   │   ├── Http/
+│   │   │   ├── Controllers/
+│   │   │   │   ├── Auth/AuthController.php
+│   │   │   │   └── CustomerController.php
+│   │   │   └── Requests/
+│   │   │       ├── Auth/LoginRequest.php
+│   │   │       └── Customer/{Store,Update}CustomerRequest.php
+│   │   └── Providers/AppServiceProvider.php
 │   ├── database/
-│   │   └── migrations/
-│   ├── routes/
-│   │   ├── web.php
-│   │   └── api.php           # criar conforme módulos
-│   ├── .env.example          # referência de variáveis
-│   └── Dockerfile
+│   │   ├── migrations/                   tudo com UUID + establishment_id
+│   │   └── seeders/
+│   │       ├── DatabaseSeeder.php        cria establishment + admin
+│   │       └── RoleSeeder.php            4 roles, 19 permissions
+│   ├── config/
+│   │   ├── permission.php                aponta para App\Models\{Role,Permission}
+│   │   ├── sanctum.php
+│   │   └── cors.php
+│   └── routes/api.php
 │
-├── frontend/                 # Next.js (App Router)
+├── frontend/                             Next.js 16
+│   ├── proxy.ts                          auth check na borda (antigo middleware)
 │   ├── app/
-│   │   └── page.tsx
-│   └── Dockerfile            # multi-stage: builder → prod
+│   │   ├── (dashboard)/                  ROUTE GROUP — não aparece na URL
+│   │   │   ├── layout.tsx                sync; sidebar + Suspense para user
+│   │   │   ├── sidebar-nav.tsx           client component (usePathname)
+│   │   │   ├── sidebar-user.tsx          async; redireciona se 401
+│   │   │   ├── actions.ts                logoutAction
+│   │   │   ├── dashboard/page.tsx        rota: /dashboard
+│   │   │   └── customers/                rota: /customers
+│   │   │       ├── page.tsx              lista server-side
+│   │   │       ├── new/page.tsx
+│   │   │       ├── [id]/edit/page.tsx
+│   │   │       ├── customer-form.tsx     client; useActionState
+│   │   │       ├── delete-button.tsx     client; confirm() + form action
+│   │   │       └── actions.ts            create/update/delete
+│   │   ├── api/auth/clear/route.ts       limpa cookie inválido
+│   │   ├── lib/
+│   │   │   ├── api.ts                    apiFetch (token do cookie)
+│   │   │   └── types.ts                  Customer, PaginatedResponse
+│   │   ├── ui/skeletons.tsx              TableSkeleton, FormSkeleton, etc.
+│   │   ├── login/
+│   │   │   ├── page.tsx
+│   │   │   └── actions.ts                loginAction (seta cookie token)
+│   │   └── page.tsx                      home pública (em construção)
+│   └── next.config.ts                    serverActions.allowedOrigins
 │
 ├── nginx/conf.d/
-│   ├── default.conf          # SSL prod+dev (4 domínios)
-│   ├── local.conf            # HTTP local (portas 8000/8001)
-│   └── bootstrap.conf        # HTTP-only para emissão inicial de cert
+│   ├── default.conf                      SSL prod+dev (4 domínios)
+│   ├── local.conf                        HTTP local (portas 8000/8001)
+│   └── dev.conf                          dev no VPS (portas 8080/8081)
 │
-├── docker-compose.yml        # ambiente local
-├── docker-compose.dev.yml    # ambiente dev (VPS, rede erp_shared)
-├── docker-compose.prod.yml   # ambiente prod (VPS, cria rede erp_shared)
+├── docker-compose.yml                    local
+├── docker-compose.dev.yml                dev (VPS, rede erp_shared)
+├── docker-compose.prod.yml               prod (VPS, cria rede erp_shared)
 │
 ├── .github/workflows/
-│   ├── deploy.yml            # push em main → deploy prod
-│   └── deploy-dev.yml        # push em dev → deploy dev
-│
-├── init-ssl.sh               # emissão inicial do cert Let's Encrypt
-├── scripts/
-│   └── setup-github-secrets.sh  # configura secrets do repositório via gh CLI
+│   ├── deploy.yml                        push main → prod
+│   └── deploy-dev.yml                    push dev → dev
 │
 └── docs/
-    ├── ia/                   # contexto para IA
-    └── tutoriais/            # guias de desenvolvimento
+    ├── arquitetura/                      visão, multi-tenant, sync, roadmap
+    ├── banco-de-dados/                   schema por módulo
+    ├── tutoriais/                        rodar local, deploy
+    └── ia/                               este arquivo
 ```
 
 ---
 
-## Arquitetura de Rede (VPS)
+## Padrões obrigatórios
 
-```
-Internet
-    │
-    ▼
-nginx (erp-webserver-1)   ← porta 80/443 exposta
-    │         │
-    │         ├── api.inovabi.com     → fastcgi → erp-backend-1:9000   (prod)
-    │         ├── inovabi.com         → proxy   → erp-frontend-1:3000  (prod)
-    │         ├── api-dev.inovabi.com → fastcgi → backend_dev:9000     (dev)
-    │         └── dev.inovabi.com     → proxy   → frontend_dev:3000    (dev)
-    │
-    └── Rede Docker: erp_shared
-            ├── erp-backend-1    (PHP-FPM, prod)
-            ├── erp-frontend-1   (Next.js, prod)
-            ├── erp-db-1         (MySQL, prod)
-            ├── backend_dev      (PHP-FPM, dev)
-            ├── frontend_dev     (Next.js, dev)
-            └── db_dev           (MySQL, dev)
+### Backend
+
+**Todo model de domínio** (que tem `establishment_id`) deve usar:
+
+```php
+use App\Models\Concerns\BelongsToEstablishment;
+use App\Models\Concerns\HasUuidV7;
+
+class Foo extends Model
+{
+    use BelongsToEstablishment, HasFactory, HasUuidV7, SoftDeletes;
+}
 ```
 
-- O compose de prod **cria** a rede `erp_shared`.
-- O compose de dev **entra** na rede `erp_shared` como externa.
-- O nginx do prod roteia os 4 domínios (prod + dev) num único container.
+- `HasUuidV7` — gera UUID v7 como PK
+- `BelongsToEstablishment` — global scope (filtra queries por `establishment_id` do user logado) + creating hook (preenche o campo automaticamente)
+- Inclua `'establishment_id'` no `#[Fillable]` (para que seeders funcionem)
+
+**Migrations** sempre:
+
+```php
+$table->uuid('id')->primary();
+$table->foreignUuid('establishment_id')->constrained()->cascadeOnDelete();
+// FKs são foreignUuid, nunca foreignId
+// Morphs polimórficos são uuidMorphs / nullableUuidMorphs
+```
+
+**Unique constraints multi-tenant:** compostos com `establishment_id`:
+
+```php
+$table->unique(['establishment_id', 'document']);  // cada tenant pode ter o mesmo CPF
+```
+
+**Validation de unique** em FormRequests deve escopar por establishment:
+
+```php
+Rule::unique('customers', 'document')
+    ->ignore($this->route('customer'))
+    ->where(fn ($q) => $q->where('establishment_id', auth()->user()->establishment_id))
+```
+
+**Permissões** verificadas no controller:
+
+```php
+abort_if($request->user()->cannot('customers.view'), 403, 'Sem permissão.');
+```
+
+### Frontend
+
+**Rotas autenticadas** vivem em `app/(dashboard)/`. O parêntese **remove** o segmento da URL — `app/(dashboard)/customers/page.tsx` é a rota `/customers`.
+
+**Auth na borda:** `proxy.ts` verifica só a existência do token no cookie. NÃO faz chamada à API (rodaria em todo prefetch). Token inválido é tratado pelas Server Components via `apiFetch`.
+
+**API fetch em Server Components:**
+
+```ts
+import { apiFetch } from '@/app/lib/api'
+const res = await apiFetch(`/customers?${params}`)
+```
+
+`apiFetch` injeta o `Authorization: Bearer ${token}` e em 401 redireciona para `/api/auth/clear` (route handler que limpa o cookie e manda pra `/login`).
+
+**Mutações:** Server Actions em `actions.ts`, formulários client usam `useActionState`:
+
+```tsx
+'use client'
+const [state, formAction, pending] = useActionState(action, null)
+return <form action={formAction}>...</form>
+```
+
+**Para passar IDs em actions** (UUID = string):
+
+```ts
+const boundUpdate = updateCustomerAction.bind(null, customer.id)
+```
+
+**Loading states:** cada rota tem seu `loading.tsx` que importa um skeleton de `@/app/ui/skeletons`. Padrão reutilizável — não criar skeletons inline.
+
+**Tipos:** ids são `string` (UUID), nunca `number`.
 
 ---
 
-## Variáveis de Ambiente
+## Gotchas
+
+- **Sanctum's `PersonalAccessToken`** mantém `id` como `bigint` — só os `morphs` para `tokenable` viram UUID. O model do Sanctum não usa `HasUuids`.
+- **Spatie's Permission/Role** precisam de subclasses locais (`App\Models\Role`, `App\Models\Permission`) para usar `HasUuidV7`. O config `permission.php` aponta para essas.
+- **Server Components não podem mutar cookies** — quando precisar (ex: limpar token inválido), redirecione para uma route handler em `app/api/.../route.ts`.
+- **Next.js 16 renomeou `middleware.ts` para `proxy.ts`** — mesma API, mesmo comportamento, nome novo.
+- **`searchParams` e `params` agora são Promise** em Next.js 16 — precisam de `await`.
+- **`Server Actions allowedOrigins`** em `next.config.ts` fica sob `experimental` (Next.js 16+).
+- **nginx local:** `proxy_set_header Host $http_host` (não `$host`) — caso contrário a porta não é encaminhada, e o `x-forwarded-host` quebra a CSRF do Server Actions.
+
+---
+
+## Estado atual
+
+**Pronto:**
+- Infraestrutura (Docker, nginx, SSL, CI/CD) nos 3 ambientes
+- Autenticação (Sanctum + Spatie, login/logout/me)
+- Schema do banco com 8 tabelas de domínio + establishments + sync_log + tabelas Spatie/Sanctum
+- Migração para UUID v7 em todas as tabelas
+- Multi-tenancy via `establishment_id` + global scope
+- CRUD completo de clientes (backend API + frontend páginas)
+- Layout do dashboard com sidebar, route group, loading skeletons
+- Auth check na borda via `proxy.ts`
+- Documentação completa em `docs/arquitetura/`
+
+**Pendente (próximos passos):**
+- CRUDs dos demais módulos: fornecedores, categorias, produtos, vendas, financeiro
+- Movimentação de estoque (com `stock_movements` como log imutável)
+- PDV web (carrinho, fechamento de venda)
+- Relatórios básicos
+- Backup automatizado do MySQL em produção
+
+**Fase 2 (depois da Fase 1):**
+- Observer que popula `sync_log` automaticamente
+- Endpoints `POST /api/sync/push` e `GET /api/sync/pull`
+- Empacotamento do backend para rodar on-premise como servidor local
+- Painel de status de sincronização
+
+---
+
+## Variáveis de ambiente
 
 ### Backend (`backend/.env`)
-| Variável         | Descrição                       |
-|------------------|---------------------------------|
-| `APP_KEY`        | Chave de criptografia do Laravel|
-| `APP_URL`        | URL base da API                 |
-| `DB_HOST`        | Hostname do container MySQL     |
-| `DB_DATABASE`    | Nome do banco                   |
-| `DB_USERNAME`    | Usuário do banco                |
-| `DB_PASSWORD`    | Senha do banco                  |
 
-### GitHub Secrets (CI/CD)
-| Secret                  | Usado em    |
-|-------------------------|-------------|
-| `VPS_HOST`              | ambos       |
-| `VPS_USER`              | ambos       |
-| `VPS_SSH_KEY`           | ambos       |
-| `PROD_APP_KEY`          | prod        |
-| `PROD_APP_URL`          | prod        |
-| `PROD_DB_ROOT_PASSWORD` | prod        |
-| `PROD_DB_PASSWORD`      | prod        |
-| `PROD_NEXT_PUBLIC_API_URL` | prod     |
-| `DEV_APP_KEY`           | dev         |
-| `DEV_APP_URL`           | dev         |
-| `DEV_DB_ROOT_PASSWORD`  | dev         |
-| `DEV_DB_PASSWORD`       | dev         |
+| Variável | Descrição |
+|---|---|
+| `APP_KEY` | Chave de criptografia do Laravel |
+| `APP_URL` | URL base da API |
+| `DB_HOST`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` | MySQL |
+| `SANCTUM_STATEFUL_DOMAINS` | domínios autorizados |
+| `SANCTUM_TOKEN_EXPIRATION` | minutos até expirar token (default 1440) |
+| `CORS_ALLOWED_ORIGINS` | origins permitidos pela API |
 
----
+### Frontend (`frontend/.env.local`)
 
-## Convenções de Branch
+| Variável | Descrição |
+|---|---|
+| `API_BASE_URL` | URL interna para Server Components chamarem a API (ex: `http://webserver:8001`) |
+| `NEXT_PUBLIC_API_URL` | URL pública (cliente) — atualmente pouco usado, fetches server-side |
 
-| Branch  | Finalidade                        | Deploy automático |
-|---------|-----------------------------------|-------------------|
-| `main`  | Código estável de produção        | Sim → prod        |
-| `dev`   | Integração e testes               | Sim → dev         |
-| `feature/*` | Desenvolvimento de features   | Não               |
+### GitHub Secrets
 
-Fluxo: `feature/*` → PR para `dev` → validar → PR para `main`.
+| Secret | Onde |
+|---|---|
+| `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY` | ambos |
+| `PROD_APP_KEY`, `PROD_APP_URL`, `PROD_DB_ROOT_PASSWORD`, `PROD_DB_PASSWORD`, `PROD_NEXT_PUBLIC_API_URL` | prod |
+| `DEV_APP_KEY`, `DEV_APP_URL`, `DEV_DB_ROOT_PASSWORD`, `DEV_DB_PASSWORD` | dev |
 
 ---
 
-## Estado Atual do Sistema
+## Convenções
 
-- Infraestrutura: completa (Docker, nginx, SSL, CI/CD)
-- Backend: scaffold padrão Laravel 13 (sem módulos de negócio ainda)
-- Frontend: scaffold padrão Next.js (sem páginas de negócio ainda)
-- Banco: apenas tabelas base (users, cache, jobs, sessions)
-- Próximo passo: criar módulos do ERP (autenticação, clientes, produtos, etc.)
+- **Código e identificadores em inglês**; **documentação em PT-BR**; **commits em inglês** com prefixo (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`)
+- **Branch ativo:** `dev`. Merge para `main` faz deploy de produção
+- **Nunca usar** `foreignId` em migrations novas — sempre `foreignUuid`
+- **Nunca criar** model de domínio sem `BelongsToEstablishment`
+- **Nunca chamar API direto** em Server Components — usar o helper `apiFetch`
+- **Nunca passar `onClick` ou outros event handlers** como prop em componentes server — só client components podem ter handlers
