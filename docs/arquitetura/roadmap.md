@@ -10,10 +10,10 @@ Objetivo: sistema web funcional, operando em produção, com as fundações arqu
 - [x] Estrutura de banco (clientes, fornecedores, catálogo, estoque, vendas, financeiro)
 - [x] CRUD de clientes (backend + frontend)
 - [x] Layout dashboard com route group, sidebar, loading states
-- [ ] **Migração de IDs para UUID v7** ← bloqueante para Fase 2
-- [ ] **Tabela `establishments` e `establishment_id` nas tabelas de domínio** ← bloqueante para Fase 2
-- [ ] **Tabela `sync_log`** (schema; observer fica para a Fase 2)
-- [ ] Trait `BelongsToEstablishment` + global scope nos models
+- [x] **Migração de IDs para UUID v7** ← bloqueante para Fase 2
+- [x] **Tabela `establishments` e `establishment_id` nas tabelas de domínio** ← bloqueante para Fase 2
+- [x] **Tabela `sync_log`** (schema; observer fica para a Fase 2)
+- [x] Trait `BelongsToEstablishment` + global scope nos models
 
 ### Módulos de negócio
 
