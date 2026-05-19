@@ -20,7 +20,7 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
     cache: 'no-store',
   })
 
-  if (res.status === 401) redirect('/login')
+  if (res.status === 401) redirect('/api/auth/clear')
 
   return res
 }
