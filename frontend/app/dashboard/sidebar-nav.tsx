@@ -1,0 +1,81 @@
+'use client'
+
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { logoutAction } from './actions'
+
+const navItems = [
+  {
+    href: '/dashboard',
+    label: 'Dashboard',
+    icon: (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+      </svg>
+    ),
+    exact: true,
+  },
+  {
+    href: '/dashboard/customers',
+    label: 'Clientes',
+    icon: (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+    ),
+    exact: false,
+  },
+]
+
+interface User {
+  name: string
+  email: string
+}
+
+export function SidebarNav({ user }: { user: User }) {
+  const pathname = usePathname()
+
+  return (
+    <aside className="w-56 shrink-0 bg-white border-r border-zinc-200 flex flex-col h-full">
+      <div className="px-5 py-4 border-b border-zinc-100">
+        <span className="text-sm font-bold text-zinc-900 tracking-tight">ERP Comercial</span>
+      </div>
+
+      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+        {navItems.map((item) => {
+          const isActive = item.exact
+            ? pathname === item.href
+            : pathname === item.href || pathname.startsWith(item.href + '/')
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isActive
+                  ? 'bg-zinc-900 text-white'
+                  : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900'
+              }`}
+            >
+              {item.icon}
+              {item.label}
+            </Link>
+          )
+        })}
+      </nav>
+
+      <div className="px-4 py-4 border-t border-zinc-100">
+        <p className="text-xs font-semibold text-zinc-900 truncate">{user.name}</p>
+        <p className="text-xs text-zinc-400 truncate mt-0.5">{user.email}</p>
+        <form action={logoutAction} className="mt-3">
+          <button
+            type="submit"
+            className="text-xs text-zinc-400 hover:text-zinc-700 transition-colors"
+          >
+            Sair da conta
+          </button>
+        </form>
+      </div>
+    </aside>
+  )
+}
