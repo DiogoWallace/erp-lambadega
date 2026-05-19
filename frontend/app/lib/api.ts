@@ -21,6 +21,7 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
   })
 
   if (res.status === 401) redirect('/api/auth/clear')
+  if (res.status === 403) redirect('/dashboard')
 
   return res
 }
