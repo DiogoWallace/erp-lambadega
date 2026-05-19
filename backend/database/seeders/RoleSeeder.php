@@ -19,6 +19,9 @@ class RoleSeeder extends Seeder
             // Clientes
             'customers.view', 'customers.create', 'customers.edit', 'customers.delete',
 
+            // Categorias
+            'categories.view', 'categories.create', 'categories.edit', 'categories.delete',
+
             // Produtos
             'products.view', 'products.create', 'products.edit', 'products.delete',
 
@@ -43,6 +46,7 @@ class RoleSeeder extends Seeder
             ->syncPermissions([
                 'users.view',
                 'customers.view', 'customers.create', 'customers.edit',
+                'categories.view', 'categories.create', 'categories.edit',
                 'products.view', 'products.create', 'products.edit',
                 'sales.view', 'sales.create', 'sales.edit',
                 'reports.view',
