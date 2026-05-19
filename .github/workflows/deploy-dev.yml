@@ -48,7 +48,7 @@ jobs:
             export DEV_DB_ROOT_PASSWORD=${{ secrets.DEV_DB_ROOT_PASSWORD }}
             export DEV_DB_PASSWORD=${{ secrets.DEV_DB_PASSWORD }}
 
-            docker compose -f docker-compose.dev.yml up -d --build
+            docker compose -f docker-compose.dev.yml up -d --build --remove-orphans
 
             docker exec backend_dev php artisan migrate --force
             docker exec backend_dev php artisan config:cache
