@@ -26,6 +26,8 @@ services:
       - ./backend/config:/var/www/config
       - ./backend/database:/var/www/database
       - ./backend/resources:/var/www/resources
+      - ./backend/tests:/var/www/tests
+      - ./backend/phpunit.xml:/var/www/phpunit.xml
       - ./backend/.env:/var/www/.env
       - storage_local:/var/www/storage
     depends_on:
