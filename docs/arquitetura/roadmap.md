@@ -18,8 +18,8 @@ Objetivo: sistema web funcional, operando em produção, com as fundações arqu
 ### Módulos de negócio
 
 - [x] Clientes (CRUD completo)
+- [x] Categorias (CRUD completo)
 - [ ] Fornecedores (CRUD)
-- [ ] Categorias (CRUD)
 - [ ] Produtos (CRUD com upload de imagem)
 - [ ] Movimentação de estoque (registro + histórico)
 - [ ] Vendas (PDV web — carrinho, desconto, fechamento)

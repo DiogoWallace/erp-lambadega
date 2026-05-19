@@ -58,16 +58,25 @@ erp-comercial/
 │   │   ├── Http/
 │   │   │   ├── Controllers/
 │   │   │   │   ├── Auth/AuthController.php
-│   │   │   │   └── CustomerController.php
-│   │   │   └── Requests/
-│   │   │       ├── Auth/LoginRequest.php
-│   │   │       └── Customer/{Store,Update}CustomerRequest.php
+│   │   │   │   └── Api/                  controllers de domínio (sem lógica de negócio)
+│   │   │   │       ├── CustomerController.php
+│   │   │   │       └── CategoryController.php
+│   │   │   ├── Requests/
+│   │   │   │   ├── Auth/LoginRequest.php
+│   │   │   │   ├── Customer/{Store,Update}CustomerRequest.php
+│   │   │   │   └── Category/{Store,Update}CategoryRequest.php
+│   │   │   └── Resources/               transforma output JSON (JsonResource)
+│   │   │       ├── CustomerResource.php
+│   │   │       └── CategoryResource.php
+│   │   ├── Services/                    regras de negócio (queries, CRUD)
+│   │   │   ├── CustomerService.php
+│   │   │   └── CategoryService.php
 │   │   └── Providers/AppServiceProvider.php
 │   ├── database/
 │   │   ├── migrations/                   tudo com UUID + establishment_id
 │   │   └── seeders/
 │   │       ├── DatabaseSeeder.php        cria establishment + admin
-│   │       └── RoleSeeder.php            4 roles, 19 permissions
+│   │       └── RoleSeeder.php            4 roles, 23 permissions
 │   ├── config/
 │   │   ├── permission.php                aponta para App\Models\{Role,Permission}
 │   │   ├── sanctum.php
@@ -83,17 +92,24 @@ erp-comercial/
 │   │   │   ├── sidebar-user.tsx          async; redireciona se 401
 │   │   │   ├── actions.ts                logoutAction
 │   │   │   ├── dashboard/page.tsx        rota: /dashboard
-│   │   │   └── customers/                rota: /customers
+│   │   │   ├── customers/                rota: /customers
+│   │   │   │   ├── page.tsx              lista server-side
+│   │   │   │   ├── new/page.tsx
+│   │   │   │   ├── [id]/edit/page.tsx
+│   │   │   │   ├── customer-form.tsx     client; useActionState
+│   │   │   │   ├── delete-button.tsx     client; confirm() + form action
+│   │   │   │   └── actions.ts            create/update/delete
+│   │   │   └── categories/               rota: /categories
 │   │   │       ├── page.tsx              lista server-side
-│   │   │       ├── new/page.tsx
-│   │   │       ├── [id]/edit/page.tsx
-│   │   │       ├── customer-form.tsx     client; useActionState
+│   │   │       ├── new/page.tsx          recebe lista p/ dropdown de pai
+│   │   │       ├── [id]/edit/page.tsx    exclui a própria categoria do dropdown
+│   │   │       ├── category-form.tsx     client; useActionState
 │   │   │       ├── delete-button.tsx     client; confirm() + form action
 │   │   │       └── actions.ts            create/update/delete
 │   │   ├── api/auth/clear/route.ts       limpa cookie inválido
 │   │   ├── lib/
 │   │   │   ├── api.ts                    apiFetch (token do cookie)
-│   │   │   └── types.ts                  Customer, PaginatedResponse
+│   │   │   └── types.ts                  Customer, Category, PaginatedResponse
 │   │   ├── ui/skeletons.tsx              TableSkeleton, FormSkeleton, etc.
 │   │   ├── login/
 │   │   │   ├── page.tsx
@@ -166,7 +182,23 @@ Rule::unique('customers', 'document')
     ->where(fn ($q) => $q->where('establishment_id', auth()->user()->establishment_id))
 ```
 
-**Permissões** verificadas no controller:
+**Arquitetura de camadas** — todo módulo de domínio segue:
+
+- `Controllers/Api/FooController` — só HTTP: recebe request, chama service, retorna resource. Nada de queries ou regras aqui.
+- `Services/FooService` — regras de negócio, queries, paginação, CRUD.
+- `Resources/FooResource` — transforma o model em JSON (substitui `response()->json()` manual).
+- `Requests/Foo/{Store,Update}FooRequest` — validação com escopo multi-tenant.
+
+```php
+// Controller enxuto
+public function index(Request $request): AnonymousResourceCollection
+{
+    abort_if($request->user()->cannot('foo.view'), 403, 'Sem permissão.');
+    return FooResource::collection($this->service->paginate($request->only(['search', 'is_active'])));
+}
+```
+
+**Permissões** verificadas no controller (antes de chamar o service):
 
 ```php
 abort_if($request->user()->cannot('customers.view'), 403, 'Sem permissão.');
@@ -211,11 +243,14 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 
 - **Sanctum's `PersonalAccessToken`** mantém `id` como `bigint` — só os `morphs` para `tokenable` viram UUID. O model do Sanctum não usa `HasUuids`.
 - **Spatie's Permission/Role** precisam de subclasses locais (`App\Models\Role`, `App\Models\Permission`) para usar `HasUuidV7`. O config `permission.php` aponta para essas.
+- **Ao criar novo módulo, lembrar de adicionar as permissões no `RoleSeeder`** e re-executar `php artisan db:seed --class=RoleSeeder`. Sem isso o endpoint retorna 403 para todos.
+- **`laravel/sanctum` e `spatie/laravel-permission` devem estar no `composer.json`** — se o vendor for recriado (container recreate), pacotes instalados manualmente somem.
 - **Server Components não podem mutar cookies** — quando precisar (ex: limpar token inválido), redirecione para uma route handler em `app/api/.../route.ts`.
 - **Next.js 16 renomeou `middleware.ts` para `proxy.ts`** — mesma API, mesmo comportamento, nome novo.
 - **`searchParams` e `params` agora são Promise** em Next.js 16 — precisam de `await`.
 - **`Server Actions allowedOrigins`** em `next.config.ts` fica sob `experimental` (Next.js 16+).
 - **nginx local:** `proxy_set_header Host $http_host` (não `$host`) — caso contrário a porta não é encaminhada, e o `x-forwarded-host` quebra a CSRF do Server Actions.
+- **Categoria pai no form** — `new/page.tsx` e `[id]/edit/page.tsx` chamam `GET /categories?all=1` para popular o dropdown. O edit exclui a própria categoria da lista para evitar auto-referência.
 
 ---
 
@@ -227,13 +262,15 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - Schema do banco com 8 tabelas de domínio + establishments + sync_log + tabelas Spatie/Sanctum
 - Migração para UUID v7 em todas as tabelas
 - Multi-tenancy via `establishment_id` + global scope
-- CRUD completo de clientes (backend API + frontend páginas)
+- Arquitetura de camadas: Controllers/Api + Services + Resources
+- CRUD completo de clientes (backend + frontend)
+- CRUD completo de categorias (backend + frontend, suporte a subcategorias via `parent_id`)
 - Layout do dashboard com sidebar, route group, loading skeletons
 - Auth check na borda via `proxy.ts`
 - Documentação completa em `docs/arquitetura/`
 
 **Pendente (próximos passos):**
-- CRUDs dos demais módulos: fornecedores, categorias, produtos, vendas, financeiro
+- CRUDs dos demais módulos: fornecedores, produtos, vendas, financeiro
 - Movimentação de estoque (com `stock_movements` como log imutável)
 - PDV web (carrinho, fechamento de venda)
 - Relatórios básicos

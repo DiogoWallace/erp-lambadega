@@ -22,6 +22,20 @@ export interface Customer {
   updated_at: string
 }
 
+export interface Category {
+  id: string
+  establishment_id: string
+  parent_id: string | null
+  parent?: { id: string; name: string } | null
+  name: string
+  slug: string
+  description: string | null
+  sort_order: number
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
 export interface PaginationMeta {
   current_page: number
   last_page: number
