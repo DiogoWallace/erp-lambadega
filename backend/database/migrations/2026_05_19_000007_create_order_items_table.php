@@ -9,9 +9,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('order_items', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('order_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('product_id')->constrained()->restrictOnDelete();
+            $table->uuid('id')->primary();
+            $table->foreignUuid('establishment_id')->constrained()->cascadeOnDelete();
+            $table->foreignUuid('order_id')->constrained()->cascadeOnDelete();
+            $table->foreignUuid('product_id')->constrained()->restrictOnDelete();
             $table->integer('quantity');
             $table->decimal('unit_price', 10, 2);
             $table->decimal('cost_price', 10, 2)->default(0);
@@ -20,8 +21,8 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->timestamps();
 
-            $table->index('order_id');
-            $table->index('product_id');
+            $table->index(['establishment_id', 'order_id']);
+            $table->index(['establishment_id', 'product_id']);
         });
     }
 

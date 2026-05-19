@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToEstablishment;
+use App\Models\Concerns\HasUuidV7;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -9,24 +11,24 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable([
-    'order_id', 'user_id', 'supplier_id', 'customer_id',
+    'establishment_id', 'order_id', 'user_id', 'supplier_id', 'customer_id',
     'type', 'category', 'description', 'amount', 'payment_method',
     'due_date', 'payment_date', 'status',
     'installment_number', 'installment_count', 'notes',
 ])]
 class FinancialTransaction extends Model
 {
-    use HasFactory, SoftDeletes;
+    use BelongsToEstablishment, HasFactory, HasUuidV7, SoftDeletes;
 
     protected function casts(): array
     {
         return [
-            'amount' => 'decimal:2',
-            'due_date' => 'date',
-            'payment_date' => 'date',
+            'amount'             => 'decimal:2',
+            'due_date'           => 'date',
+            'payment_date'       => 'date',
             'installment_number' => 'integer',
-            'installment_count' => 'integer',
-            'deleted_at' => 'datetime',
+            'installment_count'  => 'integer',
+            'deleted_at'         => 'datetime',
         ];
     }
 

@@ -9,11 +9,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('financial_transactions', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('order_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignId('supplier_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignId('customer_id')->nullable()->constrained()->nullOnDelete();
+            $table->uuid('id')->primary();
+            $table->foreignUuid('establishment_id')->constrained()->cascadeOnDelete();
+            $table->foreignUuid('order_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignUuid('user_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignUuid('supplier_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignUuid('customer_id')->nullable()->constrained()->nullOnDelete();
             $table->enum('type', ['income', 'expense']);
             $table->string('category')->nullable();
             $table->string('description');
@@ -28,10 +29,10 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->index('type');
-            $table->index('status');
-            $table->index('due_date');
-            $table->index(['type', 'status']);
+            $table->index(['establishment_id', 'type']);
+            $table->index(['establishment_id', 'status']);
+            $table->index(['establishment_id', 'due_date']);
+            $table->index(['establishment_id', 'type', 'status']);
         });
     }
 

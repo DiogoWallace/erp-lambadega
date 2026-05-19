@@ -14,11 +14,17 @@ class StoreCustomerRequest extends FormRequest
 
     public function rules(): array
     {
+        $establishmentId = $this->user()->establishment_id;
+
         return [
             'type'                => ['required', Rule::in(['individual', 'company'])],
             'name'                => ['required', 'string', 'max:255'],
             'trade_name'          => ['nullable', 'string', 'max:255'],
-            'document'            => ['nullable', 'string', 'max:20', 'unique:customers,document'],
+            'document'            => [
+                'nullable', 'string', 'max:20',
+                Rule::unique('customers', 'document')
+                    ->where(fn ($q) => $q->where('establishment_id', $establishmentId)),
+            ],
             'email'               => ['nullable', 'email', 'max:255'],
             'phone'               => ['nullable', 'string', 'max:20'],
             'address'             => ['nullable', 'string', 'max:255'],

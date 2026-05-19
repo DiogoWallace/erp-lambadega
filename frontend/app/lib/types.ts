@@ -1,7 +1,8 @@
 export type CustomerType = 'individual' | 'company'
 
 export interface Customer {
-  id: number
+  id: string
+  establishment_id: string
   type: CustomerType
   name: string
   trade_name: string | null

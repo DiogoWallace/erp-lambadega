@@ -40,7 +40,7 @@ export async function createCustomerAction(_prevState: unknown, formData: FormDa
   redirect('/customers')
 }
 
-export async function updateCustomerAction(id: number, _prevState: unknown, formData: FormData) {
+export async function updateCustomerAction(id: string, _prevState: unknown, formData: FormData) {
   const token = await getToken()
   if (!token) redirect('/login')
 
@@ -69,7 +69,7 @@ export async function updateCustomerAction(id: number, _prevState: unknown, form
   redirect('/customers')
 }
 
-export async function deleteCustomerAction(id: number) {
+export async function deleteCustomerAction(id: string) {
   const token = await getToken()
   if (!token) redirect('/login')
 

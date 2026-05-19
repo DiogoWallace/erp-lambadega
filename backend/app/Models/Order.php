@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToEstablishment;
+use App\Models\Concerns\HasUuidV7;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,22 +13,22 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable([
-    'order_number', 'customer_id', 'user_id',
+    'establishment_id', 'order_number', 'customer_id', 'user_id',
     'subtotal_amount', 'discount_amount', 'discount_type', 'total_amount',
     'status', 'payment_method', 'paid_at', 'notes',
 ])]
 class Order extends Model
 {
-    use HasFactory, SoftDeletes;
+    use BelongsToEstablishment, HasFactory, HasUuidV7, SoftDeletes;
 
     protected function casts(): array
     {
         return [
             'subtotal_amount' => 'decimal:2',
             'discount_amount' => 'decimal:2',
-            'total_amount' => 'decimal:2',
-            'paid_at' => 'datetime',
-            'deleted_at' => 'datetime',
+            'total_amount'    => 'decimal:2',
+            'paid_at'         => 'datetime',
+            'deleted_at'      => 'datetime',
         ];
     }
 
