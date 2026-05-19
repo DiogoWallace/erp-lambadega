@@ -30,24 +30,24 @@ export default async function CustomersPage({ searchParams }: Props) {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900">Clientes</h1>
-          <p className="mt-0.5 text-sm text-zinc-500">{meta.total} clientes cadastrados</p>
+          <h1 className="text-2xl font-bold text-zinc-900">Customers</h1>
+          <p className="mt-0.5 text-sm text-zinc-500">{meta.total} customers registered</p>
         </div>
         <Link
-          href="/dashboard/customers/new"
+          href="/customers/new"
           className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 transition-colors"
         >
-          + Novo cliente
+          + New customer
         </Link>
       </div>
 
-      {/* Filtros */}
+      {/* Filters */}
       <form method="GET" className="flex gap-3 mb-6">
         <input
           name="search"
           type="text"
           defaultValue={search}
-          placeholder="Buscar por nome, documento ou e-mail..."
+          placeholder="Search by name, document or email..."
           className="flex-1 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900"
         />
         <select
@@ -55,41 +55,41 @@ export default async function CustomersPage({ searchParams }: Props) {
           defaultValue={is_active}
           className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900"
         >
-          <option value="">Todos</option>
-          <option value="true">Ativos</option>
-          <option value="false">Inativos</option>
+          <option value="">All</option>
+          <option value="true">Active</option>
+          <option value="false">Inactive</option>
         </select>
         <button
           type="submit"
           className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
         >
-          Buscar
+          Search
         </button>
         {(search || is_active) && (
           <a
-            href="/dashboard/customers"
+            href="/customers"
             className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-500 hover:bg-zinc-50 transition-colors"
           >
-            Limpar
+            Clear
           </a>
         )}
       </form>
 
-      {/* Tabela */}
+      {/* Table */}
       <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden">
         {customers.length === 0 ? (
           <div className="px-6 py-16 text-center">
-            <p className="text-sm text-zinc-500">Nenhum cliente encontrado.</p>
+            <p className="text-sm text-zinc-500">No customers found.</p>
           </div>
         ) : (
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-zinc-100 bg-zinc-50 text-left">
-                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide">Nome</th>
-                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide">Tipo</th>
-                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide">Documento</th>
-                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide">Telefone</th>
-                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide">Cidade/UF</th>
+                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide">Name</th>
+                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide">Type</th>
+                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide">Document</th>
+                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide">Phone</th>
+                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide">City / State</th>
                 <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide">Status</th>
                 <th className="px-4 py-3"></th>
               </tr>
@@ -104,7 +104,7 @@ export default async function CustomersPage({ searchParams }: Props) {
                     )}
                   </td>
                   <td className="px-4 py-3 text-zinc-500">
-                    {customer.type === 'individual' ? 'PF' : 'PJ'}
+                    {customer.type === 'individual' ? 'Individual' : 'Company'}
                   </td>
                   <td className="px-4 py-3 font-mono text-zinc-600 text-xs">
                     {formatDocument(customer.document, customer.type)}
@@ -123,15 +123,15 @@ export default async function CustomersPage({ searchParams }: Props) {
                           : 'bg-zinc-100 text-zinc-500'
                       }`}
                     >
-                      {customer.is_active ? 'Ativo' : 'Inativo'}
+                      {customer.is_active ? 'Active' : 'Inactive'}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
                     <Link
-                      href={`/dashboard/customers/${customer.id}/edit`}
+                      href={`/customers/${customer.id}/edit`}
                       className="text-xs font-medium text-zinc-500 hover:text-zinc-900 transition-colors"
                     >
-                      Editar
+                      Edit
                     </Link>
                   </td>
                 </tr>
@@ -141,11 +141,11 @@ export default async function CustomersPage({ searchParams }: Props) {
         )}
       </div>
 
-      {/* Paginação */}
+      {/* Pagination */}
       {meta.last_page > 1 && (
         <div className="flex items-center justify-between mt-6">
           <p className="text-sm text-zinc-500">
-            Página {meta.current_page} de {meta.last_page}
+            Page {meta.current_page} of {meta.last_page}
           </p>
           <div className="flex gap-2">
             {meta.current_page > 1 && (
@@ -153,7 +153,7 @@ export default async function CustomersPage({ searchParams }: Props) {
                 page={meta.current_page - 1}
                 search={search}
                 isActive={is_active}
-                label="← Anterior"
+                label="← Previous"
               />
             )}
             {meta.current_page < meta.last_page && (
@@ -161,7 +161,7 @@ export default async function CustomersPage({ searchParams }: Props) {
                 page={meta.current_page + 1}
                 search={search}
                 isActive={is_active}
-                label="Próxima →"
+                label="Next →"
               />
             )}
           </div>
@@ -188,7 +188,7 @@ function PaginationLink({
 
   return (
     <Link
-      href={`/dashboard/customers?${params}`}
+      href={`/customers?${params}`}
       className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
     >
       {label}
