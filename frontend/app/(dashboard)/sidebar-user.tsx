@@ -14,7 +14,7 @@ export async function SidebarUser() {
     cache: 'no-store',
   })
 
-  if (!res.ok) redirect('/login')
+  if (!res.ok) redirect('/api/auth/clear')
 
   const { data: user } = await res.json()
 
