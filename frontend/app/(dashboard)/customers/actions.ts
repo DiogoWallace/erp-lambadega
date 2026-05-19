@@ -33,11 +33,11 @@ export async function createCustomerAction(_prevState: unknown, formData: FormDa
   }
 
   if (!res.ok) {
-    return { error: 'Erro ao criar cliente. Tente novamente.' }
+    return { error: 'Failed to create customer. Please try again.' }
   }
 
-  revalidatePath('/dashboard/customers')
-  redirect('/dashboard/customers')
+  revalidatePath('/customers')
+  redirect('/customers')
 }
 
 export async function updateCustomerAction(id: number, _prevState: unknown, formData: FormData) {
@@ -62,11 +62,11 @@ export async function updateCustomerAction(id: number, _prevState: unknown, form
   }
 
   if (!res.ok) {
-    return { error: 'Erro ao atualizar cliente. Tente novamente.' }
+    return { error: 'Failed to update customer. Please try again.' }
   }
 
-  revalidatePath('/dashboard/customers')
-  redirect('/dashboard/customers')
+  revalidatePath('/customers')
+  redirect('/customers')
 }
 
 export async function deleteCustomerAction(id: number) {
@@ -81,8 +81,8 @@ export async function deleteCustomerAction(id: number) {
     },
   })
 
-  revalidatePath('/dashboard/customers')
-  redirect('/dashboard/customers')
+  revalidatePath('/customers')
+  redirect('/customers')
 }
 
 function buildBody(formData: FormData) {

@@ -61,19 +61,19 @@ export function CustomerForm({ action, customer, submitLabel }: Props) {
         </div>
       )}
 
-      {/* Dados principais */}
+      {/* Main data */}
       <section>
-        <h2 className="text-sm font-semibold text-zinc-900 mb-4">Dados principais</h2>
+        <h2 className="text-sm font-semibold text-zinc-900 mb-4">Main data</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="Tipo *" name="type" errors={state?.errors}>
+          <Field label="Type *" name="type" errors={state?.errors}>
             <select
               name="type"
               defaultValue={customer?.type ?? 'individual'}
               onChange={(e) => setType(e.target.value as 'individual' | 'company')}
               className={inputClass}
             >
-              <option value="individual">Pessoa Física (CPF)</option>
-              <option value="company">Pessoa Jurídica (CNPJ)</option>
+              <option value="individual">Individual (CPF)</option>
+              <option value="company">Company (CNPJ)</option>
             </select>
           </Field>
 
@@ -83,27 +83,27 @@ export function CustomerForm({ action, customer, submitLabel }: Props) {
               defaultValue={customer ? String(customer.is_active) : 'true'}
               className={inputClass}
             >
-              <option value="true">Ativo</option>
-              <option value="false">Inativo</option>
+              <option value="true">Active</option>
+              <option value="false">Inactive</option>
             </select>
           </Field>
 
-          <Field label="Nome / Razão social *" name="name" errors={state?.errors}>
+          <Field label="Name / Company name *" name="name" errors={state?.errors}>
             <input
               name="name"
               type="text"
               defaultValue={customer?.name ?? ''}
-              placeholder="Nome completo ou razão social"
+              placeholder="Full name or company name"
               className={inputClass}
             />
           </Field>
 
-          <Field label="Nome fantasia" name="trade_name" errors={state?.errors}>
+          <Field label="Trade name" name="trade_name" errors={state?.errors}>
             <input
               name="trade_name"
               type="text"
               defaultValue={customer?.trade_name ?? ''}
-              placeholder="Nome fantasia"
+              placeholder="Trade name"
               className={inputClass}
             />
           </Field>
@@ -122,17 +122,17 @@ export function CustomerForm({ action, customer, submitLabel }: Props) {
             />
           </Field>
 
-          <Field label="E-mail" name="email" errors={state?.errors}>
+          <Field label="Email" name="email" errors={state?.errors}>
             <input
               name="email"
               type="email"
               defaultValue={customer?.email ?? ''}
-              placeholder="email@exemplo.com"
+              placeholder="email@example.com"
               className={inputClass}
             />
           </Field>
 
-          <Field label="Telefone" name="phone" errors={state?.errors}>
+          <Field label="Phone" name="phone" errors={state?.errors}>
             <input
               name="phone"
               type="text"
@@ -144,11 +144,11 @@ export function CustomerForm({ action, customer, submitLabel }: Props) {
         </div>
       </section>
 
-      {/* Endereço */}
+      {/* Address */}
       <section>
-        <h2 className="text-sm font-semibold text-zinc-900 mb-4">Endereço</h2>
+        <h2 className="text-sm font-semibold text-zinc-900 mb-4">Address</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="CEP" name="zip_code" errors={state?.errors}>
+          <Field label="ZIP code" name="zip_code" errors={state?.errors}>
             <input
               name="zip_code"
               type="text"
@@ -158,17 +158,17 @@ export function CustomerForm({ action, customer, submitLabel }: Props) {
             />
           </Field>
 
-          <Field label="Logradouro" name="address" errors={state?.errors}>
+          <Field label="Street" name="address" errors={state?.errors}>
             <input
               name="address"
               type="text"
               defaultValue={customer?.address ?? ''}
-              placeholder="Rua, Avenida..."
+              placeholder="Street, Avenue..."
               className={inputClass}
             />
           </Field>
 
-          <Field label="Número" name="address_number" errors={state?.errors}>
+          <Field label="Number" name="address_number" errors={state?.errors}>
             <input
               name="address_number"
               type="text"
@@ -178,43 +178,43 @@ export function CustomerForm({ action, customer, submitLabel }: Props) {
             />
           </Field>
 
-          <Field label="Complemento" name="address_complement" errors={state?.errors}>
+          <Field label="Complement" name="address_complement" errors={state?.errors}>
             <input
               name="address_complement"
               type="text"
               defaultValue={customer?.address_complement ?? ''}
-              placeholder="Apto, sala..."
+              placeholder="Apt, suite..."
               className={inputClass}
             />
           </Field>
 
-          <Field label="Bairro" name="neighborhood" errors={state?.errors}>
+          <Field label="Neighborhood" name="neighborhood" errors={state?.errors}>
             <input
               name="neighborhood"
               type="text"
               defaultValue={customer?.neighborhood ?? ''}
-              placeholder="Bairro"
+              placeholder="Neighborhood"
               className={inputClass}
             />
           </Field>
 
-          <Field label="Cidade" name="city" errors={state?.errors}>
+          <Field label="City" name="city" errors={state?.errors}>
             <input
               name="city"
               type="text"
               defaultValue={customer?.city ?? ''}
-              placeholder="Cidade"
+              placeholder="City"
               className={inputClass}
             />
           </Field>
 
-          <Field label="Estado" name="state" errors={state?.errors}>
+          <Field label="State" name="state" errors={state?.errors}>
             <select
               name="state"
               defaultValue={customer?.state ?? ''}
               className={inputClass}
             >
-              <option value="">Selecione...</option>
+              <option value="">Select...</option>
               {STATES.map((uf) => (
                 <option key={uf} value={uf}>{uf}</option>
               ))}
@@ -223,31 +223,31 @@ export function CustomerForm({ action, customer, submitLabel }: Props) {
         </div>
       </section>
 
-      {/* Observações */}
+      {/* Notes */}
       <section>
-        <h2 className="text-sm font-semibold text-zinc-900 mb-4">Observações</h2>
+        <h2 className="text-sm font-semibold text-zinc-900 mb-4">Notes</h2>
         <textarea
           name="notes"
           defaultValue={customer?.notes ?? ''}
           rows={3}
-          placeholder="Anotações internas sobre o cliente..."
+          placeholder="Internal notes about this customer..."
           className={`${inputClass} resize-none`}
         />
       </section>
 
       <div className="flex justify-end gap-3 pt-2">
         <a
-          href="/dashboard/customers"
+          href="/customers"
           className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 transition-colors"
         >
-          Cancelar
+          Cancel
         </a>
         <button
           type="submit"
           disabled={pending}
           className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50 transition-colors"
         >
-          {pending ? 'Salvando...' : submitLabel}
+          {pending ? 'Saving...' : submitLabel}
         </button>
       </div>
     </form>
