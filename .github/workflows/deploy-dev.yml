@@ -51,6 +51,7 @@ jobs:
             docker compose -f docker-compose.dev.yml up -d --build --remove-orphans
 
             docker exec backend_dev php artisan migrate --force
+            docker exec backend_dev php artisan db:seed --class=RoleSeeder --force
             docker exec backend_dev php artisan config:cache
             docker exec backend_dev php artisan route:cache
             docker exec backend_dev php artisan view:cache
