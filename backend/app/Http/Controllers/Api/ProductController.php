@@ -18,7 +18,7 @@ class ProductController extends Controller
 
     public function index(Request $request): AnonymousResourceCollection
     {
-        abort_if($request->user()->cannot('products.view'), 403, 'Sem permissão.');
+        $this->authorize('viewAny', Product::class);
 
         if ($request->boolean('all')) {
             return ProductResource::collection($this->service->all());
@@ -33,7 +33,7 @@ class ProductController extends Controller
 
     public function store(StoreProductRequest $request): JsonResponse
     {
-        abort_if($request->user()->cannot('products.create'), 403, 'Sem permissão.');
+        $this->authorize('create', Product::class);
 
         $product = $this->service->create($request->validated());
 
@@ -42,7 +42,7 @@ class ProductController extends Controller
 
     public function show(Request $request, Product $product): ProductResource
     {
-        abort_if($request->user()->cannot('products.view'), 403, 'Sem permissão.');
+        $this->authorize('view', $product);
 
         $product->load(['category:id,name', 'supplier:id,company_name']);
 
@@ -51,7 +51,7 @@ class ProductController extends Controller
 
     public function update(UpdateProductRequest $request, Product $product): ProductResource
     {
-        abort_if($request->user()->cannot('products.edit'), 403, 'Sem permissão.');
+        $this->authorize('update', $product);
 
         $product = $this->service->update($product, $request->validated());
 
@@ -60,7 +60,7 @@ class ProductController extends Controller
 
     public function destroy(Request $request, Product $product): JsonResponse
     {
-        abort_if($request->user()->cannot('products.delete'), 403, 'Sem permissão.');
+        $this->authorize('delete', $product);
 
         $this->service->delete($product);
 

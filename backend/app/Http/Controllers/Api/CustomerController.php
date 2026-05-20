@@ -18,7 +18,7 @@ class CustomerController extends Controller
 
     public function index(Request $request): AnonymousResourceCollection
     {
-        abort_if($request->user()->cannot('customers.view'), 403, 'Sem permissão.');
+        $this->authorize('viewAny', Customer::class);
 
         $customers = $this->service->paginate($request->only(['search', 'is_active']));
 
@@ -27,7 +27,7 @@ class CustomerController extends Controller
 
     public function store(StoreCustomerRequest $request): JsonResponse
     {
-        abort_if($request->user()->cannot('customers.create'), 403, 'Sem permissão.');
+        $this->authorize('create', Customer::class);
 
         $customer = $this->service->create($request->validated());
 
@@ -36,14 +36,14 @@ class CustomerController extends Controller
 
     public function show(Request $request, Customer $customer): CustomerResource
     {
-        abort_if($request->user()->cannot('customers.view'), 403, 'Sem permissão.');
+        $this->authorize('view', $customer);
 
         return new CustomerResource($customer);
     }
 
     public function update(UpdateCustomerRequest $request, Customer $customer): CustomerResource
     {
-        abort_if($request->user()->cannot('customers.edit'), 403, 'Sem permissão.');
+        $this->authorize('update', $customer);
 
         $customer = $this->service->update($customer, $request->validated());
 
@@ -52,7 +52,7 @@ class CustomerController extends Controller
 
     public function destroy(Request $request, Customer $customer): JsonResponse
     {
-        abort_if($request->user()->cannot('customers.delete'), 403, 'Sem permissão.');
+        $this->authorize('delete', $customer);
 
         $this->service->delete($customer);
 

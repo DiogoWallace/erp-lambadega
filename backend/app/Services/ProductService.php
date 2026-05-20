@@ -43,7 +43,7 @@ class ProductService
 
     public function all(): Collection
     {
-        return Product::query()->orderBy('name')->get();
+        return Product::query()->orderBy('name')->limit(500)->get(['id', 'name', 'stock_quantity', 'unit']);
     }
 
     public function create(array $data): Product
