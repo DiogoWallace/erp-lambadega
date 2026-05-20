@@ -60,17 +60,25 @@ erp-comercial/
 │   │   │   │   ├── Auth/AuthController.php
 │   │   │   │   └── Api/                  controllers de domínio (sem lógica de negócio)
 │   │   │   │       ├── CustomerController.php
-│   │   │   │       └── CategoryController.php
+│   │   │   │       ├── CategoryController.php
+│   │   │   │       ├── SupplierController.php
+│   │   │   │       └── ProductController.php
 │   │   │   ├── Requests/
 │   │   │   │   ├── Auth/LoginRequest.php
 │   │   │   │   ├── Customer/{Store,Update}CustomerRequest.php
-│   │   │   │   └── Category/{Store,Update}CategoryRequest.php
+│   │   │   │   ├── Category/{Store,Update}CategoryRequest.php
+│   │   │   │   ├── Supplier/{Store,Update}SupplierRequest.php
+│   │   │   │   └── Product/{Store,Update}ProductRequest.php
 │   │   │   └── Resources/               transforma output JSON (JsonResource)
 │   │   │       ├── CustomerResource.php
-│   │   │       └── CategoryResource.php
+│   │   │       ├── CategoryResource.php
+│   │   │       ├── SupplierResource.php
+│   │   │       └── ProductResource.php   inclui category e supplier via whenLoaded
 │   │   ├── Services/                    regras de negócio (queries, CRUD)
 │   │   │   ├── CustomerService.php
-│   │   │   └── CategoryService.php
+│   │   │   ├── CategoryService.php
+│   │   │   ├── SupplierService.php
+│   │   │   └── ProductService.php       filtros: search, category_id, supplier_id, is_active, low_stock
 │   │   └── Providers/AppServiceProvider.php
 │   ├── database/
 │   │   ├── migrations/                   tudo com UUID + establishment_id
@@ -78,16 +86,20 @@ erp-comercial/
 │   │   │   ├── EstablishmentFactory.php
 │   │   │   ├── UserFactory.php           inclui establishment_id por padrão
 │   │   │   ├── CustomerFactory.php
-│   │   │   └── CategoryFactory.php
+│   │   │   ├── CategoryFactory.php
+│   │   │   ├── SupplierFactory.php
+│   │   │   └── ProductFactory.php
 │   │   └── seeders/
 │   │       ├── DatabaseSeeder.php        cria establishment + admin
-│   │       └── RoleSeeder.php            4 roles, 23 permissions (idempotente)
+│   │       └── RoleSeeder.php            4 roles, 27+ permissions (idempotente)
 │   ├── tests/
 │   │   ├── TestCase.php                  RefreshDatabase + seed(RoleSeeder) + helpers
 │   │   ├── Feature/
 │   │   │   └── Api/
 │   │   │       ├── CustomerTest.php      auth, permissões, CRUD, multi-tenant
-│   │   │       └── CategoryTest.php      + slug, parent_id, ?all=1
+│   │   │       ├── CategoryTest.php      + slug, parent_id, ?all=1
+│   │   │       ├── SupplierTest.php      + CNPJ único por establishment
+│   │   │       └── ProductTest.php       + SKU/barcode únicos, filtro low_stock, category_id de outro tenant
 │   │   └── Unit/
 │   ├── phpunit.xml                       SQLite in-memory para testes rápidos
 │   ├── config/
@@ -113,17 +125,31 @@ erp-comercial/
 │   │   │   │   ├── delete-button.tsx     client; confirm() + form action
 │   │   │   │   └── actions.ts            create/update/delete
 │   │   │   ├── error.tsx                 error boundary do dashboard (client)
-│   │   │   └── categories/               rota: /categories
-│   │   │       ├── page.tsx              lista server-side
-│   │   │       ├── new/page.tsx          recebe lista p/ dropdown de pai
-│   │   │       ├── [id]/edit/page.tsx    exclui a própria categoria do dropdown
-│   │   │       ├── category-form.tsx     client; useActionState
-│   │   │       ├── delete-button.tsx     client; confirm() + form action
-│   │   │       └── actions.ts            create/update/delete
+│   │   │   ├── categories/               rota: /categories
+│   │   │   │   ├── page.tsx              lista server-side
+│   │   │   │   ├── new/page.tsx          recebe lista p/ dropdown de pai
+│   │   │   │   ├── [id]/edit/page.tsx    exclui a própria categoria do dropdown
+│   │   │   │   ├── category-form.tsx     client; useActionState
+│   │   │   │   ├── delete-button.tsx     client; confirm() + form action
+│   │   │   │   └── actions.ts            create/update/delete
+│   │   │   ├── suppliers/                rota: /suppliers
+│   │   │   │   ├── page.tsx              lista; formata CNPJ
+│   │   │   │   ├── new/page.tsx
+│   │   │   │   ├── [id]/edit/page.tsx
+│   │   │   │   ├── supplier-form.tsx     4 seções: empresa, contato, endereço, notas
+│   │   │   │   ├── delete-button.tsx
+│   │   │   │   └── actions.ts
+│   │   │   └── products/                 rota: /products
+│   │   │       ├── page.tsx              lista; filtros: search, categoria, status, low_stock
+│   │   │       ├── new/page.tsx          carrega categorias + fornecedores p/ dropdowns
+│   │   │       ├── [id]/edit/page.tsx    carrega produto + categorias + fornecedores
+│   │   │       ├── product-form.tsx      4 seções: informações, preços, estoque/id, descrição
+│   │   │       ├── delete-button.tsx
+│   │   │       └── actions.ts
 │   │   ├── api/auth/clear/route.ts       limpa cookie inválido
 │   │   ├── lib/
 │   │   │   ├── api.ts                    apiFetch (token do cookie)
-│   │   │   └── types.ts                  Customer, Category, PaginatedResponse
+│   │   │   └── types.ts                  Customer, Category, Supplier, Product, PaginatedResponse
 │   │   ├── ui/skeletons.tsx              TableSkeleton, FormSkeleton, etc.
 │   │   ├── login/
 │   │   │   ├── page.tsx
@@ -269,6 +295,9 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - **`Server Actions allowedOrigins`** em `next.config.ts` fica sob `experimental` (Next.js 16+).
 - **nginx local:** `proxy_set_header Host $http_host` (não `$host`) — caso contrário a porta não é encaminhada, e o `x-forwarded-host` quebra a CSRF do Server Actions.
 - **Categoria pai no form** — `new/page.tsx` e `[id]/edit/page.tsx` chamam `GET /categories?all=1` para popular o dropdown. O edit exclui a própria categoria da lista para evitar auto-referência.
+- **`?all=1` em categorias e fornecedores** — ambos os endpoints suportam `?all=1` para retornar lista completa (sem paginação). Usado pelos formulários de produto que precisam popular dropdowns de categoria e fornecedor.
+- **Produto tem relações carregadas no Resource** — `ProductResource` inclui `category` (id, name) e `supplier` (id, company_name) via `whenLoaded`. O service faz `with(['category:id,name', 'supplier:id,company_name'])` na lista. O controller faz `$product->load(...)` no show.
+- **`is_low_stock`** — calculado no model (`isLowStock()`) e exposto no Resource como campo virtual. `true` quando `stock_quantity <= min_stock_quantity`.
 
 ---
 
@@ -283,17 +312,19 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - Arquitetura de camadas: Controllers/Api + Services + Resources
 - CRUD completo de clientes (backend + frontend)
 - CRUD completo de categorias (backend + frontend, suporte a subcategorias via `parent_id`)
+- CRUD completo de fornecedores (backend + frontend, CNPJ único por tenant)
+- CRUD completo de produtos (backend + frontend, SKU/barcode únicos por tenant, relações categoria/fornecedor, badge low_stock)
 - Layout do dashboard com sidebar, route group, loading skeletons
 - Auth check na borda via `proxy.ts`
-- **Testes automatizados**: 42 feature tests PHPUnit cobrindo auth, permissões, CRUD e isolamento multi-tenant para Customer e Category (SQLite in-memory, ~2s)
+- **Testes automatizados**: 81 feature tests PHPUnit cobrindo auth, permissões, CRUD e isolamento multi-tenant para todos os 4 módulos (SQLite in-memory, ~4s — `make test`)
 - Error boundary no dashboard (`error.tsx`) + proteção 5xx no `apiFetch`
 - Documentação completa em `docs/arquitetura/`
 
 **Pendente (próximos passos):**
-- CRUDs dos demais módulos: fornecedores, produtos, vendas, financeiro
-- Movimentação de estoque (com `stock_movements` como log imutável)
-- PDV web (carrinho, fechamento de venda)
-- Relatórios básicos
+- Movimentação de estoque (registro + histórico via `stock_movements`)
+- PDV web / Vendas (carrinho, desconto, fechamento)
+- Contas a pagar / receber (financeiro)
+- Relatórios básicos (vendas por período, top produtos, fluxo de caixa)
 - Backup automatizado do MySQL em produção
 
 **Fase 2 (depois da Fase 1):**
