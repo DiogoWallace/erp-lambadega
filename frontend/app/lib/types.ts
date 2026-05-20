@@ -36,6 +36,26 @@ export interface Category {
   updated_at: string
 }
 
+export interface Supplier {
+  id: string
+  establishment_id: string
+  company_name: string
+  trade_name: string | null
+  cnpj: string | null
+  contact_name: string | null
+  email: string | null
+  phone: string | null
+  website: string | null
+  address: string | null
+  city: string | null
+  state: string | null
+  zip_code: string | null
+  notes: string | null
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
 export interface PaginationMeta {
   current_page: number
   last_page: number
