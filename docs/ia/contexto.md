@@ -74,9 +74,22 @@ erp-comercial/
 │   │   └── Providers/AppServiceProvider.php
 │   ├── database/
 │   │   ├── migrations/                   tudo com UUID + establishment_id
+│   │   ├── factories/
+│   │   │   ├── EstablishmentFactory.php
+│   │   │   ├── UserFactory.php           inclui establishment_id por padrão
+│   │   │   ├── CustomerFactory.php
+│   │   │   └── CategoryFactory.php
 │   │   └── seeders/
 │   │       ├── DatabaseSeeder.php        cria establishment + admin
-│   │       └── RoleSeeder.php            4 roles, 23 permissions
+│   │       └── RoleSeeder.php            4 roles, 23 permissions (idempotente)
+│   ├── tests/
+│   │   ├── TestCase.php                  RefreshDatabase + seed(RoleSeeder) + helpers
+│   │   ├── Feature/
+│   │   │   └── Api/
+│   │   │       ├── CustomerTest.php      auth, permissões, CRUD, multi-tenant
+│   │   │       └── CategoryTest.php      + slug, parent_id, ?all=1
+│   │   └── Unit/
+│   ├── phpunit.xml                       SQLite in-memory para testes rápidos
 │   ├── config/
 │   │   ├── permission.php                aponta para App\Models\{Role,Permission}
 │   │   ├── sanctum.php
@@ -99,6 +112,7 @@ erp-comercial/
 │   │   │   │   ├── customer-form.tsx     client; useActionState
 │   │   │   │   ├── delete-button.tsx     client; confirm() + form action
 │   │   │   │   └── actions.ts            create/update/delete
+│   │   │   ├── error.tsx                 error boundary do dashboard (client)
 │   │   │   └── categories/               rota: /categories
 │   │   │       ├── page.tsx              lista server-side
 │   │   │       ├── new/page.tsx          recebe lista p/ dropdown de pai
@@ -122,7 +136,8 @@ erp-comercial/
 │   ├── local.conf                        HTTP local (portas 8000/8001)
 │   └── dev.conf                          dev no VPS (portas 8080/8081)
 │
-├── docker-compose.yml                    local
+├── Makefile                              atalhos: make test, make migrate, make shell…
+├── docker-compose.yml                    local (monta tests/ e phpunit.xml como volumes)
 ├── docker-compose.dev.yml                dev (VPS, rede erp_shared)
 ├── docker-compose.prod.yml               prod (VPS, cria rede erp_shared)
 │
@@ -245,6 +260,9 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - **Spatie's Permission/Role** precisam de subclasses locais (`App\Models\Role`, `App\Models\Permission`) para usar `HasUuidV7`. O config `permission.php` aponta para essas.
 - **Ao criar novo módulo, lembrar de adicionar as permissões no `RoleSeeder`** e re-executar `php artisan db:seed --class=RoleSeeder`. Sem isso o endpoint retorna 403 para todos.
 - **`laravel/sanctum` e `spatie/laravel-permission` devem estar no `composer.json`** — se o vendor for recriado (container recreate), pacotes instalados manualmente somem.
+- **O Dockerfile usa `--no-dev`** — dev dependencies (phpunit, faker) não estão na imagem. Para rodar testes use `make test` que instala as dev deps antes de executar.
+- **Dev server do frontend pode travar** após o container do backend ser recriado — sintoma: páginas retornam HTTP 200 com body vazio. Correção: `docker compose restart frontend`.
+- **`apiFetch` lança exceção em 5xx** — se a API retornar 500, o erro é capturado pelo `error.tsx` do dashboard em vez de causar crash no Server Component.
 - **Server Components não podem mutar cookies** — quando precisar (ex: limpar token inválido), redirecione para uma route handler em `app/api/.../route.ts`.
 - **Next.js 16 renomeou `middleware.ts` para `proxy.ts`** — mesma API, mesmo comportamento, nome novo.
 - **`searchParams` e `params` agora são Promise** em Next.js 16 — precisam de `await`.
@@ -267,6 +285,8 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - CRUD completo de categorias (backend + frontend, suporte a subcategorias via `parent_id`)
 - Layout do dashboard com sidebar, route group, loading skeletons
 - Auth check na borda via `proxy.ts`
+- **Testes automatizados**: 42 feature tests PHPUnit cobrindo auth, permissões, CRUD e isolamento multi-tenant para Customer e Category (SQLite in-memory, ~2s)
+- Error boundary no dashboard (`error.tsx`) + proteção 5xx no `apiFetch`
 - Documentação completa em `docs/arquitetura/`
 
 **Pendente (próximos passos):**

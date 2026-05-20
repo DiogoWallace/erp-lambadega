@@ -14,6 +14,7 @@ Objetivo: sistema web funcional, operando em produção, com as fundações arqu
 - [x] **Tabela `establishments` e `establishment_id` nas tabelas de domínio** ← bloqueante para Fase 2
 - [x] **Tabela `sync_log`** (schema; observer fica para a Fase 2)
 - [x] Trait `BelongsToEstablishment` + global scope nos models
+- [x] Testes automatizados (42 feature tests, SQLite in-memory, ~2s — `make test`)
 
 ### Módulos de negócio
 
