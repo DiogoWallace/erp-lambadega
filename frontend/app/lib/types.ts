@@ -56,6 +56,32 @@ export interface Supplier {
   updated_at: string
 }
 
+export type ProductUnit = 'un' | 'kg' | 'g' | 'l' | 'ml' | 'cx'
+
+export interface Product {
+  id: string
+  establishment_id: string
+  category_id: string | null
+  supplier_id: string | null
+  name: string
+  description: string | null
+  brand: string | null
+  sku: string | null
+  barcode: string | null
+  unit: ProductUnit
+  cost_price: string
+  sale_price: string
+  stock_quantity: number
+  min_stock_quantity: number
+  image_path: string | null
+  is_active: boolean
+  is_low_stock: boolean
+  category: { id: string; name: string } | null
+  supplier: { id: string; company_name: string } | null
+  created_at: string
+  updated_at: string
+}
+
 export interface PaginationMeta {
   current_page: number
   last_page: number
