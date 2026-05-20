@@ -18,7 +18,7 @@ class SupplierController extends Controller
 
     public function index(Request $request): AnonymousResourceCollection
     {
-        abort_if($request->user()->cannot('suppliers.view'), 403, 'Sem permissão.');
+        $this->authorize('viewAny', Supplier::class);
 
         if ($request->boolean('all')) {
             return SupplierResource::collection($this->service->all());
@@ -31,7 +31,7 @@ class SupplierController extends Controller
 
     public function store(StoreSupplierRequest $request): JsonResponse
     {
-        abort_if($request->user()->cannot('suppliers.create'), 403, 'Sem permissão.');
+        $this->authorize('create', Supplier::class);
 
         $supplier = $this->service->create($request->validated());
 
@@ -40,14 +40,14 @@ class SupplierController extends Controller
 
     public function show(Request $request, Supplier $supplier): SupplierResource
     {
-        abort_if($request->user()->cannot('suppliers.view'), 403, 'Sem permissão.');
+        $this->authorize('view', $supplier);
 
         return new SupplierResource($supplier);
     }
 
     public function update(UpdateSupplierRequest $request, Supplier $supplier): SupplierResource
     {
-        abort_if($request->user()->cannot('suppliers.edit'), 403, 'Sem permissão.');
+        $this->authorize('update', $supplier);
 
         $supplier = $this->service->update($supplier, $request->validated());
 
@@ -56,7 +56,7 @@ class SupplierController extends Controller
 
     public function destroy(Request $request, Supplier $supplier): JsonResponse
     {
-        abort_if($request->user()->cannot('suppliers.delete'), 403, 'Sem permissão.');
+        $this->authorize('delete', $supplier);
 
         $this->service->delete($supplier);
 

@@ -15,7 +15,7 @@ Sistema ERP comercial multi-tenant com arquitetura preparada para evolução **o
 | Autenticação | Laravel Sanctum (token-based) + Spatie Permission (RBAC) |
 | Infra | Docker Compose, nginx, GitHub Actions (CI/CD) |
 | Identificadores | UUID v7 em todas as tabelas |
-| Testes | PHPUnit — 96 feature tests, SQLite in-memory (~5s) |
+| Testes | PHPUnit — 96 feature tests (backend) · Vitest — 21 unit tests (frontend) |
 
 ---
 
@@ -54,12 +54,14 @@ Acesse:
 ### Atalhos (Makefile)
 
 ```bash
-make test      # roda a suite completa (96 tests, ~5s)
-make migrate   # php artisan migrate
-make seed      # php artisan db:seed --class=RoleSeeder
-make fresh     # migrate:fresh --seed
-make shell     # bash no container backend
-make logs      # docker compose logs -f backend
+make test           # roda a suite completa (backend + frontend)
+make test-backend   # 96 feature tests PHPUnit (SQLite in-memory, ~5s)
+make test-frontend  # 21 unit tests Vitest
+make migrate        # php artisan migrate
+make seed           # php artisan db:seed --class=RoleSeeder
+make fresh          # migrate:fresh --seed
+make shell          # bash no container backend
+make logs           # docker compose logs -f backend
 ```
 
 Para detalhes (troubleshooting, hot-reload), veja [docs/tutoriais/rodar-local.md](docs/tutoriais/rodar-local.md).
@@ -89,6 +91,7 @@ erp-comercial/
 │   │   │   ├── Controllers/Api/  # Sem lógica de negócio — só HTTP
 │   │   │   ├── Requests/         # Validação por módulo (escopo multi-tenant)
 │   │   │   └── Resources/        # Transformação JSON (JsonResource)
+│   │   ├── Policies/             # Autorização acoplada ao model (auto-descoberta)
 │   │   └── Services/             # Regras de negócio, queries, transações
 │   ├── database/
 │   │   ├── migrations/           # UUID v7 + establishment_id em tudo
@@ -99,14 +102,16 @@ erp-comercial/
 │
 ├── frontend/
 │   ├── proxy.ts                  # Auth check na borda (Next.js 16)
+│   ├── vitest.config.ts          # Config de testes unitários
 │   └── app/
 │       ├── (dashboard)/          # Route group — rotas autenticadas
-│       │   ├── customers/        # CRUD
-│       │   ├── categories/       # CRUD + subcategorias
-│       │   ├── suppliers/        # CRUD
-│       │   ├── products/         # CRUD + link "+ Mov." p/ estoque
-│       │   └── stock-movements/  # Registrar + histórico filtrado
-│       ├── lib/api.ts            # apiFetch (injeta token, trata 401/5xx)
+│       │   ├── __tests__/        # 21 testes Vitest para buildBody dos 5 módulos
+│       │   ├── customers/        # CRUD + build-body.ts
+│       │   ├── categories/       # CRUD + subcategorias + build-body.ts
+│       │   ├── suppliers/        # CRUD + build-body.ts
+│       │   ├── products/         # CRUD + link "+ Mov." p/ estoque + build-body.ts
+│       │   └── stock-movements/  # Registrar + histórico filtrado + build-body.ts
+│       ├── lib/api.ts            # apiFetch (injeta token, trata 401/403/5xx)
 │       ├── lib/types.ts          # Interfaces TypeScript de todos os modelos
 │       └── ui/skeletons.tsx      # TableSkeleton, FormSkeleton
 │

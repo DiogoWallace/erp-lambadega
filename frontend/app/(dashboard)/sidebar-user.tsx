@@ -1,21 +1,9 @@
-import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { apiFetch } from '@/app/lib/api'
 import { logoutAction } from './actions'
 
 export async function SidebarUser() {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('token')?.value
-
-  if (!token) redirect('/login')
-
-  const apiUrl = process.env.API_BASE_URL ?? 'http://webserver:8001'
-  const res = await fetch(`${apiUrl}/api/auth/me`, {
-    headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
-    cache: 'no-store',
-  })
-
-  if (!res.ok) redirect('/api/auth/clear')
-
+  const res = await apiFetch('/auth/me')
   const { data: user } = await res.json()
 
   return (
