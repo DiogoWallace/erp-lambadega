@@ -173,12 +173,20 @@ export default async function ProductsPage({ searchParams }: Props) {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
+                    <div className="flex items-center justify-end gap-3">
+                    <Link
+                      href={`/stock-movements/new?product_id=${product.id}`}
+                      className="text-xs font-medium text-zinc-400 hover:text-zinc-700 transition-colors"
+                    >
+                      + Mov.
+                    </Link>
                     <Link
                       href={`/products/${product.id}/edit`}
                       className="text-xs font-medium text-zinc-500 hover:text-zinc-900 transition-colors"
                     >
                       Editar
                     </Link>
+                    </div>
                   </td>
                 </tr>
               ))}

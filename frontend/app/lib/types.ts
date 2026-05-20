@@ -82,6 +82,23 @@ export interface Product {
   updated_at: string
 }
 
+export type StockMovementType = 'in' | 'out' | 'adjustment'
+
+export interface StockMovement {
+  id: string
+  product_id: string
+  user_id: string
+  type: StockMovementType
+  quantity: number
+  stock_before: number
+  stock_after: number
+  cost_price: string | null
+  description: string | null
+  product: { id: string; name: string } | null
+  user: { id: string; name: string } | null
+  created_at: string
+}
+
 export interface PaginationMeta {
   current_page: number
   last_page: number

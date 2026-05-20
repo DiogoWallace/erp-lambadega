@@ -28,6 +28,9 @@ class RoleSeeder extends Seeder
             // Produtos
             'products.view', 'products.create', 'products.edit', 'products.delete',
 
+            // Estoque
+            'stock.view', 'stock.create',
+
             // Vendas
             'sales.view', 'sales.create', 'sales.edit', 'sales.delete',
 
@@ -52,6 +55,7 @@ class RoleSeeder extends Seeder
                 'suppliers.view', 'suppliers.create', 'suppliers.edit', 'suppliers.delete',
                 'categories.view', 'categories.create', 'categories.edit',
                 'products.view', 'products.create', 'products.edit',
+                'stock.view', 'stock.create',
                 'sales.view', 'sales.create', 'sales.edit',
                 'reports.view',
             ]);
@@ -60,6 +64,7 @@ class RoleSeeder extends Seeder
             ->syncPermissions([
                 'customers.view', 'customers.create', 'customers.edit',
                 'products.view',
+                'stock.view',
                 'sales.view', 'sales.create',
             ]);
 
@@ -67,6 +72,7 @@ class RoleSeeder extends Seeder
             ->syncPermissions([
                 'customers.view',
                 'suppliers.view',
+                'stock.view',
                 'sales.view',
                 'reports.view',
             ]);
