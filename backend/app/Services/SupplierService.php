@@ -31,7 +31,7 @@ class SupplierService
 
     public function all(): Collection
     {
-        return Supplier::query()->orderBy('company_name')->get();
+        return Supplier::query()->orderBy('company_name')->limit(500)->get(['id', 'company_name']);
     }
 
     public function create(array $data): Supplier

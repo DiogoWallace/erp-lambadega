@@ -18,7 +18,7 @@ class CategoryController extends Controller
 
     public function index(Request $request): AnonymousResourceCollection
     {
-        abort_if($request->user()->cannot('categories.view'), 403, 'Sem permissão.');
+        $this->authorize('viewAny', Category::class);
 
         if ($request->boolean('all')) {
             return CategoryResource::collection($this->service->all());
@@ -31,7 +31,7 @@ class CategoryController extends Controller
 
     public function store(StoreCategoryRequest $request): JsonResponse
     {
-        abort_if($request->user()->cannot('categories.create'), 403, 'Sem permissão.');
+        $this->authorize('create', Category::class);
 
         $category = $this->service->create($request->validated());
 
@@ -40,14 +40,14 @@ class CategoryController extends Controller
 
     public function show(Request $request, Category $category): CategoryResource
     {
-        abort_if($request->user()->cannot('categories.view'), 403, 'Sem permissão.');
+        $this->authorize('view', $category);
 
         return new CategoryResource($category->load('parent'));
     }
 
     public function update(UpdateCategoryRequest $request, Category $category): CategoryResource
     {
-        abort_if($request->user()->cannot('categories.edit'), 403, 'Sem permissão.');
+        $this->authorize('update', $category);
 
         $category = $this->service->update($category, $request->validated());
 
@@ -56,7 +56,7 @@ class CategoryController extends Controller
 
     public function destroy(Request $request, Category $category): JsonResponse
     {
-        abort_if($request->user()->cannot('categories.delete'), 403, 'Sem permissão.');
+        $this->authorize('delete', $category);
 
         $this->service->delete($category);
 

@@ -3,6 +3,7 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import { buildBody } from './build-body'
 
 const API_BASE = process.env.API_BASE_URL ?? 'http://webserver:8001'
 
@@ -85,14 +86,3 @@ export async function deleteCategoryAction(id: string) {
   redirect('/categories')
 }
 
-function buildBody(formData: FormData) {
-  const sortOrder = formData.get('sort_order')
-
-  return {
-    name:        formData.get('name') || undefined,
-    description: formData.get('description') || null,
-    parent_id:   formData.get('parent_id') || null,
-    sort_order:  sortOrder ? Number(sortOrder) : 0,
-    is_active:   formData.get('is_active') === 'true',
-  }
-}

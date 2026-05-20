@@ -25,7 +25,7 @@ class CategoryService
 
     public function all(): Collection
     {
-        return Category::orderBy('sort_order')->orderBy('name')->get(['id', 'name', 'parent_id']);
+        return Category::orderBy('sort_order')->orderBy('name')->limit(500)->get(['id', 'name', 'parent_id']);
     }
 
     public function create(array $data): Category

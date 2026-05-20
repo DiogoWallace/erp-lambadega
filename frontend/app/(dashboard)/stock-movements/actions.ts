@@ -3,6 +3,7 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import { buildBody } from './build-body'
 
 const API_BASE = process.env.API_BASE_URL ?? 'http://webserver:8001'
 
@@ -15,16 +16,7 @@ export async function createStockMovementAction(_prevState: unknown, formData: F
   const token = await getToken()
   if (!token) redirect('/login')
 
-  const quantity = formData.get('quantity')
-  const costPrice = formData.get('cost_price')
-
-  const body = {
-    product_id:  formData.get('product_id') || undefined,
-    type:        formData.get('type') || undefined,
-    quantity:    quantity ? parseInt(quantity as string, 10) : undefined,
-    cost_price:  costPrice ? parseFloat(costPrice as string) : null,
-    description: formData.get('description') || null,
-  }
+  const body = buildBody(formData)
 
   const res = await fetch(`${API_BASE}/api/stock-movements`, {
     method: 'POST',

@@ -18,7 +18,7 @@ class StockMovementController extends Controller
 
     public function index(Request $request): AnonymousResourceCollection
     {
-        abort_if($request->user()->cannot('stock.view'), 403, 'Sem permissão.');
+        $this->authorize('viewAny', StockMovement::class);
 
         $movements = $this->service->paginate(
             $request->only(['product_id', 'type', 'date_from', 'date_to'])
@@ -29,7 +29,7 @@ class StockMovementController extends Controller
 
     public function store(StoreStockMovementRequest $request): JsonResponse
     {
-        abort_if($request->user()->cannot('stock.create'), 403, 'Sem permissão.');
+        $this->authorize('create', StockMovement::class);
 
         $product = Product::findOrFail($request->validated()['product_id']);
 
@@ -47,7 +47,7 @@ class StockMovementController extends Controller
 
     public function show(Request $request, StockMovement $stockMovement): StockMovementResource
     {
-        abort_if($request->user()->cannot('stock.view'), 403, 'Sem permissão.');
+        $this->authorize('view', $stockMovement);
 
         $stockMovement->load(['product:id,name', 'user:id,name']);
 
