@@ -62,23 +62,27 @@ erp-comercial/
 │   │   │   │       ├── CustomerController.php
 │   │   │   │       ├── CategoryController.php
 │   │   │   │       ├── SupplierController.php
-│   │   │   │       └── ProductController.php
+│   │   │   │       ├── ProductController.php   suporta ?all=1
+│   │   │   │       └── StockMovementController.php  só index/store/show (log imutável)
 │   │   │   ├── Requests/
 │   │   │   │   ├── Auth/LoginRequest.php
 │   │   │   │   ├── Customer/{Store,Update}CustomerRequest.php
 │   │   │   │   ├── Category/{Store,Update}CategoryRequest.php
 │   │   │   │   ├── Supplier/{Store,Update}SupplierRequest.php
-│   │   │   │   └── Product/{Store,Update}ProductRequest.php
+│   │   │   │   ├── Product/{Store,Update}ProductRequest.php
+│   │   │   │   └── StockMovement/StoreStockMovementRequest.php
 │   │   │   └── Resources/               transforma output JSON (JsonResource)
 │   │   │       ├── CustomerResource.php
 │   │   │       ├── CategoryResource.php
 │   │   │       ├── SupplierResource.php
-│   │   │       └── ProductResource.php   inclui category e supplier via whenLoaded
+│   │   │       ├── ProductResource.php   inclui category e supplier via whenLoaded
+│   │   │       └── StockMovementResource.php  inclui product e user via whenLoaded
 │   │   ├── Services/                    regras de negócio (queries, CRUD)
 │   │   │   ├── CustomerService.php
 │   │   │   ├── CategoryService.php
 │   │   │   ├── SupplierService.php
-│   │   │   └── ProductService.php       filtros: search, category_id, supplier_id, is_active, low_stock
+│   │   │   ├── ProductService.php       filtros: search, category_id, supplier_id, is_active, low_stock
+│   │   │   └── StockMovementService.php record() usa DB::transaction + lockForUpdate
 │   │   └── Providers/AppServiceProvider.php
 │   ├── database/
 │   │   ├── migrations/                   tudo com UUID + establishment_id
@@ -88,10 +92,11 @@ erp-comercial/
 │   │   │   ├── CustomerFactory.php
 │   │   │   ├── CategoryFactory.php
 │   │   │   ├── SupplierFactory.php
-│   │   │   └── ProductFactory.php
+│   │   │   ├── ProductFactory.php
+│   │   │   └── StockMovementFactory.php
 │   │   └── seeders/
 │   │       ├── DatabaseSeeder.php        cria establishment + admin
-│   │       └── RoleSeeder.php            4 roles, 27+ permissions (idempotente)
+│   │       └── RoleSeeder.php            4 roles, 29+ permissions (idempotente)
 │   ├── tests/
 │   │   ├── TestCase.php                  RefreshDatabase + seed(RoleSeeder) + helpers
 │   │   ├── Feature/
@@ -99,7 +104,8 @@ erp-comercial/
 │   │   │       ├── CustomerTest.php      auth, permissões, CRUD, multi-tenant
 │   │   │       ├── CategoryTest.php      + slug, parent_id, ?all=1
 │   │   │       ├── SupplierTest.php      + CNPJ único por establishment
-│   │   │       └── ProductTest.php       + SKU/barcode únicos, filtro low_stock, category_id de outro tenant
+│   │   │       ├── ProductTest.php       + SKU/barcode únicos, filtro low_stock, category_id de outro tenant
+│   │   │       └── StockMovementTest.php in/out/adjustment, estoque insuficiente, isolamento multi-tenant
 │   │   └── Unit/
 │   ├── phpunit.xml                       SQLite in-memory para testes rápidos
 │   ├── config/
@@ -139,17 +145,22 @@ erp-comercial/
 │   │   │   │   ├── supplier-form.tsx     4 seções: empresa, contato, endereço, notas
 │   │   │   │   ├── delete-button.tsx
 │   │   │   │   └── actions.ts
-│   │   │   └── products/                 rota: /products
-│   │   │       ├── page.tsx              lista; filtros: search, categoria, status, low_stock
-│   │   │       ├── new/page.tsx          carrega categorias + fornecedores p/ dropdowns
-│   │   │       ├── [id]/edit/page.tsx    carrega produto + categorias + fornecedores
-│   │   │       ├── product-form.tsx      4 seções: informações, preços, estoque/id, descrição
-│   │   │       ├── delete-button.tsx
-│   │   │       └── actions.ts
+│   │   │   ├── products/                 rota: /products
+│   │   │   │   ├── page.tsx              lista; filtros: search, categoria, status, low_stock; link "+ Mov."
+│   │   │   │   ├── new/page.tsx          carrega categorias + fornecedores p/ dropdowns
+│   │   │   │   ├── [id]/edit/page.tsx    carrega produto + categorias + fornecedores
+│   │   │   │   ├── product-form.tsx      4 seções: informações, preços, estoque/id, descrição
+│   │   │   │   ├── delete-button.tsx
+│   │   │   │   └── actions.ts
+│   │   │   └── stock-movements/          rota: /stock-movements
+│   │   │       ├── page.tsx              lista; filtros: produto, tipo, datas; badges coloridos
+│   │   │       ├── new/page.tsx          aceita ?product_id= para pré-preencher produto
+│   │   │       ├── movement-form.tsx     client; campo cost_price condicional (só para "in")
+│   │   │       └── actions.ts            createStockMovementAction; redireciona filtrado por produto
 │   │   ├── api/auth/clear/route.ts       limpa cookie inválido
 │   │   ├── lib/
 │   │   │   ├── api.ts                    apiFetch (token do cookie)
-│   │   │   └── types.ts                  Customer, Category, Supplier, Product, PaginatedResponse
+│   │   │   └── types.ts                  Customer, Category, Supplier, Product, StockMovement, PaginatedResponse
 │   │   ├── ui/skeletons.tsx              TableSkeleton, FormSkeleton, etc.
 │   │   ├── login/
 │   │   │   ├── page.tsx
@@ -298,6 +309,9 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - **`?all=1` em categorias e fornecedores** — ambos os endpoints suportam `?all=1` para retornar lista completa (sem paginação). Usado pelos formulários de produto que precisam popular dropdowns de categoria e fornecedor.
 - **Produto tem relações carregadas no Resource** — `ProductResource` inclui `category` (id, name) e `supplier` (id, company_name) via `whenLoaded`. O service faz `with(['category:id,name', 'supplier:id,company_name'])` na lista. O controller faz `$product->load(...)` no show.
 - **`is_low_stock`** — calculado no model (`isLowStock()`) e exposto no Resource como campo virtual. `true` quando `stock_quantity <= min_stock_quantity`.
+- **Movimentações de estoque são imutáveis** — o endpoint só tem `index`, `store` e `show`. Nunca update ou delete. Usar `adjustment` para corrigir erros.
+- **`StockMovementService::record()` usa transação + lock** — `DB::transaction` + `lockForUpdate` no produto garante consistência se duas requisições tentarem alterar o estoque ao mesmo tempo.
+- **Tipo `adjustment` define valor absoluto** — ao contrário de `in` (soma) e `out` (subtrai), `adjustment` seta o `stock_quantity` direto no valor informado. Útil para contagem de inventário. Aceita `quantity = 0`.
 
 ---
 
@@ -314,14 +328,14 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - CRUD completo de categorias (backend + frontend, suporte a subcategorias via `parent_id`)
 - CRUD completo de fornecedores (backend + frontend, CNPJ único por tenant)
 - CRUD completo de produtos (backend + frontend, SKU/barcode únicos por tenant, relações categoria/fornecedor, badge low_stock)
+- Movimentação de estoque (in/out/adjustment, log imutável, transação atômica com lock, frontend com filtros e link "+ Mov." nos produtos)
 - Layout do dashboard com sidebar, route group, loading skeletons
 - Auth check na borda via `proxy.ts`
-- **Testes automatizados**: 81 feature tests PHPUnit cobrindo auth, permissões, CRUD e isolamento multi-tenant para todos os 4 módulos (SQLite in-memory, ~4s — `make test`)
+- **Testes automatizados**: 96 feature tests PHPUnit cobrindo auth, permissões, CRUD e isolamento multi-tenant para todos os 5 módulos (SQLite in-memory, ~5s — `make test`)
 - Error boundary no dashboard (`error.tsx`) + proteção 5xx no `apiFetch`
 - Documentação completa em `docs/arquitetura/`
 
 **Pendente (próximos passos):**
-- Movimentação de estoque (registro + histórico via `stock_movements`)
 - PDV web / Vendas (carrinho, desconto, fechamento)
 - Contas a pagar / receber (financeiro)
 - Relatórios básicos (vendas por período, top produtos, fluxo de caixa)
@@ -369,6 +383,7 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 
 - **Código e identificadores em inglês**; **documentação em PT-BR**; **commits em inglês** com prefixo (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`)
 - **Branch ativo:** `dev`. Merge para `main` faz deploy de produção
+- **Deploy em produção = PR `dev → main`** — quando solicitado a "enviar para produção" ou "fazer deploy em prod", o fluxo correto é: commit + push na `dev`, depois abrir um PR de `dev` para `main` via `gh pr create`. **Nunca fazer push direto em `main`.**
 - **Nunca usar** `foreignId` em migrations novas — sempre `foreignUuid`
 - **Nunca criar** model de domínio sem `BelongsToEstablishment`
 - **Nunca chamar API direto** em Server Components — usar o helper `apiFetch`
