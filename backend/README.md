@@ -1,58 +1,166 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# ERP Comercial — Backend
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+API REST em Laravel 13 (PHP 8.4) para o ERP multi-tenant da Inovabi. Responsável por autenticação, RBAC, CRUD de domínio, movimentação de estoque e toda a lógica de negócio.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Stack
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+| | |
+|---|---|
+| Framework | Laravel 13 (PHP-FPM 8.4) |
+| Banco | MySQL 8.0 |
+| Auth | Laravel Sanctum (token) + Spatie Permission (RBAC) |
+| Identificadores | UUID v7 em todas as tabelas |
+| Testes | PHPUnit — SQLite in-memory |
+| Container | Docker + Compose v2 |
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## Rodando localmente
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+Os comandos abaixo assumem que o Docker Compose já está up (`docker compose up -d` na raiz).
 
 ```bash
-composer require laravel/boost --dev
+# Instalar dependências (necessário na primeira vez ou após recreate)
+docker compose exec backend composer install
 
-php artisan boost:install
+# Criar banco e rodar seeders
+docker compose exec backend php artisan migrate:fresh --seed
+
+# Rodar os testes
+make test-backend
+# ou diretamente:
+docker compose exec backend composer install --no-interaction --ignore-platform-reqs
+docker compose exec backend php artisan test
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+> Os testes usam SQLite in-memory (`phpunit.xml`) — isolados do banco de desenvolvimento.
 
-## Contributing
+---
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Estrutura
 
-## Code of Conduct
+```
+backend/
+├── app/
+│   ├── Models/
+│   │   ├── Concerns/
+│   │   │   ├── HasUuidV7.php              UUID v7 como PK (Str::uuid7())
+│   │   │   └── BelongsToEstablishment.php global scope + creating hook
+│   │   ├── Establishment.php              raiz do tenant
+│   │   ├── User.php
+│   │   ├── Customer.php / Category.php / Supplier.php
+│   │   ├── Product.php / StockMovement.php
+│   │   └── Role.php / Permission.php      sobrescrevem Spatie p/ usar UUID v7
+│   ├── Http/
+│   │   ├── Controllers/
+│   │   │   ├── Auth/AuthController.php    login, logout, me
+│   │   │   └── Api/                       um controller por módulo (só HTTP)
+│   │   ├── Requests/                      validação com escopo multi-tenant
+│   │   └── Resources/                     transformação JSON (JsonResource)
+│   ├── Policies/                          autorização acoplada ao model
+│   └── Services/                          regras de negócio, queries, transações
+├── database/
+│   ├── migrations/                        UUID + establishment_id em tudo
+│   ├── factories/                         para testes
+│   └── seeders/
+│       ├── DatabaseSeeder.php             cria establishment + admin
+│       └── RoleSeeder.php                 4 roles, 29+ permissões (idempotente)
+├── tests/
+│   ├── TestCase.php                       RefreshDatabase + seed(RoleSeeder) + helpers
+│   └── Feature/Api/                       testes por módulo
+├── routes/api.php
+└── phpunit.xml                            SQLite in-memory
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+---
 
-## Security Vulnerabilities
+## Módulos e rotas
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+| Módulo | Rotas | Observações |
+|---|---|---|
+| Auth | `POST /auth/login`, `POST /auth/logout`, `GET /auth/me` | Sanctum token |
+| Clientes | `GET/POST /customers`, `GET/PUT/DELETE /customers/{id}` | |
+| Categorias | `GET/POST /categories`, `GET/PUT/DELETE /categories/{id}` | `?all=1` para dropdown (limite 500) |
+| Fornecedores | `GET/POST /suppliers`, `GET/PUT/DELETE /suppliers/{id}` | `?all=1` para dropdown (limite 500) |
+| Produtos | `GET/POST /products`, `GET/PUT/DELETE /products/{id}` | `?all=1` para dropdown (limite 500) |
+| Estoque | `GET/POST /stock-movements`, `GET /stock-movements/{id}` | Imutável — sem update/delete |
 
-## License
+Todas as rotas (exceto auth) exigem `Authorization: Bearer {token}`.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+---
+
+## Padrões obrigatórios
+
+### Multi-tenancy
+
+Todo model de domínio usa os dois traits de `Concerns/`:
+
+```php
+class Foo extends Model
+{
+    use BelongsToEstablishment, HasFactory, HasUuidV7, SoftDeletes;
+}
+```
+
+- `HasUuidV7` — gera UUID v7 como PK
+- `BelongsToEstablishment` — global scope filtra queries por `establishment_id`; creating hook preenche o campo automaticamente
+
+Sempre usar `foreignUuid` em migrations, nunca `foreignId`. Unique constraints compostas com `establishment_id`:
+
+```php
+$table->unique(['establishment_id', 'document']);
+```
+
+### Autorização
+
+Cada módulo tem uma Policy em `app/Policies/`. O controller usa `$this->authorize()` — o base `Controller` tem `AuthorizesRequests`. As Policies são auto-descobertas por convenção de nome.
+
+```php
+// No controller
+public function index(Request $request): AnonymousResourceCollection
+{
+    $this->authorize('viewAny', Customer::class);
+    return CustomerResource::collection($this->service->paginate(...));
+}
+
+// Na Policy
+public function viewAny(User $user): bool
+{
+    return $user->can('customers.view'); // Spatie Permission
+}
+```
+
+### Camadas
+
+- **Controller** — só HTTP: valida com FormRequest, chama service, retorna Resource
+- **Policy** — autorização; delega para Spatie (`$user->can(...)`)
+- **Service** — regras de negócio, queries, transações
+- **Resource** — transforma model em JSON
+
+---
+
+## Testes
+
+```bash
+make test-backend     # instala dev deps e roda toda a suite
+```
+
+- 96 feature tests cobrindo auth, permissões, CRUD e isolamento multi-tenant
+- SQLite in-memory — rodam em ~5s
+- Padrão: `Sanctum::actingAs($user)`, `$this->seed(RoleSeeder::class)` no setUp
+
+---
+
+## Variáveis de ambiente
+
+Copiar `backend/.env.example` para `backend/.env` e ajustar:
+
+| Variável | Descrição |
+|---|---|
+| `APP_KEY` | Gerado com `php artisan key:generate` |
+| `DB_HOST / DATABASE / USERNAME / PASSWORD` | MySQL |
+| `SANCTUM_STATEFUL_DOMAINS` | Domínios com acesso stateful |
+| `SANCTUM_TOKEN_EXPIRATION` | Minutos até expirar (default 1440) |
+| `CORS_ALLOWED_ORIGINS` | Origins permitidos |
