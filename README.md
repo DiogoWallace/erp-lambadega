@@ -2,7 +2,7 @@
 
 Sistema ERP comercial multi-tenant com arquitetura preparada para evolução **offline-first**. Atende lojas, restaurantes e adegas com módulos de cadastros, estoque, vendas (PDV) e financeiro.
 
-> **Status atual:** Fase 1 — sistema web em construção. Veja o [roadmap](docs/arquitetura/roadmap.md) completo.
+> **Status atual:** Fase 1 em andamento — 5 módulos funcionando em produção. Veja o [roadmap](docs/arquitetura/roadmap.md) completo.
 
 ---
 
@@ -15,65 +15,22 @@ Sistema ERP comercial multi-tenant com arquitetura preparada para evolução **o
 | Autenticação | Laravel Sanctum (token-based) + Spatie Permission (RBAC) |
 | Infra | Docker Compose, nginx, GitHub Actions (CI/CD) |
 | Identificadores | UUID v7 em todas as tabelas |
-
----
-
-## Estrutura do repositório
-
-```
-erp-comercial/
-├── backend/                  # API Laravel
-│   ├── app/
-│   │   ├── Models/
-│   │   │   └── Concerns/     # Traits: HasUuidV7, BelongsToEstablishment
-│   │   ├── Http/
-│   │   │   ├── Controllers/Api/  # Controllers de domínio (sem lógica de negócio)
-│   │   │   ├── Requests/         # Validação por módulo
-│   │   │   └── Resources/        # Transformação do output JSON
-│   │   └── Services/         # Regras de negócio e queries
-│   ├── database/
-│   │   ├── migrations/
-│   │   └── seeders/
-│   └── routes/api.php
-│
-├── frontend/                 # Next.js 16
-│   ├── app/
-│   │   ├── (dashboard)/      # Route group: rotas autenticadas
-│   │   │   ├── customers/    # CRUD completo
-│   │   │   ├── categories/   # CRUD completo
-│   │   │   └── dashboard/
-│   │   ├── api/auth/clear/   # Route handler para limpar cookie inválido
-│   │   ├── lib/              # api.ts, types.ts
-│   │   ├── ui/               # skeletons reutilizáveis
-│   │   └── login/
-│   └── proxy.ts              # Auth check na borda
-│
-├── docs/                     # Documentação do projeto
-│   ├── arquitetura/          # Visão de longo prazo, decisões técnicas
-│   ├── banco-de-dados/       # Schema por módulo
-│   ├── tutoriais/            # Como rodar e deployar
-│   └── ia/                   # Contexto para agentes de IA
-│
-├── nginx/conf.d/             # Configurações por ambiente
-├── docker-compose.yml        # Ambiente local
-├── docker-compose.dev.yml    # Ambiente dev (VPS)
-└── docker-compose.prod.yml   # Ambiente produção (VPS)
-```
+| Testes | PHPUnit — 96 feature tests, SQLite in-memory (~5s) |
 
 ---
 
 ## Módulos implementados
 
-| Módulo | Backend | Frontend |
-|---|---|---|
-| Autenticação | login, logout, me | tela de login, cookie token |
-| Clientes | CRUD + filtros + paginação | lista, novo, editar, excluir |
-| Categorias | CRUD + subcategorias + filtros | lista, novo, editar, excluir |
-| Fornecedores | migration + model | — |
-| Produtos | migration + model | — |
-| Estoque | migration + model | — |
-| Vendas | migration + model | — |
-| Financeiro | migration + model | — |
+| Módulo | Backend | Frontend | Testes |
+|---|---|---|---|
+| Autenticação | login, logout, me | tela de login, cookie token | — |
+| Clientes | CRUD + filtros + paginação | lista, novo, editar, excluir | 18 |
+| Categorias | CRUD + subcategorias + `?all=1` | lista, novo, editar, excluir | 22 |
+| Fornecedores | CRUD + `?all=1` + CNPJ único/tenant | lista, novo, editar, excluir | 18 |
+| Produtos | CRUD + `?all=1` + SKU/barcode únicos/tenant | lista, novo, editar, excluir | 21 |
+| Estoque | in/out/adjustment + lock atômico | lista filtrada, registrar mov. | 15 |
+| Vendas | migration + model | — | — |
+| Financeiro | migration + model | — | — |
 
 ---
 
@@ -94,7 +51,18 @@ Acesse:
 - **API:** http://localhost:8001/api
 - **Credenciais iniciais:** `admin@inovabi.com` / `password`
 
-Para detalhes (troubleshooting, comandos úteis, hot-reload), veja [docs/tutoriais/rodar-local.md](docs/tutoriais/rodar-local.md).
+### Atalhos (Makefile)
+
+```bash
+make test      # roda a suite completa (96 tests, ~5s)
+make migrate   # php artisan migrate
+make seed      # php artisan db:seed --class=RoleSeeder
+make fresh     # migrate:fresh --seed
+make shell     # bash no container backend
+make logs      # docker compose logs -f backend
+```
+
+Para detalhes (troubleshooting, hot-reload), veja [docs/tutoriais/rodar-local.md](docs/tutoriais/rodar-local.md).
 
 ---
 
@@ -104,15 +72,59 @@ Para detalhes (troubleshooting, comandos úteis, hot-reload), veja [docs/tutoria
 |---|---|---|---|
 | Local | http://localhost:8000 | qualquer | manual |
 | Dev | https://dev.inovabi.com | `dev` | automático (push) |
-| Produção | https://inovabi.com | `main` | automático (push) |
+| Produção | https://inovabi.com | `main` | automático (PR `dev → main`) |
 
 O CI/CD está em [`.github/workflows/`](.github/workflows). Veja [docs/tutoriais/deploy.md](docs/tutoriais/deploy.md) para detalhes.
 
 ---
 
-## Documentação
+## Estrutura do repositório
 
-### Arquitetura
+```
+erp-comercial/
+├── backend/
+│   ├── app/
+│   │   ├── Models/Concerns/      # HasUuidV7, BelongsToEstablishment
+│   │   ├── Http/
+│   │   │   ├── Controllers/Api/  # Sem lógica de negócio — só HTTP
+│   │   │   ├── Requests/         # Validação por módulo (escopo multi-tenant)
+│   │   │   └── Resources/        # Transformação JSON (JsonResource)
+│   │   └── Services/             # Regras de negócio, queries, transações
+│   ├── database/
+│   │   ├── migrations/           # UUID v7 + establishment_id em tudo
+│   │   ├── factories/            # EstablishmentFactory, UserFactory + 5 módulos
+│   │   └── seeders/RoleSeeder.php  # 4 roles, 29+ permissões (idempotente)
+│   ├── tests/Feature/Api/        # 96 testes (SQLite in-memory)
+│   └── routes/api.php
+│
+├── frontend/
+│   ├── proxy.ts                  # Auth check na borda (Next.js 16)
+│   └── app/
+│       ├── (dashboard)/          # Route group — rotas autenticadas
+│       │   ├── customers/        # CRUD
+│       │   ├── categories/       # CRUD + subcategorias
+│       │   ├── suppliers/        # CRUD
+│       │   ├── products/         # CRUD + link "+ Mov." p/ estoque
+│       │   └── stock-movements/  # Registrar + histórico filtrado
+│       ├── lib/api.ts            # apiFetch (injeta token, trata 401/5xx)
+│       ├── lib/types.ts          # Interfaces TypeScript de todos os modelos
+│       └── ui/skeletons.tsx      # TableSkeleton, FormSkeleton
+│
+├── docs/
+│   ├── arquitetura/              # Visão de longo prazo, decisões técnicas, roadmap
+│   ├── banco-de-dados/           # Schema por módulo
+│   ├── tutoriais/                # Como rodar e deployar
+│   └── ia/contexto.md            # Contexto completo para agentes de IA
+│
+├── Makefile                      # Atalhos de desenvolvimento
+├── docker-compose.yml            # Local
+├── docker-compose.dev.yml        # Dev (VPS)
+└── docker-compose.prod.yml       # Produção (VPS)
+```
+
+---
+
+## Arquitetura
 
 A arquitetura é desenhada em três fases. Leia antes de implementar qualquer módulo novo.
 
@@ -121,32 +133,18 @@ A arquitetura é desenhada em três fases. Leia antes de implementar qualquer m�
 - [Identificadores](docs/arquitetura/identificadores.md) — por que UUID v7 em todas as tabelas
 - [Sincronização](docs/arquitetura/sincronizacao.md) — protocolo de sync entre central e local (Fase 2)
 - [Roadmap](docs/arquitetura/roadmap.md) — o que está pronto, em andamento e planejado
-
-### Banco de dados
-
-Schema de cada módulo com colunas, índices e relacionamentos.
-
-- [Autenticação](docs/banco-de-dados/autenticacao.md) — users, roles, permissions, tokens
-- [Clientes e fornecedores](docs/banco-de-dados/clientes-fornecedores.md)
-- [Catálogo e estoque](docs/banco-de-dados/catalogo-estoque.md)
-- [Vendas](docs/banco-de-dados/vendas.md)
-- [Financeiro](docs/banco-de-dados/financeiro.md)
-
-### Tutoriais
-
-- [Rodar localmente](docs/tutoriais/rodar-local.md)
-- [Deploy](docs/tutoriais/deploy.md)
+- [Contexto IA](docs/ia/contexto.md) — guia completo para agentes de IA
 
 ---
 
 ## Convenções
 
 - **Código e identificadores em inglês**; **documentação em PT-BR**; **commits em inglês** com prefixo (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`)
-- **Branches:** `dev` é o branch ativo; PRs vão para `dev`; merge de `dev` → `main` dispara deploy de produção
+- **Deploy em produção = PR `dev → main`** — nunca push direto em `main`
 - **Arquitetura de camadas:** `Controllers/Api` (só HTTP) → `Services` (negócio) → `Resources` (output)
 - **Todo model de domínio** usa `HasUuidV7` + `BelongsToEstablishment`
 - **Migrations** sempre usam `foreignUuid`, nunca `foreignId`
-- **Ao criar módulo novo:** adicionar permissões no `RoleSeeder` — sem isso o endpoint retorna 403
+- **Ao criar módulo novo:** adicionar permissões no `RoleSeeder` e re-executar `make seed`
 - **Frontend:** `apiFetch` para todas as chamadas em Server Components; Server Actions em `actions.ts`
 
 ---
