@@ -369,6 +369,7 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 
 - **Código e identificadores em inglês**; **documentação em PT-BR**; **commits em inglês** com prefixo (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`)
 - **Branch ativo:** `dev`. Merge para `main` faz deploy de produção
+- **Deploy em produção = PR `dev → main`** — quando solicitado a "enviar para produção" ou "fazer deploy em prod", o fluxo correto é: commit + push na `dev`, depois abrir um PR de `dev` para `main` via `gh pr create`. **Nunca fazer push direto em `main`.**
 - **Nunca usar** `foreignId` em migrations novas — sempre `foreignUuid`
 - **Nunca criar** model de domínio sem `BelongsToEstablishment`
 - **Nunca chamar API direto** em Server Components — usar o helper `apiFetch`
