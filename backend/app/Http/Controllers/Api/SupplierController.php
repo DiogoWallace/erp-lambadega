@@ -20,6 +20,10 @@ class SupplierController extends Controller
     {
         abort_if($request->user()->cannot('suppliers.view'), 403, 'Sem permissão.');
 
+        if ($request->boolean('all')) {
+            return SupplierResource::collection($this->service->all());
+        }
+
         $suppliers = $this->service->paginate($request->only(['search', 'is_active']));
 
         return SupplierResource::collection($suppliers);

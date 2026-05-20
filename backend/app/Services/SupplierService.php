@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Supplier;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 
 class SupplierService
 {
@@ -26,6 +27,11 @@ class SupplierService
         }
 
         return $query->orderBy('company_name')->paginate(15);
+    }
+
+    public function all(): Collection
+    {
+        return Supplier::query()->orderBy('company_name')->get();
     }
 
     public function create(array $data): Supplier
