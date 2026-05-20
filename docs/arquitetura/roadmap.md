@@ -14,7 +14,7 @@ Objetivo: sistema web funcional, operando em produção, com as fundações arqu
 - [x] **Tabela `establishments` e `establishment_id` nas tabelas de domínio** ← bloqueante para Fase 2
 - [x] **Tabela `sync_log`** (schema; observer fica para a Fase 2)
 - [x] Trait `BelongsToEstablishment` + global scope nos models
-- [x] Testes automatizados (81 feature tests, SQLite in-memory, ~4s — `make test`)
+- [x] Testes automatizados (96 feature tests, SQLite in-memory, ~5s — `make test`)
 
 ### Módulos de negócio
 
@@ -22,7 +22,7 @@ Objetivo: sistema web funcional, operando em produção, com as fundações arqu
 - [x] Categorias (CRUD completo)
 - [x] Fornecedores (CRUD completo)
 - [x] Produtos (CRUD completo — nome, preço, estoque, SKU/barcode, categoria, fornecedor)
-- [ ] Movimentação de estoque (registro + histórico)
+- [x] Movimentação de estoque (in/out/adjustment, log imutável, transação atômica)
 - [ ] Vendas (PDV web — carrinho, desconto, fechamento)
 - [ ] Contas a pagar / receber (financeiro)
 - [ ] Relatórios básicos (vendas por período, top produtos, fluxo de caixa)
