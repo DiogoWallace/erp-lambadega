@@ -20,6 +20,10 @@ class ProductController extends Controller
     {
         abort_if($request->user()->cannot('products.view'), 403, 'Sem permissão.');
 
+        if ($request->boolean('all')) {
+            return ProductResource::collection($this->service->all());
+        }
+
         $products = $this->service->paginate(
             $request->only(['search', 'category_id', 'supplier_id', 'is_active', 'low_stock'])
         );

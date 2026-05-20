@@ -45,6 +45,16 @@ const navItems = [
     exact: false,
   },
   {
+    href: '/stock-movements',
+    label: 'Stock',
+    icon: (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M3 14h18M10 3v18M14 3v18M3 6a3 3 0 013-3h12a3 3 0 013 3v12a3 3 0 01-3 3H6a3 3 0 01-3-3V6z" />
+      </svg>
+    ),
+    exact: false,
+  },
+  {
     href: '/suppliers',
     label: 'Suppliers',
     icon: (
