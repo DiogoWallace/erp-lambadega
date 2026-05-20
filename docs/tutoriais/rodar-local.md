@@ -37,10 +37,10 @@ docker compose run --rm backend php artisan key:generate --show
 docker compose up -d --build
 ```
 
-### 4. Rode as migrations
+### 4. Rode as migrations e o seed inicial
 
 ```bash
-docker compose exec backend php artisan migrate
+docker compose exec backend php artisan migrate:fresh --seed
 ```
 
 ---
@@ -52,6 +52,22 @@ docker compose exec backend php artisan migrate
 | Frontend | http://localhost:8000      |
 | API      | http://localhost:8001      |
 | MySQL    | localhost:3306 (usuário: `erp_user`, senha: `localpass`) |
+
+---
+
+## Makefile — atalhos
+
+O projeto tem um `Makefile` na raiz com os comandos mais usados:
+
+```bash
+make test      # instala dev deps + roda a suite de testes (81 tests, ~4s)
+make migrate   # php artisan migrate
+make seed      # php artisan db:seed --class=RoleSeeder
+make fresh     # migrate:fresh --seed (apaga e recria o banco)
+make logs      # docker compose logs -f backend
+make shell     # acessa o bash do container backend
+make artisan CMD="route:list"  # qualquer comando artisan
+```
 
 ---
 
@@ -68,17 +84,11 @@ docker compose down
 docker compose logs -f backend
 docker compose logs -f frontend
 
-# Rodar comando artisan
-docker compose exec backend php artisan <comando>
-
 # Criar migration
 docker compose exec backend php artisan make:migration create_produtos_table
 
 # Criar model com migration e controller
 docker compose exec backend php artisan make:model Produto -mc
-
-# Rodar migrations
-docker compose exec backend php artisan migrate
 
 # Rollback
 docker compose exec backend php artisan migrate:rollback
@@ -94,11 +104,32 @@ docker compose exec db mysql -u erp_user -plocalpass erp_local_db
 
 ---
 
+## Rodando os testes
+
+```bash
+make test
+```
+
+Isso instala as dev deps (phpunit, faker) no container e executa a suite completa. Os testes usam SQLite in-memory — não afetam o banco local e rodam em ~2s.
+
+---
+
 ## Desenvolvimento com hot reload
 
 O frontend já está configurado com hot reload — qualquer alteração em `frontend/app/` reflete imediatamente no browser.
 
-O backend usa volume bind para `app/`, `routes/`, `config/`, `database/` e `resources/` — alterações nesses diretórios são refletidas sem precisar rebuildar o container.
+O backend usa volume bind para `app/`, `routes/`, `config/`, `database/`, `resources/` e `tests/` — alterações nesses diretórios são refletidas sem precisar rebuildar o container.
+
+---
+
+## Problemas conhecidos
+
+**Frontend com tela branca (body vazio)**
+O dev server do Next.js pode travar após o container do backend ser recriado. Sintoma: o browser mostra tela branca, o `curl` retorna 0 bytes mesmo com HTTP 200. Solução:
+
+```bash
+docker compose restart frontend
+```
 
 ---
 
@@ -107,7 +138,7 @@ O backend usa volume bind para `app/`, `routes/`, `config/`, `database/` e `reso
 Se precisar limpar tudo e começar do zero:
 
 ```bash
-docker compose down -v   # remove containers E volumes (apaga o banco)
+docker compose down -v        # remove containers E volumes (apaga o banco)
 docker compose up -d --build
-docker compose exec backend php artisan migrate
+make fresh                    # migrate:fresh --seed
 ```
