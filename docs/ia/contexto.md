@@ -62,7 +62,7 @@ erp-comercial/
 │   │   │   │       ├── CustomerController.php
 │   │   │   │       ├── CategoryController.php
 │   │   │   │       ├── SupplierController.php
-│   │   │   │       ├── ProductController.php   suporta ?all=1
+│   │   │   │       ├── ProductController.php   suporta ?all=1 (limitado a 500)
 │   │   │   │       └── StockMovementController.php  só index/store/show (log imutável)
 │   │   │   ├── Requests/
 │   │   │   │   ├── Auth/LoginRequest.php
@@ -77,11 +77,17 @@ erp-comercial/
 │   │   │       ├── SupplierResource.php
 │   │   │       ├── ProductResource.php   inclui category e supplier via whenLoaded
 │   │   │       └── StockMovementResource.php  inclui product e user via whenLoaded
+│   │   ├── Policies/                    autorização acoplada ao model (auto-descoberta Laravel)
+│   │   │   ├── CustomerPolicy.php
+│   │   │   ├── CategoryPolicy.php
+│   │   │   ├── SupplierPolicy.php
+│   │   │   ├── ProductPolicy.php
+│   │   │   └── StockMovementPolicy.php  só viewAny/view/create (sem update/delete — log imutável)
 │   │   ├── Services/                    regras de negócio (queries, CRUD)
 │   │   │   ├── CustomerService.php
-│   │   │   ├── CategoryService.php
-│   │   │   ├── SupplierService.php
-│   │   │   ├── ProductService.php       filtros: search, category_id, supplier_id, is_active, low_stock
+│   │   │   ├── CategoryService.php      all() limitado a 500 registros
+│   │   │   ├── SupplierService.php      all() limitado a 500 registros
+│   │   │   ├── ProductService.php       filtros: search, category_id, supplier_id, is_active, low_stock; all() limitado a 500
 │   │   │   └── StockMovementService.php record() usa DB::transaction + lockForUpdate
 │   │   └── Providers/AppServiceProvider.php
 │   ├── database/
@@ -106,7 +112,7 @@ erp-comercial/
 │   │   │       ├── SupplierTest.php      + CNPJ único por establishment
 │   │   │       ├── ProductTest.php       + SKU/barcode únicos, filtro low_stock, category_id de outro tenant
 │   │   │       └── StockMovementTest.php in/out/adjustment, estoque insuficiente, isolamento multi-tenant
-│   │   └── Unit/
+│   │   └── Unit/                         (a ser expandido)
 │   ├── phpunit.xml                       SQLite in-memory para testes rápidos
 │   ├── config/
 │   │   ├── permission.php                aponta para App\Models\{Role,Permission}
@@ -116,11 +122,14 @@ erp-comercial/
 │
 ├── frontend/                             Next.js 16
 │   ├── proxy.ts                          auth check na borda (antigo middleware)
+│   ├── vitest.config.ts                  testes unitários (node environment)
 │   ├── app/
 │   │   ├── (dashboard)/                  ROUTE GROUP — não aparece na URL
+│   │   │   ├── __tests__/
+│   │   │   │   └── build-body.test.ts    21 testes unitários (vitest) para os 5 módulos
 │   │   │   ├── layout.tsx                sync; sidebar + Suspense para user
 │   │   │   ├── sidebar-nav.tsx           client component (usePathname)
-│   │   │   ├── sidebar-user.tsx          async; redireciona se 401
+│   │   │   ├── sidebar-user.tsx          async; usa apiFetch('/auth/me'), redireciona se 401
 │   │   │   ├── actions.ts                logoutAction
 │   │   │   ├── dashboard/page.tsx        rota: /dashboard
 │   │   │   ├── customers/                rota: /customers
@@ -129,7 +138,8 @@ erp-comercial/
 │   │   │   │   ├── [id]/edit/page.tsx
 │   │   │   │   ├── customer-form.tsx     client; useActionState
 │   │   │   │   ├── delete-button.tsx     client; confirm() + form action
-│   │   │   │   └── actions.ts            create/update/delete
+│   │   │   │   ├── build-body.ts         função pura — extrai FormData → objeto de API
+│   │   │   │   └── actions.ts            create/update/delete (importa build-body)
 │   │   │   ├── error.tsx                 error boundary do dashboard (client)
 │   │   │   ├── categories/               rota: /categories
 │   │   │   │   ├── page.tsx              lista server-side
@@ -137,6 +147,7 @@ erp-comercial/
 │   │   │   │   ├── [id]/edit/page.tsx    exclui a própria categoria do dropdown
 │   │   │   │   ├── category-form.tsx     client; useActionState
 │   │   │   │   ├── delete-button.tsx     client; confirm() + form action
+│   │   │   │   ├── build-body.ts         função pura
 │   │   │   │   └── actions.ts            create/update/delete
 │   │   │   ├── suppliers/                rota: /suppliers
 │   │   │   │   ├── page.tsx              lista; formata CNPJ
@@ -144,6 +155,7 @@ erp-comercial/
 │   │   │   │   ├── [id]/edit/page.tsx
 │   │   │   │   ├── supplier-form.tsx     4 seções: empresa, contato, endereço, notas
 │   │   │   │   ├── delete-button.tsx
+│   │   │   │   ├── build-body.ts         função pura
 │   │   │   │   └── actions.ts
 │   │   │   ├── products/                 rota: /products
 │   │   │   │   ├── page.tsx              lista; filtros: search, categoria, status, low_stock; link "+ Mov."
@@ -151,15 +163,17 @@ erp-comercial/
 │   │   │   │   ├── [id]/edit/page.tsx    carrega produto + categorias + fornecedores
 │   │   │   │   ├── product-form.tsx      4 seções: informações, preços, estoque/id, descrição
 │   │   │   │   ├── delete-button.tsx
+│   │   │   │   ├── build-body.ts         função pura; converte strings para float/int
 │   │   │   │   └── actions.ts
 │   │   │   └── stock-movements/          rota: /stock-movements
 │   │   │       ├── page.tsx              lista; filtros: produto, tipo, datas; badges coloridos
 │   │   │       ├── new/page.tsx          aceita ?product_id= para pré-preencher produto
 │   │   │       ├── movement-form.tsx     client; campo cost_price condicional (só para "in")
+│   │   │       ├── build-body.ts         função pura
 │   │   │       └── actions.ts            createStockMovementAction; redireciona filtrado por produto
 │   │   ├── api/auth/clear/route.ts       limpa cookie inválido
 │   │   ├── lib/
-│   │   │   ├── api.ts                    apiFetch (token do cookie)
+│   │   │   ├── api.ts                    apiFetch (token do cookie; 401→clear, 403→dashboard, 5xx→throw)
 │   │   │   └── types.ts                  Customer, Category, Supplier, Product, StockMovement, PaginatedResponse
 │   │   ├── ui/skeletons.tsx              TableSkeleton, FormSkeleton, etc.
 │   │   ├── login/
@@ -237,23 +251,28 @@ Rule::unique('customers', 'document')
 **Arquitetura de camadas** — todo módulo de domínio segue:
 
 - `Controllers/Api/FooController` — só HTTP: recebe request, chama service, retorna resource. Nada de queries ou regras aqui.
+- `Policies/FooPolicy` — autorização acoplada ao model; delegam para `$user->can('foo.action')` via Spatie.
 - `Services/FooService` — regras de negócio, queries, paginação, CRUD.
 - `Resources/FooResource` — transforma o model em JSON (substitui `response()->json()` manual).
 - `Requests/Foo/{Store,Update}FooRequest` — validação com escopo multi-tenant.
 
 ```php
-// Controller enxuto
+// Controller enxuto — autorização via Policy (auto-descoberta por convenção de nome)
 public function index(Request $request): AnonymousResourceCollection
 {
-    abort_if($request->user()->cannot('foo.view'), 403, 'Sem permissão.');
+    $this->authorize('viewAny', Foo::class);
     return FooResource::collection($this->service->paginate($request->only(['search', 'is_active'])));
 }
 ```
 
-**Permissões** verificadas no controller (antes de chamar o service):
+**Permissões** verificadas via `$this->authorize()` no controller. O base `Controller` tem o trait `AuthorizesRequests`. As Policies ficam em `app/Policies/` e são auto-descobertas pelo Laravel por convenção de nome (`FooPolicy` para `Foo`). **Não usar `abort_if` para permissões** — a Policy pode ser reutilizada de Jobs, Artisan commands e outros contextos fora do HTTP.
 
 ```php
-abort_if($request->user()->cannot('customers.view'), 403, 'Sem permissão.');
+// FooPolicy — delega para Spatie Permission
+public function viewAny(User $user): bool { return $user->can('foo.view'); }
+public function create(User $user): bool  { return $user->can('foo.create'); }
+public function update(User $user, Foo $foo): bool { return $user->can('foo.edit'); }
+public function delete(User $user, Foo $foo): bool { return $user->can('foo.delete'); }
 ```
 
 ### Frontend
@@ -278,6 +297,8 @@ const res = await apiFetch(`/customers?${params}`)
 const [state, formAction, pending] = useActionState(action, null)
 return <form action={formAction}>...</form>
 ```
+
+**`build-body.ts`** — cada módulo tem um arquivo `build-body.ts` com uma função pura `buildBody(formData: FormData)` que converte os campos do formulário para o objeto de API (parseia números, trata strings vazias como `null`, etc.). As Server Actions importam essa função. Isso separa a lógica de transformação do contexto de servidor (`'use server'`) e permite testar sem mocks.
 
 **Para passar IDs em actions** (UUID = string):
 
@@ -306,7 +327,7 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - **`Server Actions allowedOrigins`** em `next.config.ts` fica sob `experimental` (Next.js 16+).
 - **nginx local:** `proxy_set_header Host $http_host` (não `$host`) — caso contrário a porta não é encaminhada, e o `x-forwarded-host` quebra a CSRF do Server Actions.
 - **Categoria pai no form** — `new/page.tsx` e `[id]/edit/page.tsx` chamam `GET /categories?all=1` para popular o dropdown. O edit exclui a própria categoria da lista para evitar auto-referência.
-- **`?all=1` em categorias e fornecedores** — ambos os endpoints suportam `?all=1` para retornar lista completa (sem paginação). Usado pelos formulários de produto que precisam popular dropdowns de categoria e fornecedor.
+- **`?all=1` em categorias, fornecedores e produtos** — suportam `?all=1` para retornar lista sem paginação (população de dropdowns). Limitados a **500 registros** no service (`->limit(500)`) para evitar queries ilimitadas quando o tenant crescer. Retornam apenas colunas necessárias (id, name, etc.). Se um tenant tiver mais de 500 itens, implementar autocomplete assíncrono (react-select com async) em vez de dropdown estático.
 - **Produto tem relações carregadas no Resource** — `ProductResource` inclui `category` (id, name) e `supplier` (id, company_name) via `whenLoaded`. O service faz `with(['category:id,name', 'supplier:id,company_name'])` na lista. O controller faz `$product->load(...)` no show.
 - **`is_low_stock`** — calculado no model (`isLowStock()`) e exposto no Resource como campo virtual. `true` quando `stock_quantity <= min_stock_quantity`.
 - **Movimentações de estoque são imutáveis** — o endpoint só tem `index`, `store` e `show`. Nunca update ou delete. Usar `adjustment` para corrigir erros.
@@ -323,7 +344,7 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - Schema do banco com 8 tabelas de domínio + establishments + sync_log + tabelas Spatie/Sanctum
 - Migração para UUID v7 em todas as tabelas
 - Multi-tenancy via `establishment_id` + global scope
-- Arquitetura de camadas: Controllers/Api + Services + Resources
+- Arquitetura de camadas: Controllers/Api + Policies + Services + Resources
 - CRUD completo de clientes (backend + frontend)
 - CRUD completo de categorias (backend + frontend, suporte a subcategorias via `parent_id`)
 - CRUD completo de fornecedores (backend + frontend, CNPJ único por tenant)
@@ -331,7 +352,7 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - Movimentação de estoque (in/out/adjustment, log imutável, transação atômica com lock, frontend com filtros e link "+ Mov." nos produtos)
 - Layout do dashboard com sidebar, route group, loading skeletons
 - Auth check na borda via `proxy.ts`
-- **Testes automatizados**: 96 feature tests PHPUnit cobrindo auth, permissões, CRUD e isolamento multi-tenant para todos os 5 módulos (SQLite in-memory, ~5s — `make test`)
+- **Testes automatizados**: 96 feature tests PHPUnit (backend) + 21 testes unitários Vitest (frontend) — `make test` roda a suite completa. Backend cobre auth, permissões, CRUD e isolamento multi-tenant. Frontend cobre as funções `buildBody` de todos os 5 módulos.
 - Error boundary no dashboard (`error.tsx`) + proteção 5xx no `apiFetch`
 - Documentação completa em `docs/arquitetura/`
 
