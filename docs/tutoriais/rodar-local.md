@@ -60,7 +60,7 @@ docker compose exec backend php artisan migrate:fresh --seed
 O projeto tem um `Makefile` na raiz com os comandos mais usados:
 
 ```bash
-make test      # instala dev deps + roda a suite de testes (42 tests, ~2s)
+make test      # instala dev deps + roda a suite de testes (81 tests, ~4s)
 make migrate   # php artisan migrate
 make seed      # php artisan db:seed --class=RoleSeeder
 make fresh     # migrate:fresh --seed (apaga e recria o banco)
