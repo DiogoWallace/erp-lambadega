@@ -7,14 +7,14 @@ use App\Http\Requests\StockMovement\StoreStockMovementRequest;
 use App\Http\Resources\StockMovementResource;
 use App\Models\Product;
 use App\Models\StockMovement;
-use App\Services\StockMovementService;
+use App\Services\InventoryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class StockMovementController extends Controller
 {
-    public function __construct(private StockMovementService $service) {}
+    public function __construct(private InventoryService $service) {}
 
     public function index(Request $request): AnonymousResourceCollection
     {
