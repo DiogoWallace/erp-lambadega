@@ -27,6 +27,17 @@ Objetivo: sistema web funcional, operando em produção, com as fundações arqu
 - [ ] Contas a pagar / receber (financeiro)
 - [ ] Relatórios básicos (vendas por período, top produtos, fluxo de caixa)
 
+### Auditoria e rastreabilidade
+
+- [x] Tabela `audit_logs` (imutável — quem criou/editou/deletou cada registro)
+- [x] Trait `LogsActivity` nos models (diff automático de campos alterados — Customer, Supplier, Category, Product, StockMovement)
+- [x] `AuditService::log()` para eventos manuais (login, logout)
+- [x] Tela de auditoria no frontend (filtro por evento, módulo, período) — restrita ao role `admin`
+- [ ] Middleware `AuditModuleAccess` para rotas sensíveis
+- [ ] Comando `audit:prune` para retenção configurável (12 meses em prod)
+
+> Detalhes em [auditoria.md](auditoria.md)
+
 ### Operacional
 
 - [x] Deploy automatizado (dev + prod via GitHub Actions)

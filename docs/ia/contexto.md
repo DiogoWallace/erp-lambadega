@@ -47,9 +47,11 @@ erp-comercial/
 │   │   ├── Models/
 │   │   │   ├── Concerns/
 │   │   │   │   ├── HasUuidV7.php         UUID v7 via Str::uuid7()
-│   │   │   │   └── BelongsToEstablishment.php  global scope + creating hook
+│   │   │   │   ├── BelongsToEstablishment.php  global scope + creating hook
+│   │   │   │   └── LogsActivity.php      trait de auditoria (observers created/updating/updated/deleted + diff)
 │   │   │   ├── Establishment.php         tenant root
 │   │   │   ├── User.php                  HasUuidV7 + HasRoles + HasApiTokens
+│   │   │   ├── AuditLog.php              log imutável (HasUuidV7; sem updated_at; CONST UPDATED_AT = null)
 │   │   │   ├── Customer.php / Supplier.php / Category.php / Product.php
 │   │   │   ├── Order.php / OrderItem.php / StockMovement.php
 │   │   │   ├── FinancialTransaction.php
@@ -63,7 +65,8 @@ erp-comercial/
 │   │   │   │       ├── CategoryController.php
 │   │   │   │       ├── SupplierController.php
 │   │   │   │       ├── ProductController.php   suporta ?all=1 (limitado a 500)
-│   │   │   │       └── StockMovementController.php  só index/store/show (log imutável)
+│   │   │   │       ├── StockMovementController.php  só index/store/show (log imutável)
+│   │   │   │       └── AuditLogController.php  só index/show; restrito ao role admin
 │   │   │   ├── Requests/
 │   │   │   │   ├── Auth/LoginRequest.php
 │   │   │   │   ├── Customer/{Store,Update}CustomerRequest.php
@@ -76,20 +79,23 @@ erp-comercial/
 │   │   │       ├── CategoryResource.php
 │   │   │       ├── SupplierResource.php
 │   │   │       ├── ProductResource.php   inclui category e supplier via whenLoaded
-│   │   │       └── StockMovementResource.php  inclui product e user via whenLoaded
+│   │   │       ├── StockMovementResource.php  inclui product e user via whenLoaded
+│   │   │       └── AuditLogResource.php  model_type exibe só basename (ex: Customer)
 │   │   ├── Policies/                    autorização acoplada ao model (auto-descoberta Laravel)
 │   │   │   ├── CustomerPolicy.php
 │   │   │   ├── CategoryPolicy.php
 │   │   │   ├── SupplierPolicy.php
 │   │   │   ├── ProductPolicy.php
-│   │   │   └── StockMovementPolicy.php  só viewAny/view/create (sem update/delete — log imutável)
+│   │   │   ├── StockMovementPolicy.php  só viewAny/view/create (sem update/delete — log imutável)
+│   │   │   └── AuditLogPolicy.php       só viewAny/view; requer permissão audit.view (admin only)
 │   │   ├── Services/                    regras de negócio (queries, CRUD)
 │   │   │   ├── CustomerService.php
 │   │   │   ├── CategoryService.php      all() limitado a 500 registros
 │   │   │   ├── SupplierService.php      all() limitado a 500 registros
 │   │   │   ├── ProductService.php       filtros: search, category_id, supplier_id, is_active, low_stock; all() limitado a 500
-│   │   │   └── StockMovementService.php record() usa DB::transaction + lockForUpdate
-│   │   └── Providers/AppServiceProvider.php
+│   │   │   ├── StockMovementService.php record() usa DB::transaction + lockForUpdate
+│   │   │   └── AuditService.php         singleton; logModel(), log(), queueUpdate()/dequeuePendingUpdate()
+│   │   └── Providers/AppServiceProvider.php  registra AuditService como singleton
 │   ├── database/
 │   │   ├── migrations/                   tudo com UUID + establishment_id
 │   │   ├── factories/
@@ -102,7 +108,7 @@ erp-comercial/
 │   │   │   └── StockMovementFactory.php
 │   │   └── seeders/
 │   │       ├── DatabaseSeeder.php        cria establishment + admin
-│   │       └── RoleSeeder.php            4 roles, 29+ permissions (idempotente)
+│   │       └── RoleSeeder.php            4 roles, 30+ permissions (idempotente); audit.view só para admin
 │   ├── tests/
 │   │   ├── TestCase.php                  RefreshDatabase + seed(RoleSeeder) + helpers
 │   │   ├── Feature/
@@ -127,8 +133,8 @@ erp-comercial/
 │   │   ├── (dashboard)/                  ROUTE GROUP — não aparece na URL
 │   │   │   ├── __tests__/
 │   │   │   │   └── build-body.test.ts    21 testes unitários (vitest) para os 5 módulos
-│   │   │   ├── layout.tsx                sync; sidebar + Suspense para user
-│   │   │   ├── sidebar-nav.tsx           client component (usePathname)
+│   │   │   ├── layout.tsx                async; faz fetch /auth/me p/ determinar canAudit; passa prop p/ SidebarNav
+│   │   │   ├── sidebar-nav.tsx           client component (usePathname); aceita canAudit prop
 │   │   │   ├── sidebar-user.tsx          async; usa apiFetch('/auth/me'), redireciona se 401
 │   │   │   ├── actions.ts                logoutAction
 │   │   │   ├── dashboard/page.tsx        rota: /dashboard
@@ -165,16 +171,19 @@ erp-comercial/
 │   │   │   │   ├── delete-button.tsx
 │   │   │   │   ├── build-body.ts         função pura; converte strings para float/int
 │   │   │   │   └── actions.ts
-│   │   │   └── stock-movements/          rota: /stock-movements
-│   │   │       ├── page.tsx              lista; filtros: produto, tipo, datas; badges coloridos
-│   │   │       ├── new/page.tsx          aceita ?product_id= para pré-preencher produto
-│   │   │       ├── movement-form.tsx     client; campo cost_price condicional (só para "in")
-│   │   │       ├── build-body.ts         função pura
-│   │   │       └── actions.ts            createStockMovementAction; redireciona filtrado por produto
+│   │   │   ├── stock-movements/          rota: /stock-movements
+│   │   │   │   ├── page.tsx              lista; filtros: produto, tipo, datas; badges coloridos
+│   │   │   │   ├── new/page.tsx          aceita ?product_id= para pré-preencher produto
+│   │   │   │   ├── movement-form.tsx     client; campo cost_price condicional (só para "in")
+│   │   │   │   ├── build-body.ts         função pura
+│   │   │   │   └── actions.ts            createStockMovementAction; redireciona filtrado por produto
+│   │   │   └── audit-logs/               rota: /audit-logs (visível só para admin)
+│   │   │       ├── page.tsx              lista server-side; filtros: evento, módulo, período
+│   │   │       └── loading.tsx           TableSkeleton
 │   │   ├── api/auth/clear/route.ts       limpa cookie inválido
 │   │   ├── lib/
 │   │   │   ├── api.ts                    apiFetch (token do cookie; 401→clear, 403→dashboard, 5xx→throw)
-│   │   │   └── types.ts                  Customer, Category, Supplier, Product, StockMovement, PaginatedResponse
+│   │   │   └── types.ts                  Customer, Category, Supplier, Product, StockMovement, AuditLog, PaginatedResponse
 │   │   ├── ui/skeletons.tsx              TableSkeleton, FormSkeleton, etc.
 │   │   ├── login/
 │   │   │   ├── page.tsx
@@ -214,16 +223,25 @@ erp-comercial/
 ```php
 use App\Models\Concerns\BelongsToEstablishment;
 use App\Models\Concerns\HasUuidV7;
+use App\Models\Concerns\LogsActivity;
 
 class Foo extends Model
 {
-    use BelongsToEstablishment, HasFactory, HasUuidV7, SoftDeletes;
+    use BelongsToEstablishment, HasFactory, HasUuidV7, LogsActivity, SoftDeletes;
+
+    protected static string $auditModule = 'foos';   // nome do módulo no audit_log
 }
 ```
 
 - `HasUuidV7` — gera UUID v7 como PK
 - `BelongsToEstablishment` — global scope (filtra queries por `establishment_id` do user logado) + creating hook (preenche o campo automaticamente)
+- `LogsActivity` — registra automaticamente `created`, `updated` (diff de campos) e `deleted` na tabela `audit_logs`. Nunca quebra o fluxo principal (try-catch silencioso). Requer que `AuditService` seja singleton no container (já configurado em `AppServiceProvider`).
 - Inclua `'establishment_id'` no `#[Fillable]` (para que seeders funcionem)
+
+**Campos excluídos do diff de auditoria** por padrão: `id`, `establishment_id`, `updated_at`, `created_at`, `deleted_at`, `remember_token`. Para excluir campos adicionais no model:
+```php
+protected static array $auditExclude = ['password', 'token'];
+```
 
 **Migrations** sempre:
 
@@ -333,6 +351,10 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - **Movimentações de estoque são imutáveis** — o endpoint só tem `index`, `store` e `show`. Nunca update ou delete. Usar `adjustment` para corrigir erros.
 - **`StockMovementService::record()` usa transação + lock** — `DB::transaction` + `lockForUpdate` no produto garante consistência se duas requisições tentarem alterar o estoque ao mesmo tempo.
 - **Tipo `adjustment` define valor absoluto** — ao contrário de `in` (soma) e `out` (subtrai), `adjustment` seta o `stock_quantity` direto no valor informado. Útil para contagem de inventário. Aceita `quantity = 0`.
+- **`AuditService` é singleton** — registrado em `AppServiceProvider::register()`. Isso é obrigatório: o par de observers `updating`/`updated` usa o serviço para guardar os valores antigos entre os dois disparos via `queueUpdate()`/`dequeuePendingUpdate()`. Se não for singleton, o estado se perde.
+- **`layout.tsx` é async** — faz `apiFetch('/auth/me')` para determinar `canAudit` e passa a prop para `SidebarNav`. O fetch é deduplicado pelo Next.js com a chamada idêntica em `SidebarUser`. Envolver em try-catch para não quebrar o layout se a chamada falhar.
+- **`LogsActivity` nos models de domínio** — ao criar um novo model, adicionar a trait e definir `protected static string $auditModule = 'nome-do-modulo'`. Sem isso o módulo não aparece corretamente nos logs.
+- **Audit logs são imutáveis** — a tabela `audit_logs` não tem `updated_at` (`const UPDATED_AT = null`) e não tem soft delete. Nunca adicionar update ou delete na `AuditLogPolicy`.
 
 ---
 
@@ -350,6 +372,7 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - CRUD completo de fornecedores (backend + frontend, CNPJ único por tenant)
 - CRUD completo de produtos (backend + frontend, SKU/barcode únicos por tenant, relações categoria/fornecedor, badge low_stock)
 - Movimentação de estoque (in/out/adjustment, log imutável, transação atômica com lock, frontend com filtros e link "+ Mov." nos produtos)
+- **Auditoria** (tabela `audit_logs` imutável, trait `LogsActivity` em todos os models de domínio, login/logout registrados, tela `/audit-logs` restrita ao admin com filtros por evento/módulo/período)
 - Layout do dashboard com sidebar, route group, loading skeletons
 - Auth check na borda via `proxy.ts`
 - **Testes automatizados**: 96 feature tests PHPUnit (backend) + 21 testes unitários Vitest (frontend) — `make test` roda a suite completa. Backend cobre auth, permissões, CRUD e isolamento multi-tenant. Frontend cobre as funções `buildBody` de todos os 5 módulos.
@@ -361,6 +384,8 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - Contas a pagar / receber (financeiro)
 - Relatórios básicos (vendas por período, top produtos, fluxo de caixa)
 - Backup automatizado do MySQL em produção
+- Middleware `AuditModuleAccess` para rotas sensíveis (relatórios, exportações)
+- Comando `audit:prune` para retenção configurável (12 meses em prod via `AUDIT_RETENTION_DAYS`)
 
 **Fase 2 (depois da Fase 1):**
 - Observer que popula `sync_log` automaticamente
