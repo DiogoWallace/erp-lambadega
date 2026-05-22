@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use App\DataTransferObjects\CreateOrderDTO;
+use App\DataTransferObjects\OrderItemDTO;
+use App\DataTransferObjects\PayOrderDTO;
 use App\Models\FinancialTransaction;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -32,12 +35,11 @@ class OrderService
             ->findOrFail($id);
     }
 
-    public function create(array $data): Order
+    public function create(CreateOrderDTO $dto): Order
     {
-        return DB::transaction(function () use ($data) {
-            $user        = auth()->user();
-            $itemsData   = $data['items'];
-            $productIds  = array_column($itemsData, 'product_id');
+        return DB::transaction(function () use ($dto) {
+            $user       = auth()->user();
+            $productIds = array_map(static fn (OrderItemDTO $item) => $item->productId, $dto->items);
 
             $products = Product::lockForUpdate()
                 ->whereIn('id', $productIds)
@@ -45,14 +47,14 @@ class OrderService
                 ->keyBy('id');
 
             // Validate stock
-            foreach ($itemsData as $item) {
-                $product = $products[$item['product_id']] ?? null;
+            foreach ($dto->items as $item) {
+                $product = $products[$item->productId] ?? null;
                 if (!$product) {
                     throw ValidationException::withMessages([
-                        'items' => ["Produto {$item['product_id']} não encontrado."],
+                        'items' => ["Produto {$item->productId} não encontrado."],
                     ]);
                 }
-                if ($product->stock_quantity < $item['quantity']) {
+                if ($product->stock_quantity < $item->quantity) {
                     throw ValidationException::withMessages([
                         'items' => ["Estoque insuficiente para \"{$product->name}\". Disponível: {$product->stock_quantity}."],
                     ]);
@@ -61,43 +63,35 @@ class OrderService
 
             // Compute subtotal (items without order-level discount)
             $subtotal = 0;
-            foreach ($itemsData as $item) {
-                $product      = $products[$item['product_id']];
-                $unitPrice    = isset($item['unit_price']) && $item['unit_price'] !== null
-                    ? (float) $item['unit_price']
-                    : (float) $product->sale_price;
-                $itemDiscount = (float) ($item['discount_amount'] ?? 0);
-                $subtotal    += ($unitPrice * $item['quantity']) - $itemDiscount;
+            foreach ($dto->items as $item) {
+                $product   = $products[$item->productId];
+                $unitPrice = $item->unitPrice ?? (float) $product->sale_price;
+                $subtotal += ($unitPrice * $item->quantity) - $item->discountAmount;
             }
 
-            $discountType  = $data['discount_type'] ?? 'fixed';
-            $discountValue = (float) ($data['discount_amount'] ?? 0);
-            $discountAmount = $discountType === 'percentage'
-                ? round($subtotal * $discountValue / 100, 2)
-                : min($discountValue, $subtotal);
+            $discountAmount = $dto->discountType === 'percentage'
+                ? round($subtotal * $dto->discountAmount / 100, 2)
+                : min($dto->discountAmount, $subtotal);
             $total = max(0.0, $subtotal - $discountAmount);
 
             $order = Order::create([
                 'order_number'    => $this->generateOrderNumber($user->establishment_id),
-                'customer_id'     => $data['customer_id'] ?? null,
+                'customer_id'     => $dto->customerId,
                 'user_id'         => $user->id,
                 'subtotal_amount' => $subtotal,
                 'discount_amount' => $discountAmount,
-                'discount_type'   => $discountType,
+                'discount_type'   => $dto->discountType,
                 'total_amount'    => $total,
                 'status'          => 'pending',
-                'notes'           => $data['notes'] ?? null,
+                'notes'           => $dto->notes,
             ]);
 
-            foreach ($itemsData as $item) {
-                $product      = $products[$item['product_id']];
-                $qty          = $item['quantity'];
-                $unitPrice    = isset($item['unit_price']) && $item['unit_price'] !== null
-                    ? (float) $item['unit_price']
-                    : (float) $product->sale_price;
-                $costPrice    = (float) $product->cost_price;
-                $itemDiscount = (float) ($item['discount_amount'] ?? 0);
-                $itemTotal    = ($unitPrice * $qty) - $itemDiscount;
+            foreach ($dto->items as $item) {
+                $product   = $products[$item->productId];
+                $qty       = $item->quantity;
+                $unitPrice = $item->unitPrice ?? (float) $product->sale_price;
+                $costPrice = (float) $product->cost_price;
+                $itemTotal = ($unitPrice * $qty) - $item->discountAmount;
 
                 OrderItem::create([
                     'order_id'        => $order->id,
@@ -105,9 +99,9 @@ class OrderService
                     'quantity'        => $qty,
                     'unit_price'      => $unitPrice,
                     'cost_price'      => $costPrice,
-                    'discount_amount' => $itemDiscount,
+                    'discount_amount' => $item->discountAmount,
                     'total_price'     => $itemTotal,
-                    'notes'           => $item['notes'] ?? null,
+                    'notes'           => $item->notes,
                 ]);
 
                 $stockBefore = $product->stock_quantity;
@@ -126,15 +120,15 @@ class OrderService
                 ]);
             }
 
-            if (!empty($data['payment_method'])) {
-                $this->pay($order, $data['payment_method'], (int) ($data['installments'] ?? 1));
+            if (!empty($dto->paymentMethod)) {
+                $this->pay($order, new PayOrderDTO($dto->paymentMethod, $dto->installments));
             }
 
             return $order->load(['items.product:id,name,sku', 'customer:id,name', 'user:id,name']);
         });
     }
 
-    public function pay(Order $order, string $paymentMethod, int $installments = 1): Order
+    public function pay(Order $order, PayOrderDTO $dto): Order
     {
         if ($order->status !== 'pending') {
             throw ValidationException::withMessages([
@@ -142,7 +136,10 @@ class OrderService
             ]);
         }
 
-        return DB::transaction(function () use ($order, $paymentMethod, $installments) {
+        return DB::transaction(function () use ($order, $dto) {
+            $paymentMethod = $dto->paymentMethod;
+            $installments  = $dto->installments;
+
             $order->update([
                 'status'         => 'paid',
                 'payment_method' => $paymentMethod,
