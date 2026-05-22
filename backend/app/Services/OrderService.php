@@ -9,13 +9,14 @@ use App\Models\FinancialTransaction;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
-use App\Models\StockMovement;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class OrderService
 {
+    public function __construct(private InventoryService $inventory) {}
+
     public function paginate(array $filters = []): LengthAwarePaginator
     {
         return Order::with(['customer:id,name', 'user:id,name'])
@@ -104,20 +105,7 @@ class OrderService
                     'notes'           => $item->notes,
                 ]);
 
-                $stockBefore = $product->stock_quantity;
-                $product->decrement('stock_quantity', $qty);
-
-                StockMovement::create([
-                    'product_id'     => $product->id,
-                    'user_id'        => $user->id,
-                    'reference_type' => Order::class,
-                    'reference_id'   => $order->id,
-                    'type'           => 'out',
-                    'quantity'       => $qty,
-                    'stock_before'   => $stockBefore,
-                    'stock_after'    => $stockBefore - $qty,
-                    'description'    => "Venda {$order->order_number}",
-                ]);
+                $this->inventory->decreaseForOrder($order, $product, $qty, $user);
             }
 
             if (!empty($dto->paymentMethod)) {
@@ -185,24 +173,12 @@ class OrderService
         }
 
         return DB::transaction(function () use ($order) {
+            $user = auth()->user();
             $order->update(['status' => 'canceled']);
 
             foreach ($order->items as $item) {
-                $product     = Product::lockForUpdate()->find($item->product_id);
-                $stockBefore = $product->stock_quantity;
-                $product->increment('stock_quantity', $item->quantity);
-
-                StockMovement::create([
-                    'product_id'     => $item->product_id,
-                    'user_id'        => auth()->id(),
-                    'reference_type' => Order::class,
-                    'reference_id'   => $order->id,
-                    'type'           => 'in',
-                    'quantity'       => $item->quantity,
-                    'stock_before'   => $stockBefore,
-                    'stock_after'    => $stockBefore + $item->quantity,
-                    'description'    => "Cancelamento {$order->order_number}",
-                ]);
+                $product = Product::lockForUpdate()->find($item->product_id);
+                $this->inventory->restoreForOrder($order, $product, $item->quantity, $user);
             }
 
             FinancialTransaction::where('order_id', $order->id)
