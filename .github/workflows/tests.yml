@@ -44,6 +44,9 @@ jobs:
       - name: Rodar testes
         run: php artisan test
 
+      - name: Checar fronteiras de arquitetura (Deptrac)
+        run: php vendor/bin/deptrac analyse --config-file=deptrac.yaml --no-progress
+
   frontend:
     name: Frontend (Vitest)
     runs-on: ubuntu-latest
