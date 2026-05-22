@@ -23,9 +23,21 @@ Objetivo: sistema web funcional, operando em produção, com as fundações arqu
 - [x] Fornecedores (CRUD completo)
 - [x] Produtos (CRUD completo — nome, preço, estoque, SKU/barcode, categoria, fornecedor)
 - [x] Movimentação de estoque (in/out/adjustment, log imutável, transação atômica)
-- [ ] Vendas (PDV web — carrinho, desconto, fechamento)
+- [x] Vendas (PDV web — carrinho, busca de produto, desconto, pagamento, parcelamento, cancelamento)
+- [x] Dashboard (métricas de vendas por período, pedidos por status, ticket médio, estoque crítico, últimas vendas)
 - [ ] Contas a pagar / receber (financeiro)
-- [ ] Relatórios básicos (vendas por período, top produtos, fluxo de caixa)
+- [ ] Relatórios básicos (top produtos, fluxo de caixa)
+
+### Auditoria e rastreabilidade
+
+- [x] Tabela `audit_logs` (imutável — quem criou/editou/deletou cada registro)
+- [x] Trait `LogsActivity` nos models (diff automático de campos alterados — Customer, Supplier, Category, Product, StockMovement)
+- [x] `AuditService::log()` para eventos manuais (login, logout)
+- [x] Tela de auditoria no frontend (filtro por evento, módulo, período) — restrita ao role `admin`
+- [ ] Middleware `AuditModuleAccess` para rotas sensíveis
+- [ ] Comando `audit:prune` para retenção configurável (12 meses em prod)
+
+> Detalhes em [auditoria.md](auditoria.md)
 
 ### Operacional
 

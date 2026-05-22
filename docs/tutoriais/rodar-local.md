@@ -124,6 +124,16 @@ O backend usa volume bind para `app/`, `routes/`, `config/`, `database/`, `resou
 
 ## Problemas conhecidos
 
+**`docker: command not found` no WSL2 (Docker Desktop)**
+O Docker Desktop injeta o binário `docker` no WSL2 via integração, mas só para distribuições habilitadas explicitamente. Se `docker` sumir ou aparecer "command not found":
+
+1. Abra o Docker Desktop no Windows
+2. Vá em **Settings → Resources → WSL Integration**
+3. Ative a chave para a distribuição Ubuntu que você usa
+4. Clique em **Apply & Restart**
+
+Após o restart, o binário fica disponível em `/Docker/host/bin/docker` (já incluso no PATH pelo Docker Desktop).
+
 **Frontend com tela branca (body vazio)**
 O dev server do Next.js pode travar após o container do backend ser recriado. Sintoma: o browser mostra tela branca, o `curl` retorna 0 bytes mesmo com HTTP 200. Solução:
 

@@ -2,13 +2,19 @@
 
 namespace App\Services;
 
+use App\Models\Order;
 use App\Models\Product;
 use App\Models\StockMovement;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
-class StockMovementService
+/**
+ * Dono único das escritas de estoque: toda mutação de Product.stock_quantity
+ * e toda criação de StockMovement passa por aqui. Nenhum outro service deve
+ * instanciar StockMovement nem alterar stock_quantity diretamente.
+ */
+class InventoryService
 {
     public function paginate(array $filters): LengthAwarePaginator
     {
@@ -35,6 +41,9 @@ class StockMovementService
         return $query->paginate(20);
     }
 
+    /**
+     * Movimentação manual (in/out/adjustment) disparada pela tela de estoque.
+     */
     public function record(Product $product, array $data, User $user): StockMovement
     {
         return DB::transaction(function () use ($product, $data, $user) {
@@ -71,5 +80,49 @@ class StockMovementService
 
             return $movement->load(['product:id,name', 'user:id,name']);
         });
+    }
+
+    /**
+     * Baixa de estoque referente a uma venda. O produto deve já estar travado
+     * (lockForUpdate) pela transação do chamador.
+     */
+    public function decreaseForOrder(Order $order, Product $product, int $quantity, User $user): StockMovement
+    {
+        $stockBefore = $product->stock_quantity;
+        $product->decrement('stock_quantity', $quantity);
+
+        return StockMovement::create([
+            'product_id'     => $product->id,
+            'user_id'        => $user->id,
+            'reference_type' => Order::class,
+            'reference_id'   => $order->id,
+            'type'           => 'out',
+            'quantity'       => $quantity,
+            'stock_before'   => $stockBefore,
+            'stock_after'    => $stockBefore - $quantity,
+            'description'    => "Venda {$order->order_number}",
+        ]);
+    }
+
+    /**
+     * Devolução de estoque por cancelamento de venda. O produto deve já estar
+     * travado (lockForUpdate) pela transação do chamador.
+     */
+    public function restoreForOrder(Order $order, Product $product, int $quantity, User $user): StockMovement
+    {
+        $stockBefore = $product->stock_quantity;
+        $product->increment('stock_quantity', $quantity);
+
+        return StockMovement::create([
+            'product_id'     => $product->id,
+            'user_id'        => $user->id,
+            'reference_type' => Order::class,
+            'reference_id'   => $order->id,
+            'type'           => 'in',
+            'quantity'       => $quantity,
+            'stock_before'   => $stockBefore,
+            'stock_after'    => $stockBefore + $quantity,
+            'description'    => "Cancelamento {$order->order_number}",
+        ]);
     }
 }

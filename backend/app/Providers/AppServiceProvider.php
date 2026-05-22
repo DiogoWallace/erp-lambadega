@@ -11,7 +11,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(\App\Services\AuditService::class);
     }
 
     /**
@@ -19,6 +19,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Listeners de venda (GenerateFinancialTransactions, CancelOrderFinancials)
+        // são auto-descobertos pelo Laravel a partir do type-hint do handle().
     }
 }

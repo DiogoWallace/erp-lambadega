@@ -1,0 +1,70 @@
+name: Testes
+
+# Reutilizável (chamado pelos workflows de deploy como gate) e também
+# executado diretamente em pull requests para dev/main.
+on:
+  workflow_call:
+  pull_request:
+    branches:
+      - dev
+      - main
+
+jobs:
+  backend:
+    name: Backend (PHPUnit)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, bcmath, pdo, sqlite, pdo_sqlite
+          coverage: none
+
+      - name: Cache de dependências do Composer
+        uses: actions/cache@v4
+        with:
+          path: backend/vendor
+          key: composer-${{ hashFiles('backend/composer.lock') }}
+          restore-keys: composer-
+
+      - name: Instalar dependências (com dev)
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Preparar .env de teste
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Rodar testes
+        run: php artisan test
+
+      - name: Checar fronteiras de arquitetura (Deptrac)
+        run: php vendor/bin/deptrac analyse --config-file=deptrac.yaml --no-progress
+
+  frontend:
+    name: Frontend (Vitest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Rodar testes
+        run: npm test

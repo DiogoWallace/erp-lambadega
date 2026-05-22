@@ -6,7 +6,8 @@ Usuários do sistema. Autenticação via Laravel Sanctum com tokens de API.
 
 | Coluna | Tipo | Descrição |
 |---|---|---|
-| `id` | BIGINT PK | — |
+| `id` | UUID v7 PK | — |
+| `establishment_id` | UUID FK | Tenant ao qual o usuário pertence |
 | `name` | VARCHAR | Nome completo |
 | `email` | VARCHAR UNIQUE | E-mail de acesso |
 | `password` | VARCHAR | Hash bcrypt |
@@ -17,32 +18,39 @@ Usuários do sistema. Autenticação via Laravel Sanctum com tokens de API.
 | `created_at` / `updated_at` | TIMESTAMP | — |
 | `deleted_at` | TIMESTAMP nullable | Soft delete |
 
-**Traits:** `HasApiTokens`, `HasRoles`, `SoftDeletes`
+**Traits:** `HasApiTokens`, `HasRoles`, `HasUuidV7`, `SoftDeletes`
 
 ---
 
 ## roles
 
-Cargos/perfis de acesso. Gerenciados pelo Spatie Laravel Permission.
+Cargos/perfis de acesso. Gerenciados pelo Spatie Laravel Permission (subclasse local para usar UUID v7).
 
 | Coluna | Tipo | Descrição |
 |---|---|---|
-| `id` | BIGINT PK | — |
+| `id` | UUID v7 PK | — |
 | `name` | VARCHAR | Nome do role (ex: `admin`) |
 | `guard_name` | VARCHAR | Guard do Laravel (padrão: `web`) |
 | `created_at` / `updated_at` | TIMESTAMP | — |
 
-**Roles iniciais:** `admin`, `gerente`, `vendedor`, `financeiro`
+**Roles e permissões:**
+
+| Role | Acesso |
+|---|---|
+| `admin` | Todas as permissões, incluindo `audit.view` |
+| `gerente` | Gestão operacional (sem delete de clientes/categorias, sem configurações, sem auditoria) |
+| `vendedor` | Clientes (view/create/edit), produtos (view), estoque (view), vendas (view/create) |
+| `financeiro` | Clientes (view), fornecedores (view), estoque (view), vendas (view), relatórios (view) |
 
 ---
 
 ## permissions
 
-Permissões granulares por ação. Gerenciadas pelo Spatie Laravel Permission.
+Permissões granulares por ação. Gerenciadas pelo Spatie Laravel Permission (subclasse local para usar UUID v7).
 
 | Coluna | Tipo | Descrição |
 |---|---|---|
-| `id` | BIGINT PK | — |
+| `id` | UUID v7 PK | — |
 | `name` | VARCHAR | Ex: `products.create` |
 | `guard_name` | VARCHAR | Guard do Laravel |
 | `created_at` / `updated_at` | TIMESTAMP | — |
@@ -55,10 +63,14 @@ Permissões granulares por ação. Gerenciadas pelo Spatie Laravel Permission.
 |---|---|
 | `users` | view, create, edit, delete |
 | `customers` | view, create, edit, delete |
+| `suppliers` | view, create, edit, delete |
+| `categories` | view, create, edit, delete |
 | `products` | view, create, edit, delete |
+| `stock` | view, create |
 | `sales` | view, create, edit, delete |
 | `reports` | view |
 | `settings` | view, edit |
+| `audit` | view (**somente admin**) |
 
 ---
 

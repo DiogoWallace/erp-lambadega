@@ -34,11 +34,20 @@ class RoleSeeder extends Seeder
             // Vendas
             'sales.view', 'sales.create', 'sales.edit', 'sales.delete',
 
+            // Financeiro (contas a pagar/receber)
+            'finance.view', 'finance.create', 'finance.edit', 'finance.delete',
+
             // Relatórios
             'reports.view',
 
             // Configurações
             'settings.view', 'settings.edit',
+
+            // Dashboard
+            'dashboard.view',
+
+            // Auditoria
+            'audit.view',
         ];
 
         foreach ($permissions as $permission) {
@@ -50,6 +59,7 @@ class RoleSeeder extends Seeder
 
         Role::firstOrCreate(['name' => 'gerente', 'guard_name' => 'web'])
             ->syncPermissions([
+                'dashboard.view',
                 'users.view',
                 'customers.view', 'customers.create', 'customers.edit',
                 'suppliers.view', 'suppliers.create', 'suppliers.edit', 'suppliers.delete',
@@ -57,11 +67,13 @@ class RoleSeeder extends Seeder
                 'products.view', 'products.create', 'products.edit',
                 'stock.view', 'stock.create',
                 'sales.view', 'sales.create', 'sales.edit',
+                'finance.view', 'finance.create', 'finance.edit',
                 'reports.view',
             ]);
 
         Role::firstOrCreate(['name' => 'vendedor', 'guard_name' => 'web'])
             ->syncPermissions([
+                'dashboard.view',
                 'customers.view', 'customers.create', 'customers.edit',
                 'products.view',
                 'stock.view',
@@ -70,10 +82,12 @@ class RoleSeeder extends Seeder
 
         Role::firstOrCreate(['name' => 'financeiro', 'guard_name' => 'web'])
             ->syncPermissions([
+                'dashboard.view',
                 'customers.view',
                 'suppliers.view',
                 'stock.view',
                 'sales.view',
+                'finance.view', 'finance.create', 'finance.edit', 'finance.delete',
                 'reports.view',
             ]);
     }

@@ -65,4 +65,4 @@ pending → overdue  (job agendado que verifica due_date < hoje)
 pending → canceled
 ```
 
-> O status `overdue` deve ser atualizado por um job/command agendado que verifica diariamente `due_date < today AND status = pending`.
+> O status `overdue` é atualizado pelo comando `php artisan finance:mark-overdue` (agendado para rodar diariamente em `routes/console.php`), que marca `due_date < today AND status = pending` como `overdue` em todos os estabelecimentos. Requer um scheduler ativo (`schedule:run` por cron/container) — até ser provisionado, pode ser rodado manualmente.

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Models\User;
+use App\Services\AuditService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -25,6 +26,8 @@ class AuthController extends Controller
 
         $token = $user->createToken('erp-token')->plainTextToken;
 
+        app(AuditService::class)->log('login', 'auth', $user->id, $user->establishment_id);
+
         return response()->json([
             'data' => [
                 'user' => $this->formatUser($user),
@@ -35,6 +38,8 @@ class AuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
+        app(AuditService::class)->log('logout', 'auth');
+
         $request->user()->currentAccessToken()->delete();
 
         return response()->json(['message' => 'Logout realizado com sucesso.']);

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToEstablishment;
 use App\Models\Concerns\HasUuidV7;
+use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -18,7 +19,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 ])]
 class Product extends Model
 {
-    use BelongsToEstablishment, HasFactory, HasUuidV7, SoftDeletes;
+    use BelongsToEstablishment, HasFactory, HasUuidV7, LogsActivity, SoftDeletes;
+
+    protected static string $auditModule = 'products';
 
     protected function casts(): array
     {

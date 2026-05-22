@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Controllers\Api\AuditLogController;
+use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\FinancialTransactionController;
+use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\ProductController;
@@ -18,9 +22,16 @@ Route::prefix('auth')->group(function () {
 });
 
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('dashboard', [DashboardController::class, 'index']);
     Route::apiResource('customers', CustomerController::class);
     Route::apiResource('categories', CategoryController::class);
     Route::apiResource('suppliers', SupplierController::class);
     Route::apiResource('products', ProductController::class);
     Route::apiResource('stock-movements', StockMovementController::class)->only(['index', 'store', 'show']);
+    Route::apiResource('audit-logs', AuditLogController::class)->only(['index', 'show']);
+    Route::apiResource('orders', OrderController::class)->only(['index', 'store', 'show']);
+    Route::post('orders/{order}/pay', [OrderController::class, 'pay']);
+    Route::post('orders/{order}/cancel', [OrderController::class, 'cancel']);
+    Route::apiResource('financial-transactions', FinancialTransactionController::class);
+    Route::post('financial-transactions/{financial_transaction}/pay', [FinancialTransactionController::class, 'pay']);
 });

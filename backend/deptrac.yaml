@@ -1,0 +1,169 @@
+deptrac:
+  paths:
+    - ./app
+
+  layers:
+    # ── Camadas HTTP ──────────────────────────────────────────────────────
+    - name: Controllers
+      collectors:
+        - type: classNameRegex
+          value: '#^App\\Http\\Controllers\\.*#'
+    - name: Requests
+      collectors:
+        - type: classNameRegex
+          value: '#^App\\Http\\Requests\\.*#'
+    - name: Resources
+      collectors:
+        - type: classNameRegex
+          value: '#^App\\Http\\Resources\\.*#'
+
+    # ── Camadas de aplicação ──────────────────────────────────────────────
+    - name: DTOs
+      collectors:
+        - type: classNameRegex
+          value: '#^App\\DataTransferObjects\\.*#'
+    - name: Events
+      collectors:
+        - type: classNameRegex
+          value: '#^App\\Events\\.*#'
+    - name: Listeners
+      collectors:
+        - type: classNameRegex
+          value: '#^App\\Listeners\\.*#'
+    - name: Policies
+      collectors:
+        - type: classNameRegex
+          value: '#^App\\Policies\\.*#'
+    - name: Providers
+      collectors:
+        - type: classNameRegex
+          value: '#^App\\Providers\\.*#'
+    - name: Commands
+      collectors:
+        - type: classNameRegex
+          value: '#^App\\Console\\.*#'
+
+    # ── Services ──────────────────────────────────────────────────────────
+    # InventoryService é o dono das escritas de estoque; fica numa camada
+    # própria para que outros services (ex: OrderService) possam CHAMÁ-LO sem
+    # poder tocar no model StockMovement diretamente.
+    - name: InventoryService
+      collectors:
+        - type: classNameRegex
+          value: '#^App\\Services\\InventoryService$#'
+    # AuditService é cross-cutting (auditoria via trait LogsActivity em todos
+    # os models). Camada própria para ser dependível por models/concerns sem
+    # abrir "model → qualquer service".
+    - name: AuditService
+      collectors:
+        - type: classNameRegex
+          value: '#^App\\Services\\AuditService$#'
+    # FinancialTransactionService é o dono das escritas de FinancialTransaction;
+    # camada própria para que os listeners deleguem a ele sem tocar no model.
+    - name: FinancialService
+      collectors:
+        - type: classNameRegex
+          value: '#^App\\Services\\FinancialTransactionService$#'
+    - name: Services
+      collectors:
+        - type: classNameRegex
+          value: '#^App\\Services\\(?!InventoryService$)(?!AuditService$)(?!FinancialTransactionService$).*#'
+
+    # ── Models ────────────────────────────────────────────────────────────
+    - name: ModelConcerns
+      collectors:
+        - type: classNameRegex
+          value: '#^App\\Models\\Concerns\\.*#'
+    # Models "donos" de contexto, isolados para travar acesso direto.
+    - name: InventoryModel
+      collectors:
+        - type: classNameRegex
+          value: '#^App\\Models\\StockMovement$#'
+    - name: FinancialModel
+      collectors:
+        - type: classNameRegex
+          value: '#^App\\Models\\FinancialTransaction$#'
+    - name: Models
+      collectors:
+        - type: classNameRegex
+          value: '#^App\\Models\\(?!Concerns\\)(?!StockMovement$)(?!FinancialTransaction$)[A-Za-z0-9]+$#'
+
+  ruleset:
+    # Controllers só falam com a camada de aplicação (services, requests,
+    # resources, DTOs) + leem models para route-binding/autorização.
+    Controllers:
+      - Services
+      - InventoryService
+      - AuditService
+      - FinancialService
+      - Requests
+      - Resources
+      - DTOs
+      - Models
+      - InventoryModel
+      - FinancialModel
+
+    Requests: ~
+    Resources: ~
+
+    # Services orquestram models, DTOs e disparam eventos. Podem chamar o
+    # InventoryService, mas NÃO podem tocar nos models StockMovement /
+    # FinancialTransaction (ausência intencional abaixo).
+    Services:
+      - Models
+      - DTOs
+      - Events
+      - InventoryService
+
+    InventoryService:
+      - Models
+      - InventoryModel
+
+    AuditService:
+      - Models
+
+    FinancialService:
+      - Models
+      - FinancialModel
+
+    DTOs: ~
+
+    Events:
+      - Models
+
+    # Geração/cancelamento de contas a receber: único lugar que escreve
+    # FinancialTransaction.
+    Listeners:
+      - Events
+      - FinancialService
+
+    Policies:
+      - Models
+      - InventoryModel
+      - FinancialModel
+
+    Providers:
+      - AuditService
+
+    Commands:
+      - FinancialService
+
+    ModelConcerns:
+      - Models
+      - AuditService
+
+    Models:
+      - ModelConcerns
+      - InventoryModel
+      - FinancialModel
+      - AuditService
+
+    InventoryModel:
+      - Models
+      - ModelConcerns
+      - AuditService
+
+    FinancialModel:
+      - Models
+      - ModelConcerns
+      - AuditService

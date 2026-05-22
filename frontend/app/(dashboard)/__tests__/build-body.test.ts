@@ -4,6 +4,7 @@ import { buildBody as buildCategory } from '../categories/build-body'
 import { buildBody as buildSupplier } from '../suppliers/build-body'
 import { buildBody as buildProduct } from '../products/build-body'
 import { buildBody as buildMovement } from '../stock-movements/build-body'
+import { buildBody as buildFinance } from '../finance/build-body'
 
 function fd(pairs: Record<string, string>): FormData {
   const form = new FormData()
@@ -141,5 +142,38 @@ describe('stock-movements buildBody', () => {
     const body = buildMovement(fd({}))
     expect(body.product_id).toBeUndefined()
     expect(body.type).toBeUndefined()
+  })
+})
+
+// ── finance ──────────────────────────────────────────────────────────────────
+
+describe('finance buildBody', () => {
+  it('maps fields and parses amount as float', () => {
+    const body = buildFinance(fd({
+      type: 'expense', category: 'utilities', description: 'Luz',
+      amount: '289.90', due_date: '2026-06-10', status: 'pending',
+    }))
+    expect(body.type).toBe('expense')
+    expect(body.category).toBe('utilities')
+    expect(body.description).toBe('Luz')
+    expect(body.amount).toBe(289.9)
+    expect(body.due_date).toBe('2026-06-10')
+    expect(body.status).toBe('pending')
+  })
+
+  it('amount undefined when missing, status defaults to pending', () => {
+    const body = buildFinance(fd({}))
+    expect(body.amount).toBeUndefined()
+    expect(body.type).toBeUndefined()
+    expect(body.status).toBe('pending')
+  })
+
+  it('optional links and dates null when empty', () => {
+    const body = buildFinance(fd({ type: 'expense', description: 'x', amount: '10', due_date: '2026-01-01' }))
+    expect(body.supplier_id).toBeNull()
+    expect(body.customer_id).toBeNull()
+    expect(body.payment_date).toBeNull()
+    expect(body.payment_method).toBeNull()
+    expect(body.category).toBeNull()
   })
 })
