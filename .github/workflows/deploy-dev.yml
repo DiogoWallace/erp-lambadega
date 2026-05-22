@@ -6,7 +6,11 @@ on:
       - dev
 
 jobs:
+  testes:
+    uses: ./.github/workflows/tests.yml
+
   deploy:
+    needs: testes
     runs-on: ubuntu-latest
 
     steps:
