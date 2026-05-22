@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\DataTransferObjects\CreateOrderDTO;
+use App\DataTransferObjects\PayOrderDTO;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Order\PayOrderRequest;
 use App\Http\Requests\Order\StoreOrderRequest;
@@ -31,7 +33,7 @@ class OrderController extends Controller
     {
         $this->authorize('create', Order::class);
 
-        $order = $this->service->create($request->validated());
+        $order = $this->service->create(CreateOrderDTO::fromArray($request->validated()));
 
         return new OrderResource($order);
     }
@@ -49,11 +51,7 @@ class OrderController extends Controller
     {
         $this->authorize('update', $order);
 
-        $order = $this->service->pay(
-            $order,
-            $request->validated('payment_method'),
-            (int) $request->validated('installments', 1),
-        );
+        $order = $this->service->pay($order, PayOrderDTO::fromArray($request->validated()));
 
         return new OrderResource($order);
     }
