@@ -94,6 +94,7 @@ erp-comercial/
 │   │   │   ├── SupplierService.php      all() limitado a 500 registros
 │   │   │   ├── ProductService.php       filtros: search, category_id, supplier_id, is_active, low_stock; all() limitado a 500
 │   │   │   ├── StockMovementService.php record() usa DB::transaction + lockForUpdate
+│   │   │   ├── OrderService.php         create() em transação com lockForUpdate; pay() cria FinancialTransactions; cancel() reverte estoque
 │   │   │   └── AuditService.php         singleton; logModel(), log(), queueUpdate()/dequeuePendingUpdate()
 │   │   └── Providers/AppServiceProvider.php  registra AuditService como singleton
 │   ├── database/
@@ -177,6 +178,19 @@ erp-comercial/
 │   │   │   │   ├── movement-form.tsx     client; campo cost_price condicional (só para "in")
 │   │   │   │   ├── build-body.ts         função pura
 │   │   │   │   └── actions.ts            createStockMovementAction; redireciona filtrado por produto
+│   │   │   ├── sales/                    rota: /sales
+│   │   │   │   ├── page.tsx              lista; filtros: status, cliente, período, busca por nº
+│   │   │   │   ├── loading.tsx           TableSkeleton
+│   │   │   │   ├── actions.ts            createSaleAction, paySaleAction, cancelSaleAction
+│   │   │   │   ├── new/
+│   │   │   │   │   ├── page.tsx          carrega produtos ativos + clientes server-side
+│   │   │   │   │   ├── sale-form.tsx     client; busca produto por texto; carrinho editável; desconto; parcelamento
+│   │   │   │   │   └── build-body.ts     buildBody: deserializa JSON do carrinho, normaliza números
+│   │   │   │   └── [id]/
+│   │   │   │       ├── page.tsx          detalhe do pedido; botões Pagar/Cancelar (só pending)
+│   │   │   │       ├── loading.tsx       TableSkeleton
+│   │   │   │       ├── pay-form.tsx      client; modal com payment_method + parcelas (crédito)
+│   │   │   │       └── cancel-form.tsx   client; modal de confirmação; avisa que estoque será devolvido
 │   │   │   └── audit-logs/               rota: /audit-logs (visível só para admin)
 │   │   │       ├── page.tsx              lista server-side; filtros: evento, módulo, período
 │   │   │       └── loading.tsx           TableSkeleton
@@ -355,6 +369,11 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - **`layout.tsx` é async** — faz `apiFetch('/auth/me')` para determinar `canAudit` e passa a prop para `SidebarNav`. O fetch é deduplicado pelo Next.js com a chamada idêntica em `SidebarUser`. Envolver em try-catch para não quebrar o layout se a chamada falhar.
 - **`LogsActivity` nos models de domínio** — ao criar um novo model, adicionar a trait e definir `protected static string $auditModule = 'nome-do-modulo'`. Sem isso o módulo não aparece corretamente nos logs.
 - **Audit logs são imutáveis** — a tabela `audit_logs` não tem `updated_at` (`const UPDATED_AT = null`) e não tem soft delete. Nunca adicionar update ou delete na `AuditLogPolicy`.
+- **Vendas: estoque sai no `create` (status pending)** — não no pagamento. Cancelamento devolve o estoque (StockMovement tipo `in`) e marca FinancialTransactions pendentes como `canceled`.
+- **`OrderService::create()` usa `unit_price` do item** — se o campo for enviado na requisição, é usado como preço de venda (permite desconto por item no PDV). Se não enviado, usa `$product->sale_price`. A subtotal é calculada com o mesmo preço.
+- **Parcelamento cria N `FinancialTransaction`s** — 1 parcela = status `paid`; >1 parcelas = status `pending`. Datas mensais consecutivas a partir de hoje (mês 0). `StoreOrderRequest` valida `installments` entre 1 e 12 e aceita `payment_method` como nullable (pode pagar depois via `/orders/{id}/pay`).
+- **SaleForm usa hidden inputs para estado** — `discount_type`, `discount_amount`, `payment_method`, `installments` e `cart` (JSON) são campos hidden atualizados por state React. A server action deserializa o JSON do campo `cart`.
+- **Pay/Cancel são modais client components** — `pay-form.tsx` e `cancel-form.tsx` renderizam botão que abre modal overlay com `fixed inset-0`. Usam `useActionState` com as server actions `paySaleAction`/`cancelSaleAction`.
 
 ---
 
@@ -373,6 +392,8 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - CRUD completo de produtos (backend + frontend, SKU/barcode únicos por tenant, relações categoria/fornecedor, badge low_stock)
 - Movimentação de estoque (in/out/adjustment, log imutável, transação atômica com lock, frontend com filtros e link "+ Mov." nos produtos)
 - **Auditoria** (tabela `audit_logs` imutável, trait `LogsActivity` em todos os models de domínio, login/logout registrados, tela `/audit-logs` restrita ao admin com filtros por evento/módulo/período)
+- **Vendas / PDV** (backend completo: OrderService com transação atômica, pay/cancel, geração de FinancialTransactions, estoque movimentado no create; frontend: lista paginada com filtros, PDV com busca de produto em campo de texto, carrinho editável, desconto fixo/%, pagamento com parcelamento, modal de pagamento e cancelamento na tela de detalhe)
+- **`CustomerController` e `CustomerService`** suportam `?all=1` (clientes ativos, sem paginação) — usado nos dropdowns de vendas
 - Layout do dashboard com sidebar, route group, loading skeletons
 - Auth check na borda via `proxy.ts`
 - **Testes automatizados**: 96 feature tests PHPUnit (backend) + 21 testes unitários Vitest (frontend) — `make test` roda a suite completa. Backend cobre auth, permissões, CRUD e isolamento multi-tenant. Frontend cobre as funções `buildBody` de todos os 5 módulos.
@@ -380,7 +401,7 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - Documentação completa em `docs/arquitetura/`
 
 **Pendente (próximos passos):**
-- PDV web / Vendas (carrinho, desconto, fechamento)
+- ~~PDV web / Vendas~~ ✓ (concluído — carrinho, busca de produto, desconto, pagamento, parcelamento, cancelamento)
 - Contas a pagar / receber (financeiro)
 - Relatórios básicos (vendas por período, top produtos, fluxo de caixa)
 - Backup automatizado do MySQL em produção

@@ -20,6 +20,10 @@ class CustomerController extends Controller
     {
         $this->authorize('viewAny', Customer::class);
 
+        if ($request->boolean('all')) {
+            return CustomerResource::collection($this->service->all());
+        }
+
         $customers = $this->service->paginate($request->only(['search', 'is_active']));
 
         return CustomerResource::collection($customers);

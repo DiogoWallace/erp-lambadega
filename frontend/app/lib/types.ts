@@ -99,6 +99,41 @@ export interface StockMovement {
   created_at: string
 }
 
+export type OrderStatus = 'pending' | 'paid' | 'canceled'
+export type PaymentMethod = 'credit_card' | 'debit_card' | 'pix' | 'cash' | 'bank_transfer' | 'other'
+export type DiscountType = 'fixed' | 'percentage'
+
+export interface OrderItem {
+  id: string
+  product_id: string
+  quantity: number
+  unit_price: string
+  cost_price: string
+  discount_amount: string
+  total_price: string
+  notes: string | null
+  product: { id: string; name: string; sku: string | null } | null
+}
+
+export interface Order {
+  id: string
+  order_number: string
+  status: OrderStatus
+  payment_method: PaymentMethod | null
+  subtotal_amount: string
+  discount_amount: string
+  discount_type: DiscountType
+  total_amount: string
+  paid_at: string | null
+  notes: string | null
+  items_count?: number
+  items?: OrderItem[]
+  customer: { id: string; name: string } | null
+  user: { id: string; name: string } | null
+  created_at: string
+  updated_at: string
+}
+
 export type AuditEvent = 'created' | 'updated' | 'deleted' | 'login' | 'logout'
 
 export interface AuditLog {
