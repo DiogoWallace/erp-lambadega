@@ -95,11 +95,14 @@ erp-comercial/
 │   │   │   ├── CategoryService.php      all() limitado a 500 registros
 │   │   │   ├── SupplierService.php      all() limitado a 500 registros
 │   │   │   ├── ProductService.php       filtros: search, category_id, supplier_id, is_active, low_stock; all() limitado a 500
-│   │   │   ├── StockMovementService.php record() usa DB::transaction + lockForUpdate
-│   │   │   ├── OrderService.php         create() em transação com lockForUpdate; pay() cria FinancialTransactions; cancel() reverte estoque
+│   │   │   ├── InventoryService.php     dono ÚNICO das escritas de estoque (record manual + decreaseForOrder/restoreForOrder); usa DB::transaction + lockForUpdate
+│   │   │   ├── OrderService.php         orquestra estado do pedido + despacha eventos (OrderCreated/Paid/Cancelled); recebe DTOs; delega estoque ao InventoryService; NÃO toca StockMovement/FinancialTransaction
 │   │   │   ├── DashboardService.php     metrics(period, dateFrom, dateTo); agrega receita, pedidos, ticket médio, low stock, últimas vendas
 │   │   │   └── AuditService.php         singleton; logModel(), log(), queueUpdate()/dequeuePendingUpdate()
-│   │   └── Providers/AppServiceProvider.php  registra AuditService como singleton
+│   │   ├── DataTransferObjects/         DTOs readonly tipados (fromArray): CreateOrderDTO, OrderItemDTO, PayOrderDTO
+│   │   ├── Events/                      eventos de domínio: OrderCreated, OrderPaid, OrderCancelled
+│   │   ├── Listeners/                   auto-descobertos: GenerateFinancialTransactions (OrderPaid), CancelOrderFinancials (OrderCancelled)
+│   │   └── Providers/AppServiceProvider.php  registra AuditService como singleton (listeners são auto-descobertos, NÃO registrar aqui)
 │   ├── database/
 │   │   ├── migrations/                   tudo com UUID + establishment_id
 │   │   ├── factories/
@@ -375,9 +378,14 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - **`layout.tsx` é async** — faz `apiFetch('/auth/me')` para determinar `canAudit` e passa a prop para `SidebarNav`. O fetch é deduplicado pelo Next.js com a chamada idêntica em `SidebarUser`. Envolver em try-catch para não quebrar o layout se a chamada falhar.
 - **`LogsActivity` nos models de domínio** — ao criar um novo model, adicionar a trait e definir `protected static string $auditModule = 'nome-do-modulo'`. Sem isso o módulo não aparece corretamente nos logs.
 - **Audit logs são imutáveis** — a tabela `audit_logs` não tem `updated_at` (`const UPDATED_AT = null`) e não tem soft delete. Nunca adicionar update ou delete na `AuditLogPolicy`.
-- **Vendas: estoque sai no `create` (status pending)** — não no pagamento. Cancelamento devolve o estoque (StockMovement tipo `in`) e marca FinancialTransactions pendentes como `canceled`.
+- **Vendas: estoque sai no `create` (status pending)** — não no pagamento. Cancelamento devolve o estoque (StockMovement tipo `in`). Toda escrita de estoque passa pelo `InventoryService` (`decreaseForOrder`/`restoreForOrder`), nunca pelo `OrderService` direto.
+- **Vendas é orientado a eventos** — `OrderService` despacha `OrderCreated`/`OrderPaid`/`OrderCancelled` e NÃO cria `FinancialTransaction`. A geração das contas a receber vive no listener `GenerateFinancialTransactions` (auto-descoberto). Ver [`docs/arquitetura/vendas-eventos.md`](../arquitetura/vendas-eventos.md).
+- **Listeners são SÍNCRONOS de propósito** — não marcar `ShouldQueue` antes de propagar o tenant para os jobs (o global scope depende de `auth()`, ausente em fila). Eventos despachados dentro da transação → atomicidade preservada.
+- **Deptrac trava as fronteiras no CI** (`backend/deptrac.yaml`) — `Services` pode chamar `InventoryService` mas não pode tocar nos models `StockMovement`/`FinancialTransaction`; escrever `FinancialTransaction` é exclusivo de `Listeners`. Padrões `classNameRegex` exigem delimitador (`#...#`).
+- **`OrderService` recebe DTOs** — Controller monta `CreateOrderDTO`/`PayOrderDTO` via `fromArray($request->validated())`. Services não recebem array solto nem `Request`.
+- **Achado: `CancelOrderFinancials` é no-op hoje** — `cancel()` só aceita pedidos `pending`, que ainda não têm `FinancialTransaction`. Seam mantido para futuro estorno de pedido pago (refund).
 - **`OrderService::create()` usa `unit_price` do item** — se o campo for enviado na requisição, é usado como preço de venda (permite desconto por item no PDV). Se não enviado, usa `$product->sale_price`. A subtotal é calculada com o mesmo preço.
-- **Parcelamento cria N `FinancialTransaction`s** — 1 parcela = status `paid`; >1 parcelas = status `pending`. Datas mensais consecutivas a partir de hoje (mês 0). `StoreOrderRequest` valida `installments` entre 1 e 12 e aceita `payment_method` como nullable (pode pagar depois via `/orders/{id}/pay`).
+- **Parcelamento cria N `FinancialTransaction`s** (no listener `GenerateFinancialTransactions`) — 1 parcela = status `paid`; >1 parcelas = status `pending`. Datas mensais consecutivas a partir de hoje (mês 0). `StoreOrderRequest` valida `installments` entre 1 e 12 e aceita `payment_method` como nullable (pode pagar depois via `/orders/{id}/pay`).
 - **SaleForm usa hidden inputs para estado** — `discount_type`, `discount_amount`, `payment_method`, `installments` e `cart` (JSON) são campos hidden atualizados por state React. A server action deserializa o JSON do campo `cart`.
 - **Pay/Cancel são modais client components** — `pay-form.tsx` e `cancel-form.tsx` renderizam botão que abre modal overlay com `fixed inset-0`. Usam `useActionState` com as server actions `paySaleAction`/`cancelSaleAction`.
 - **`DashboardController` usa `$this->authorize('dashboard.view')` sem Policy** — para endpoints de agregação sem model associado, o padrão é checar a Gate ability diretamente (Spatie registra cada permission como Gate). Não existe DashboardPolicy; a string `'dashboard.view'` é suficiente. Isso é diferente dos outros controllers que usam `$this->authorize('viewAny', Model::class)`.
@@ -406,7 +414,7 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - **Dashboard** (backend: `DashboardService::metrics()` agrega receita, pedidos por status, ticket médio, estoque crítico, últimas vendas; endpoint `GET /api/dashboard?period=today|week|month|custom`; autorizado via `dashboard.view` (todos os roles); frontend: 4 cards com variação %, breakdown de status, tabela de últimas vendas, lista de estoque crítico, seletor de período client-side)
 - Layout do dashboard com sidebar, route group, loading skeletons
 - Auth check na borda via `proxy.ts`
-- **Testes automatizados**: 96 feature tests PHPUnit (backend) + 21 testes unitários Vitest (frontend) — `make test` roda a suite completa. Backend cobre auth, permissões, CRUD e isolamento multi-tenant. Frontend cobre as funções `buildBody` de todos os 5 módulos.
+- **Testes automatizados**: 118 feature tests PHPUnit (backend, inclui `OrderTest` cobrindo create/pay/cancel + disparo de eventos) + 21 testes unitários Vitest (frontend) — `make test` roda a suite completa. Backend cobre auth, permissões, CRUD e isolamento multi-tenant. CI (`tests.yml`) roda a suíte + Deptrac e **trava o deploy** se algo quebrar.
 - Error boundary no dashboard (`error.tsx`) + proteção 5xx no `apiFetch`
 - Documentação completa em `docs/arquitetura/`
 
