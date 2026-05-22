@@ -119,4 +119,19 @@ class FinancialTransactionService
             ->where('status', 'pending')
             ->update(['status' => 'canceled']);
     }
+
+    /**
+     * Marca como vencidas as contas pendentes com vencimento no passado.
+     * Manutenção de sistema (roda sem auth, via comando agendado), por isso
+     * ignora o escopo de tenant de propósito — processa todos os estabelecimentos.
+     *
+     * @return int quantidade de transações atualizadas
+     */
+    public function markOverdue(): int
+    {
+        return FinancialTransaction::withoutGlobalScope('establishment')
+            ->where('status', 'pending')
+            ->whereDate('due_date', '<', now()->toDateString())
+            ->update(['status' => 'overdue']);
+    }
 }
