@@ -2,7 +2,11 @@
 
 namespace Tests\Feature\Api;
 
+use App\Events\OrderCancelled;
+use App\Events\OrderCreated;
+use App\Events\OrderPaid;
 use App\Models\Product;
+use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
 class OrderTest extends TestCase
@@ -351,5 +355,98 @@ class OrderTest extends TestCase
         $this->actingAsUser($ourUser)
             ->getJson("/api/orders/{$order['id']}")
             ->assertNotFound();
+    }
+
+    // ─── Domain events ─────────────────────────────────────────────────────────
+
+    public function test_creating_order_dispatches_order_created(): void
+    {
+        Event::fake([OrderCreated::class, OrderPaid::class, OrderCancelled::class]);
+
+        $establishment = $this->createEstablishment();
+        $user = $this->createUser($establishment);
+        $product = $this->product($establishment->id);
+
+        $this->actingAsUser($user)
+            ->postJson('/api/orders', [
+                'items' => [['product_id' => $product->id, 'quantity' => 1]],
+            ])
+            ->assertCreated();
+
+        Event::assertDispatched(OrderCreated::class);
+        Event::assertNotDispatched(OrderPaid::class);
+    }
+
+    public function test_creating_order_with_payment_dispatches_created_and_paid(): void
+    {
+        Event::fake([OrderCreated::class, OrderPaid::class]);
+
+        $establishment = $this->createEstablishment();
+        $user = $this->createUser($establishment);
+        $product = $this->product($establishment->id);
+
+        $this->actingAsUser($user)
+            ->postJson('/api/orders', [
+                'items'          => [['product_id' => $product->id, 'quantity' => 1]],
+                'payment_method' => 'pix',
+            ])
+            ->assertCreated();
+
+        Event::assertDispatched(OrderCreated::class);
+        Event::assertDispatched(
+            OrderPaid::class,
+            fn (OrderPaid $e) => $e->paymentMethod === 'pix' && $e->installments === 1
+        );
+    }
+
+    public function test_paying_order_dispatches_order_paid(): void
+    {
+        Event::fake([OrderPaid::class]);
+
+        $establishment = $this->createEstablishment();
+        $user = $this->createUser($establishment);
+        $product = $this->product($establishment->id);
+
+        $order = $this->actingAsUser($user)
+            ->postJson('/api/orders', [
+                'items' => [['product_id' => $product->id, 'quantity' => 1]],
+            ])
+            ->json('data');
+
+        $this->actingAsUser($user)
+            ->postJson("/api/orders/{$order['id']}/pay", [
+                'payment_method' => 'credit_card',
+                'installments'   => 3,
+            ])
+            ->assertOk();
+
+        Event::assertDispatched(
+            OrderPaid::class,
+            fn (OrderPaid $e) => $e->order->id === $order['id'] && $e->installments === 3
+        );
+    }
+
+    public function test_canceling_order_dispatches_order_cancelled(): void
+    {
+        Event::fake([OrderCancelled::class]);
+
+        $establishment = $this->createEstablishment();
+        $user = $this->createUser($establishment);
+        $product = $this->product($establishment->id);
+
+        $order = $this->actingAsUser($user)
+            ->postJson('/api/orders', [
+                'items' => [['product_id' => $product->id, 'quantity' => 1]],
+            ])
+            ->json('data');
+
+        $this->actingAsUser($user)
+            ->postJson("/api/orders/{$order['id']}/cancel")
+            ->assertOk();
+
+        Event::assertDispatched(
+            OrderCancelled::class,
+            fn (OrderCancelled $e) => $e->order->id === $order['id']
+        );
     }
 }

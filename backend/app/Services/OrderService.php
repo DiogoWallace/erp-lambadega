@@ -5,7 +5,9 @@ namespace App\Services;
 use App\DataTransferObjects\CreateOrderDTO;
 use App\DataTransferObjects\OrderItemDTO;
 use App\DataTransferObjects\PayOrderDTO;
-use App\Models\FinancialTransaction;
+use App\Events\OrderCancelled;
+use App\Events\OrderCreated;
+use App\Events\OrderPaid;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
@@ -108,6 +110,8 @@ class OrderService
                 $this->inventory->decreaseForOrder($order, $product, $qty, $user);
             }
 
+            OrderCreated::dispatch($order);
+
             if (!empty($dto->paymentMethod)) {
                 $this->pay($order, new PayOrderDTO($dto->paymentMethod, $dto->installments));
             }
@@ -125,42 +129,20 @@ class OrderService
         }
 
         return DB::transaction(function () use ($order, $dto) {
-            $paymentMethod = $dto->paymentMethod;
-            $installments  = $dto->installments;
-
             $order->update([
                 'status'         => 'paid',
-                'payment_method' => $paymentMethod,
+                'payment_method' => $dto->paymentMethod,
                 'paid_at'        => now(),
             ]);
 
-            $perInstallment = round((float) $order->total_amount / $installments, 2);
+            $order->refresh();
 
-            for ($i = 1; $i <= $installments; $i++) {
-                $isLast  = $i === $installments;
-                $amount  = $isLast
-                    ? round((float) $order->total_amount - ($perInstallment * ($installments - 1)), 2)
-                    : $perInstallment;
+            // Efeitos do pagamento (contas a receber, etc.) reagem ao evento.
+            // Dispatch dentro da transação: listeners síncronos mantêm a
+            // atomicidade entre o pedido pago e suas transações financeiras.
+            OrderPaid::dispatch($order, $dto->paymentMethod, $dto->installments);
 
-                FinancialTransaction::create([
-                    'order_id'           => $order->id,
-                    'user_id'            => $order->user_id,
-                    'customer_id'        => $order->customer_id,
-                    'type'               => 'income',
-                    'category'           => 'sales',
-                    'description'        => "Venda {$order->order_number}"
-                        . ($installments > 1 ? " ({$i}/{$installments})" : ''),
-                    'amount'             => $amount,
-                    'payment_method'     => $paymentMethod,
-                    'due_date'           => now()->addMonths($i - 1)->toDateString(),
-                    'payment_date'       => $installments === 1 ? now()->toDateString() : null,
-                    'status'             => $installments === 1 ? 'paid' : 'pending',
-                    'installment_number' => $installments > 1 ? $i : null,
-                    'installment_count'  => $installments > 1 ? $installments : null,
-                ]);
-            }
-
-            return $order->refresh();
+            return $order;
         });
     }
 
@@ -181,9 +163,7 @@ class OrderService
                 $this->inventory->restoreForOrder($order, $product, $item->quantity, $user);
             }
 
-            FinancialTransaction::where('order_id', $order->id)
-                ->where('status', 'pending')
-                ->update(['status' => 'canceled']);
+            OrderCancelled::dispatch($order);
 
             return $order->refresh();
         });
