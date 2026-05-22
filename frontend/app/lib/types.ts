@@ -134,6 +134,32 @@ export interface Order {
   updated_at: string
 }
 
+export type FinancialType = 'income' | 'expense'
+export type FinancialStatus = 'pending' | 'paid' | 'overdue' | 'canceled'
+
+export interface FinancialTransaction {
+  id: string
+  type: FinancialType
+  category: string | null
+  description: string
+  amount: string
+  payment_method: PaymentMethod | null
+  due_date: string | null
+  payment_date: string | null
+  status: FinancialStatus
+  installment_number: number | null
+  installment_count: number | null
+  notes: string | null
+  order_id: string | null
+  customer_id: string | null
+  supplier_id: string | null
+  order: { id: string; order_number: string } | null
+  customer: { id: string; name: string } | null
+  supplier: { id: string; company_name: string } | null
+  created_at: string
+  updated_at: string
+}
+
 export type AuditEvent = 'created' | 'updated' | 'deleted' | 'login' | 'logout'
 
 export interface AuditLog {
