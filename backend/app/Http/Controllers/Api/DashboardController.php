@@ -13,6 +13,8 @@ class DashboardController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('dashboard.view');
+
         $period   = $request->input('period', 'month');
         $dateFrom = $request->input('date_from');
         $dateTo   = $request->input('date_to');

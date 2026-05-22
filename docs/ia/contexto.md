@@ -66,7 +66,9 @@ erp-comercial/
 │   │   │   │       ├── SupplierController.php
 │   │   │   │       ├── ProductController.php   suporta ?all=1 (limitado a 500)
 │   │   │   │       ├── StockMovementController.php  só index/store/show (log imutável)
-│   │   │   │       └── AuditLogController.php  só index/show; restrito ao role admin
+│   │   │   │       ├── AuditLogController.php  só index/show; restrito ao role admin
+│   │   │   │       ├── OrderController.php   index/store/show + pay/cancel; sales.* permissions
+│   │   │   │       └── DashboardController.php  GET /api/dashboard; requer dashboard.view; retorna JSON direto (sem Resource — endpoint de agregação sem model)
 │   │   │   ├── Requests/
 │   │   │   │   ├── Auth/LoginRequest.php
 │   │   │   │   ├── Customer/{Store,Update}CustomerRequest.php
@@ -95,6 +97,7 @@ erp-comercial/
 │   │   │   ├── ProductService.php       filtros: search, category_id, supplier_id, is_active, low_stock; all() limitado a 500
 │   │   │   ├── StockMovementService.php record() usa DB::transaction + lockForUpdate
 │   │   │   ├── OrderService.php         create() em transação com lockForUpdate; pay() cria FinancialTransactions; cancel() reverte estoque
+│   │   │   ├── DashboardService.php     metrics(period, dateFrom, dateTo); agrega receita, pedidos, ticket médio, low stock, últimas vendas
 │   │   │   └── AuditService.php         singleton; logModel(), log(), queueUpdate()/dequeuePendingUpdate()
 │   │   └── Providers/AppServiceProvider.php  registra AuditService como singleton
 │   ├── database/
@@ -109,7 +112,7 @@ erp-comercial/
 │   │   │   └── StockMovementFactory.php
 │   │   └── seeders/
 │   │       ├── DatabaseSeeder.php        cria establishment + admin
-│   │       └── RoleSeeder.php            4 roles, 30+ permissions (idempotente); audit.view só para admin
+│   │       └── RoleSeeder.php            4 roles, 32+ permissions (idempotente); dashboard.view em todos os roles; audit.view só para admin
 │   ├── tests/
 │   │   ├── TestCase.php                  RefreshDatabase + seed(RoleSeeder) + helpers
 │   │   ├── Feature/
@@ -138,7 +141,10 @@ erp-comercial/
 │   │   │   ├── sidebar-nav.tsx           client component (usePathname); aceita canAudit prop
 │   │   │   ├── sidebar-user.tsx          async; usa apiFetch('/auth/me'), redireciona se 401
 │   │   │   ├── actions.ts                logoutAction
-│   │   │   ├── dashboard/page.tsx        rota: /dashboard
+│   │   │   ├── dashboard/                rota: /dashboard
+│   │   │   │   ├── page.tsx              server component; usa ?period=today|week|month|custom + date_from/date_to
+│   │   │   │   ├── loading.tsx           DashboardSkeleton
+│   │   │   │   └── period-selector.tsx   client; useRouter().push() para trocar período (sem form GET — navegação instantânea)
 │   │   │   ├── customers/                rota: /customers
 │   │   │   │   ├── page.tsx              lista server-side
 │   │   │   │   ├── new/page.tsx
@@ -374,6 +380,9 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - **Parcelamento cria N `FinancialTransaction`s** — 1 parcela = status `paid`; >1 parcelas = status `pending`. Datas mensais consecutivas a partir de hoje (mês 0). `StoreOrderRequest` valida `installments` entre 1 e 12 e aceita `payment_method` como nullable (pode pagar depois via `/orders/{id}/pay`).
 - **SaleForm usa hidden inputs para estado** — `discount_type`, `discount_amount`, `payment_method`, `installments` e `cart` (JSON) são campos hidden atualizados por state React. A server action deserializa o JSON do campo `cart`.
 - **Pay/Cancel são modais client components** — `pay-form.tsx` e `cancel-form.tsx` renderizam botão que abre modal overlay com `fixed inset-0`. Usam `useActionState` com as server actions `paySaleAction`/`cancelSaleAction`.
+- **`DashboardController` usa `$this->authorize('dashboard.view')` sem Policy** — para endpoints de agregação sem model associado, o padrão é checar a Gate ability diretamente (Spatie registra cada permission como Gate). Não existe DashboardPolicy; a string `'dashboard.view'` é suficiente. Isso é diferente dos outros controllers que usam `$this->authorize('viewAny', Model::class)`.
+- **`DashboardController` retorna `response()->json()` diretamente** — exceção aceita: endpoints de agregação não têm model, então não há JsonResource correspondente. O formato ainda segue a convenção `{ "data": {...} }`.
+- **Dashboard usa `useRouter().push()` em vez de form GET** — o seletor de período é um componente client que usa `useRouter` para navegação instantânea. Isso é uma exceção ao padrão de filtros por `<form method="GET">` dos módulos de listagem; adequado aqui pois os filtros de período têm lógica condicional (campos de data só aparecem no modo `custom`).
 
 ---
 
@@ -394,6 +403,7 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - **Auditoria** (tabela `audit_logs` imutável, trait `LogsActivity` em todos os models de domínio, login/logout registrados, tela `/audit-logs` restrita ao admin com filtros por evento/módulo/período)
 - **Vendas / PDV** (backend completo: OrderService com transação atômica, pay/cancel, geração de FinancialTransactions, estoque movimentado no create; frontend: lista paginada com filtros, PDV com busca de produto em campo de texto, carrinho editável, desconto fixo/%, pagamento com parcelamento, modal de pagamento e cancelamento na tela de detalhe)
 - **`CustomerController` e `CustomerService`** suportam `?all=1` (clientes ativos, sem paginação) — usado nos dropdowns de vendas
+- **Dashboard** (backend: `DashboardService::metrics()` agrega receita, pedidos por status, ticket médio, estoque crítico, últimas vendas; endpoint `GET /api/dashboard?period=today|week|month|custom`; autorizado via `dashboard.view` (todos os roles); frontend: 4 cards com variação %, breakdown de status, tabela de últimas vendas, lista de estoque crítico, seletor de período client-side)
 - Layout do dashboard com sidebar, route group, loading skeletons
 - Auth check na borda via `proxy.ts`
 - **Testes automatizados**: 96 feature tests PHPUnit (backend) + 21 testes unitários Vitest (frontend) — `make test` roda a suite completa. Backend cobre auth, permissões, CRUD e isolamento multi-tenant. Frontend cobre as funções `buildBody` de todos os 5 módulos.
@@ -402,6 +412,7 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 
 **Pendente (próximos passos):**
 - ~~PDV web / Vendas~~ ✓ (concluído — carrinho, busca de produto, desconto, pagamento, parcelamento, cancelamento)
+- ~~Dashboard~~ ✓ (concluído — métricas de vendas, estoque crítico, seletor de período)
 - Contas a pagar / receber (financeiro)
 - Relatórios básicos (vendas por período, top produtos, fluxo de caixa)
 - Backup automatizado do MySQL em produção
