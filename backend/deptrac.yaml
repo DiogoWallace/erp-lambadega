@@ -38,6 +38,10 @@ deptrac:
       collectors:
         - type: classNameRegex
           value: '#^App\\Providers\\.*#'
+    - name: Commands
+      collectors:
+        - type: classNameRegex
+          value: '#^App\\Console\\.*#'
 
     # ── Services ──────────────────────────────────────────────────────────
     # InventoryService é o dono das escritas de estoque; fica numa camada
@@ -140,6 +144,9 @@ deptrac:
 
     Providers:
       - AuditService
+
+    Commands:
+      - FinancialService
 
     ModelConcerns:
       - Models
