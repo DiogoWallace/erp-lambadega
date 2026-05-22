@@ -3,10 +3,11 @@
 namespace App\Listeners;
 
 use App\Events\OrderCancelled;
-use App\Models\FinancialTransaction;
+use App\Services\FinancialTransactionService;
 
 /**
- * Marca como canceladas as contas a receber pendentes de uma venda cancelada.
+ * Cancela as contas a receber pendentes de uma venda cancelada, delegando ao
+ * FinancialTransactionService.
  *
  * Hoje é efetivamente um no-op: cancel() só aceita pedidos `pending`, que ainda
  * não geraram FinancialTransaction (essas nascem no pagamento). Mantido como
@@ -15,10 +16,10 @@ use App\Models\FinancialTransaction;
  */
 class CancelOrderFinancials
 {
+    public function __construct(private FinancialTransactionService $service) {}
+
     public function handle(OrderCancelled $event): void
     {
-        FinancialTransaction::where('order_id', $event->order->id)
-            ->where('status', 'pending')
-            ->update(['status' => 'canceled']);
+        $this->service->cancelForOrder($event->order->id);
     }
 }

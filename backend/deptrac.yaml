@@ -54,10 +54,16 @@ deptrac:
       collectors:
         - type: classNameRegex
           value: '#^App\\Services\\AuditService$#'
+    # FinancialTransactionService é o dono das escritas de FinancialTransaction;
+    # camada própria para que os listeners deleguem a ele sem tocar no model.
+    - name: FinancialService
+      collectors:
+        - type: classNameRegex
+          value: '#^App\\Services\\FinancialTransactionService$#'
     - name: Services
       collectors:
         - type: classNameRegex
-          value: '#^App\\Services\\(?!InventoryService$)(?!AuditService$).*#'
+          value: '#^App\\Services\\(?!InventoryService$)(?!AuditService$)(?!FinancialTransactionService$).*#'
 
     # ── Models ────────────────────────────────────────────────────────────
     - name: ModelConcerns
@@ -85,11 +91,13 @@ deptrac:
       - Services
       - InventoryService
       - AuditService
+      - FinancialService
       - Requests
       - Resources
       - DTOs
       - Models
       - InventoryModel
+      - FinancialModel
 
     Requests: ~
     Resources: ~
@@ -110,6 +118,10 @@ deptrac:
     AuditService:
       - Models
 
+    FinancialService:
+      - Models
+      - FinancialModel
+
     DTOs: ~
 
     Events:
@@ -119,11 +131,12 @@ deptrac:
     # FinancialTransaction.
     Listeners:
       - Events
-      - FinancialModel
+      - FinancialService
 
     Policies:
       - Models
       - InventoryModel
+      - FinancialModel
 
     Providers:
       - AuditService

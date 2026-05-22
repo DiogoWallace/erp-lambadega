@@ -34,6 +34,9 @@ class RoleSeeder extends Seeder
             // Vendas
             'sales.view', 'sales.create', 'sales.edit', 'sales.delete',
 
+            // Financeiro (contas a pagar/receber)
+            'finance.view', 'finance.create', 'finance.edit', 'finance.delete',
+
             // Relatórios
             'reports.view',
 
@@ -64,6 +67,7 @@ class RoleSeeder extends Seeder
                 'products.view', 'products.create', 'products.edit',
                 'stock.view', 'stock.create',
                 'sales.view', 'sales.create', 'sales.edit',
+                'finance.view', 'finance.create', 'finance.edit',
                 'reports.view',
             ]);
 
@@ -83,6 +87,7 @@ class RoleSeeder extends Seeder
                 'suppliers.view',
                 'stock.view',
                 'sales.view',
+                'finance.view', 'finance.create', 'finance.edit', 'finance.delete',
                 'reports.view',
             ]);
     }

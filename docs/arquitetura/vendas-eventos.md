@@ -46,14 +46,15 @@ A intenção de longo prazo é rodar efeitos não-bloqueantes em fila. **Hoje is
 ### 3. Fronteiras rígidas (InventoryService + Deptrac)
 
 - **`InventoryService`** (renomeado de `StockMovementService`) é o **dono único** das escritas de estoque: toda alteração de `Product.stock_quantity` e toda criação de `StockMovement` passa por ele. O `OrderService` chama `decreaseForOrder()` / `restoreForOrder()` — nunca instancia `StockMovement`.
-- **Escrever `FinancialTransaction`** é exclusivo da camada de `Listeners`.
+- **Escrever `FinancialTransaction`** é exclusivo do `FinancialTransactionService` (dono do contexto financeiro). Os listeners de venda **delegam** a ele (`recordForOrder`/`cancelForOrder`), em vez de criar a transação direto — mesmo padrão do `InventoryService`.
 - **Deptrac** (`backend/deptrac.yaml`) trava essas fronteiras no CI. A regra central: a camada `Services` pode **chamar** o `InventoryService`, mas **não pode tocar** nos models `StockMovement` / `FinancialTransaction`. Uma violação **falha o build**.
 
 ```
-Controllers → Services / InventoryService / Requests / Resources / DTOs / Models
-Services    → Models / DTOs / Events / InventoryService        (NÃO StockMovement/FinancialTransaction)
-Listeners   → Events / FinancialTransaction
+Controllers      → Services / InventoryService / FinancialService / Requests / Resources / DTOs / Models
+Services         → Models / DTOs / Events / InventoryService    (NÃO StockMovement/FinancialTransaction)
+Listeners        → Events / FinancialService
 InventoryService → StockMovement / Models
+FinancialService → FinancialTransaction / Models
 ```
 
 `AuditService` é uma camada cross-cutting (a trait `LogsActivity` propaga a dependência para todo model).

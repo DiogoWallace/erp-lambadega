@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\FinancialTransactionController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CustomerController;
@@ -31,4 +32,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('orders', OrderController::class)->only(['index', 'store', 'show']);
     Route::post('orders/{order}/pay', [OrderController::class, 'pay']);
     Route::post('orders/{order}/cancel', [OrderController::class, 'cancel']);
+    Route::apiResource('financial-transactions', FinancialTransactionController::class);
+    Route::post('financial-transactions/{financial_transaction}/pay', [FinancialTransactionController::class, 'pay']);
 });
