@@ -149,6 +149,50 @@ export interface AuditLog {
   created_at: string
 }
 
+export interface DashboardMetric {
+  current: string
+  previous: string | null
+  change_percent: number | null
+}
+
+export interface DashboardOrders {
+  total: number
+  paid: number
+  pending: number
+  canceled: number
+  previous_paid: number | null
+  change_percent: number | null
+}
+
+export interface DashboardLowStockItem {
+  id: string
+  name: string
+  sku: string | null
+  stock_quantity: number
+  min_stock_quantity: number
+  unit: string
+}
+
+export interface DashboardRecentOrder {
+  id: string
+  order_number: string
+  status: OrderStatus
+  total_amount: string
+  customer: { id: string; name: string } | null
+  user: { id: string; name: string } | null
+  created_at: string
+}
+
+export interface DashboardData {
+  period: { key: string; label: string; date_from: string; date_to: string }
+  revenue: DashboardMetric
+  orders: DashboardOrders
+  avg_ticket: { current: string; change_percent: number | null }
+  low_stock_count: number
+  low_stock: DashboardLowStockItem[]
+  recent_orders: DashboardRecentOrder[]
+}
+
 export interface PaginationMeta {
   current_page: number
   last_page: number
