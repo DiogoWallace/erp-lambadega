@@ -12,6 +12,7 @@ Documentação da arquitetura do ERP Comercial: visão, decisões técnicas e ro
 | [Sincronização](sincronizacao.md) | Protocolo de sync entre servidor central e servidores locais |
 | [Roadmap](roadmap.md) | Cronograma das fases, o que está pronto e o que vem a seguir |
 | [Auditoria](auditoria.md) | Módulo de logs de auditoria — tabela, trait, service, decisões de design |
+| [Vendas — eventos](vendas-eventos.md) | Arquitetura orientada a eventos do módulo de Vendas: DTOs, eventos/listeners, InventoryService, Deptrac |
 
 ## Princípios
 
