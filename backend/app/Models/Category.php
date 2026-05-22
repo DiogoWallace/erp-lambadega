@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToEstablishment;
 use App\Models\Concerns\HasUuidV7;
+use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -15,7 +16,9 @@ use Illuminate\Support\Str;
 #[Fillable(['establishment_id', 'parent_id', 'name', 'slug', 'description', 'sort_order', 'is_active'])]
 class Category extends Model
 {
-    use BelongsToEstablishment, HasFactory, HasUuidV7, SoftDeletes;
+    use BelongsToEstablishment, HasFactory, HasUuidV7, LogsActivity, SoftDeletes;
+
+    protected static string $auditModule = 'categories';
 
     protected function casts(): array
     {

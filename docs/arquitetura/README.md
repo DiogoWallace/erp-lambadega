@@ -11,6 +11,7 @@ Documentação da arquitetura do ERP Comercial: visão, decisões técnicas e ro
 | [Identificadores](identificadores.md) | Estratégia de UUIDs v7, por que e como |
 | [Sincronização](sincronizacao.md) | Protocolo de sync entre servidor central e servidores locais |
 | [Roadmap](roadmap.md) | Cronograma das fases, o que está pronto e o que vem a seguir |
+| [Auditoria](auditoria.md) | Módulo de logs de auditoria — tabela, trait, service, decisões de design |
 
 ## Princípios
 

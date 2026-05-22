@@ -39,6 +39,9 @@ class RoleSeeder extends Seeder
 
             // Configurações
             'settings.view', 'settings.edit',
+
+            // Auditoria
+            'audit.view',
         ];
 
         foreach ($permissions as $permission) {

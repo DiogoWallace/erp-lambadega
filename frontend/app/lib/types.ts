@@ -99,6 +99,21 @@ export interface StockMovement {
   created_at: string
 }
 
+export type AuditEvent = 'created' | 'updated' | 'deleted' | 'login' | 'logout'
+
+export interface AuditLog {
+  id: string
+  event: AuditEvent
+  module: string
+  model_type: string | null
+  model_id: string | null
+  old_values: Record<string, unknown> | null
+  new_values: Record<string, unknown> | null
+  ip_address: string | null
+  user: { id: string; name: string } | null
+  created_at: string
+}
+
 export interface PaginationMeta {
   current_page: number
   last_page: number
