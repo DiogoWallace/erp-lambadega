@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Customer;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 
 class CustomerService
 {
@@ -25,6 +26,11 @@ class CustomerService
         }
 
         return $query->orderBy('name')->paginate(15);
+    }
+
+    public function all(): Collection
+    {
+        return Customer::where('is_active', true)->orderBy('name')->get();
     }
 
     public function create(array $data): Customer
