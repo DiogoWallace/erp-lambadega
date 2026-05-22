@@ -24,8 +24,9 @@ Objetivo: sistema web funcional, operando em produção, com as fundações arqu
 - [x] Produtos (CRUD completo — nome, preço, estoque, SKU/barcode, categoria, fornecedor)
 - [x] Movimentação de estoque (in/out/adjustment, log imutável, transação atômica)
 - [x] Vendas (PDV web — carrinho, busca de produto, desconto, pagamento, parcelamento, cancelamento)
+- [x] Dashboard (métricas de vendas por período, pedidos por status, ticket médio, estoque crítico, últimas vendas)
 - [ ] Contas a pagar / receber (financeiro)
-- [ ] Relatórios básicos (vendas por período, top produtos, fluxo de caixa)
+- [ ] Relatórios básicos (top produtos, fluxo de caixa)
 
 ### Auditoria e rastreabilidade
 
