@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Icon } from '@/app/ui/icons'
 import { toggleThemeAction } from '@/app/lib/theme'
 import { logoutAction } from './actions'
@@ -40,13 +40,16 @@ interface Props {
 export function Topbar({ userName, theme }: Props) {
   const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
+  const menuWrapRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const onDocClick = () => setMenuOpen(false)
-    if (menuOpen) {
-      document.addEventListener('click', onDocClick)
-      return () => document.removeEventListener('click', onDocClick)
+    if (!menuOpen) return
+    const onDocClick = (e: MouseEvent) => {
+      if (menuWrapRef.current?.contains(e.target as Node)) return
+      setMenuOpen(false)
     }
+    document.addEventListener('mousedown', onDocClick)
+    return () => document.removeEventListener('mousedown', onDocClick)
   }, [menuOpen])
 
   const segments = pathname.split('/').filter(Boolean)
@@ -95,12 +98,12 @@ export function Topbar({ userName, theme }: Props) {
           <span className="dot" />
         </button>
         <div style={{ width: 1, height: 22, background: 'var(--border)', margin: '0 4px' }} />
-        <div style={{ position: 'relative' }}>
+        <div ref={menuWrapRef} style={{ position: 'relative' }}>
           <button
             type="button"
             className="topbar-ico-btn"
             style={{ width: 'auto', padding: '0 8px', gap: 8 }}
-            onClick={(e) => { e.stopPropagation(); setMenuOpen((m) => !m) }}
+            onClick={() => setMenuOpen((m) => !m)}
             aria-haspopup="menu"
             aria-expanded={menuOpen}
           >
@@ -119,7 +122,6 @@ export function Topbar({ userName, theme }: Props) {
           {menuOpen && (
             <div
               role="menu"
-              onClick={(e) => e.stopPropagation()}
               style={{
                 position: 'absolute', right: 0, top: 'calc(100% + 6px)',
                 minWidth: 200, padding: 6,
