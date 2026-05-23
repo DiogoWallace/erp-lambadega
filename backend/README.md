@@ -28,6 +28,10 @@ docker compose exec backend composer install
 # Criar banco e rodar seeders
 docker compose exec backend php artisan migrate:fresh --seed
 
+# Criar symlink para servir uploads (avatares etc.) — já está no Dockerfile,
+# só é necessário em containers pré-existentes / após recriar volumes:
+docker compose exec backend php artisan storage:link
+
 # Rodar os testes
 make test-backend
 # ou diretamente:
@@ -87,7 +91,7 @@ backend/
 | Produtos | `GET/POST /products`, `GET/PUT/DELETE /products/{id}` | `?all=1` para dropdown (limite 500) |
 | Estoque | `GET/POST /stock-movements`, `GET /stock-movements/{id}` | Imutável — sem update/delete |
 | Notificações | `GET /notifications`, `GET /notifications/unread-count`, `GET /notifications/dropdown`, `POST /notifications/{id}/read`, `POST /notifications/mark-all-read`, `POST /notifications/broadcast` | Pessoais (user_id setado) + broadcast (user_id NULL, leitura por pivot). `broadcast` requer permissão `notification.broadcast`. |
-| Meu perfil | `GET /me/profile`, `PUT /me/profile`, `POST /me/password` | Self-only (sem id). `POST /me/password` exige `current_password` e revoga os demais tokens Sanctum. |
+| Meu perfil | `GET /me/profile`, `PUT /me/profile`, `POST /me/password`, `POST /me/avatar`, `DELETE /me/avatar` | Self-only (sem id). `POST /me/password` exige `current_password` e revoga os demais tokens Sanctum. Avatar via multipart (JPG/PNG/WEBP, máx 2MB, 2000×2000), salvo em `storage/app/public/users/{uuid}/`. |
 | Empresa | `GET /establishment`, `PUT /establishment` | Singleton do tenant — derivado do `establishment_id` do usuário. Leitura requer `settings.view`, escrita requer `settings.edit`. |
 
 Todas as rotas (exceto auth) exigem `Authorization: Bearer {token}`.

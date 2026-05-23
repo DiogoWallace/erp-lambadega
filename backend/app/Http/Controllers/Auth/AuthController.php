@@ -56,7 +56,8 @@ class AuthController extends Controller
     {
         return [
             ...$user->toArray(),
-            'roles' => $user->getRoleNames(),
+            'avatar_url'  => $user->avatarUrl(),
+            'roles'       => $user->getRoleNames(),
             'permissions' => $user->getAllPermissions()->pluck('name'),
         ];
     }

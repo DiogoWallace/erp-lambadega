@@ -14,7 +14,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['establishment_id', 'name', 'email', 'password', 'phone', 'is_active'])]
+#[Fillable(['establishment_id', 'name', 'email', 'password', 'phone', 'avatar_path', 'is_active'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -34,5 +34,14 @@ class User extends Authenticatable
     public function establishment(): BelongsTo
     {
         return $this->belongsTo(Establishment::class);
+    }
+
+    public function avatarUrl(): ?string
+    {
+        if (!$this->avatar_path) {
+            return null;
+        }
+
+        return rtrim(config('app.url'), '/') . '/storage/' . ltrim($this->avatar_path, '/');
     }
 }

@@ -55,6 +55,57 @@ export async function updateProfileAction(
   return { ...INITIAL, success: true }
 }
 
+export async function uploadAvatarAction(
+  _prev: ProfileFormState,
+  formData: FormData,
+): Promise<ProfileFormState> {
+  const token = await getToken()
+  if (!token) redirect('/login')
+
+  const file = formData.get('avatar')
+  if (!(file instanceof File) || file.size === 0) {
+    return { ...INITIAL, error: 'Selecione uma imagem.' }
+  }
+
+  const upload = new FormData()
+  upload.append('avatar', file)
+
+  const res = await fetch(`${API_BASE}/api/me/avatar`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: upload,
+  })
+
+  if (res.status === 422) {
+    const { message, errors } = await res.json()
+    return { ...INITIAL, error: message, errors }
+  }
+
+  if (!res.ok) {
+    return { ...INITIAL, error: 'Falha ao enviar imagem.' }
+  }
+
+  revalidatePath('/profile', 'layout')
+  revalidatePath('/', 'layout')
+  return { ...INITIAL, success: true }
+}
+
+export async function removeAvatarAction(): Promise<void> {
+  const token = await getToken()
+  if (!token) redirect('/login')
+
+  await fetch(`${API_BASE}/api/me/avatar`, {
+    method: 'DELETE',
+    headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+  })
+
+  revalidatePath('/profile', 'layout')
+  revalidatePath('/', 'layout')
+}
+
 export async function changePasswordAction(
   _prev: ProfileFormState,
   formData: FormData,

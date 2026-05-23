@@ -51,7 +51,8 @@ Objetivo: sistema web funcional, operando em produção, com as fundações arqu
 - [x] Estilizar forms de novo/editar de todos os módulos (customers, categories, suppliers, products, stock-movements, finance) + modais de pagamento/cancelamento
 - [x] Módulo de notificações (estoque crítico/zerado, financeiro vencido/vencendo, broadcast manual) com sino na topbar + página `/notifications`
 - [x] Meu perfil + Configurações fase 1 (`/profile` dados+senha; `/settings` índice; `/settings/company` editar estabelecimento; `/settings/preferences`)
-- [ ] Avatar de usuário no perfil (requer filesystem `public` + symlink)
+- [x] Avatar de usuário no perfil (disco `public`, symlink no Dockerfile, JPG/PNG/WEBP até 2MB; mostrado na topbar)
+- [ ] Backup de uploads: estender sidecar `db-backup` para incluir o volume `storage_local` (avatares e futuros uploads)
 - [ ] CRUD de usuários em `/settings/users` (UserController/Service/Policy + atribuição de cargos)
 - [ ] Estilizar login com o design system (follow-up restante)
 

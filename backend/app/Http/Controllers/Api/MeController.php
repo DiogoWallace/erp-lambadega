@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Me\ChangePasswordRequest;
 use App\Http\Requests\Me\UpdateProfileRequest;
+use App\Http\Requests\Me\UploadAvatarRequest;
 use App\Services\UserProfileService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -23,6 +24,7 @@ class MeController extends Controller
                 'name'        => $user->name,
                 'email'       => $user->email,
                 'phone'       => $user->phone,
+                'avatar_url'  => $user->avatarUrl(),
                 'roles'       => $user->getRoleNames(),
                 'permissions' => $user->getAllPermissions()->pluck('name'),
             ],
@@ -35,12 +37,32 @@ class MeController extends Controller
 
         return response()->json([
             'data' => [
-                'id'    => $user->id,
-                'name'  => $user->name,
-                'email' => $user->email,
-                'phone' => $user->phone,
+                'id'         => $user->id,
+                'name'       => $user->name,
+                'email'      => $user->email,
+                'phone'      => $user->phone,
+                'avatar_url' => $user->avatarUrl(),
             ],
         ]);
+    }
+
+    public function uploadAvatar(UploadAvatarRequest $request): JsonResponse
+    {
+        $user = $this->service->updateAvatar($request->user(), $request->file('avatar'));
+
+        return response()->json([
+            'data' => [
+                'id'         => $user->id,
+                'avatar_url' => $user->avatarUrl(),
+            ],
+        ]);
+    }
+
+    public function deleteAvatar(Request $request): JsonResponse
+    {
+        $this->service->removeAvatar($request->user());
+
+        return response()->json(['ok' => true]);
     }
 
     public function changePassword(ChangePasswordRequest $request): JsonResponse
