@@ -24,13 +24,17 @@ Sistema ERP comercial multi-tenant com arquitetura preparada para evolução **o
 | Módulo | Backend | Frontend | Testes |
 |---|---|---|---|
 | Autenticação | login, logout, me | tela de login, cookie token | — |
-| Clientes | CRUD + filtros + paginação | lista, novo, editar, excluir | 18 |
+| Clientes | CRUD + filtros + paginação + `?all=1` | lista, novo, editar, excluir | 18 |
 | Categorias | CRUD + subcategorias + `?all=1` | lista, novo, editar, excluir | 22 |
 | Fornecedores | CRUD + `?all=1` + CNPJ único/tenant | lista, novo, editar, excluir | 18 |
 | Produtos | CRUD + `?all=1` + SKU/barcode únicos/tenant | lista, novo, editar, excluir | 21 |
 | Estoque | in/out/adjustment + lock atômico | lista filtrada, registrar mov. | 15 |
-| Vendas | migration + model | — | — |
-| Financeiro | migration + model | — | — |
+| Vendas / PDV | OrderService + eventos + pay/cancel | lista, PDV, detalhe (pagar/cancelar) | ✓ |
+| Financeiro | contas a pagar/receber + `finance:mark-overdue` | lista, registrar, pagar | ✓ |
+| Auditoria | logs imutáveis + LogsActivity nos models | tela admin com filtros | ✓ |
+| Dashboard | métricas agregadas por período | cards, gráfico, últimas vendas | — |
+| Relatórios | sales, top-products, cash-flow, accounts (+CSV) | 4 telas com export CSV | — |
+| **Design system** | — | tokens oklch, tema light/dark, sidebar/topbar, Geist | — |
 
 ---
 
@@ -104,16 +108,23 @@ erp-comercial/
 │   ├── proxy.ts                  # Auth check na borda (Next.js 16)
 │   ├── vitest.config.ts          # Config de testes unitários
 │   └── app/
+│       ├── layout.tsx            # Root layout (force-dynamic; aplica tema no <html>)
+│       ├── global-error.tsx      # Root error boundary
+│       ├── globals.css           # Tokens do design system (oklch + Geist)
 │       ├── (dashboard)/          # Route group — rotas autenticadas
-│       │   ├── __tests__/        # 21 testes Vitest para buildBody dos 5 módulos
-│       │   ├── customers/        # CRUD + build-body.ts
-│       │   ├── categories/       # CRUD + subcategorias + build-body.ts
-│       │   ├── suppliers/        # CRUD + build-body.ts
-│       │   ├── products/         # CRUD + link "+ Mov." p/ estoque + build-body.ts
-│       │   └── stock-movements/  # Registrar + histórico filtrado + build-body.ts
+│       │   ├── __tests__/        # Testes Vitest para buildBody dos módulos
+│       │   ├── layout.tsx        # force-dynamic; carrega /auth/me + tema
+│       │   ├── sidebar-nav.tsx   # Sidebar com pin/favoritos/colapso
+│       │   ├── topbar.tsx        # Breadcrumbs + toggle de tema + logout
+│       │   ├── customers/ categories/ suppliers/ products/ stock-movements/
+│       │   ├── sales/ finance/ audit-logs/ reports/
+│       │   └── dashboard/        # Métricas agregadas + seletor de período
 │       ├── lib/api.ts            # apiFetch (injeta token, trata 401/403/5xx)
+│       ├── lib/theme.ts          # getTheme + toggleThemeAction (cookie 'theme')
 │       ├── lib/types.ts          # Interfaces TypeScript de todos os modelos
-│       └── ui/skeletons.tsx      # TableSkeleton, FormSkeleton
+│       └── ui/
+│           ├── icons.tsx         # Componente Icon (SVG inline; IconName tipado)
+│           └── skeletons.tsx     # TableSkeleton, FormSkeleton
 │
 ├── docs/
 │   ├── arquitetura/              # Visão de longo prazo, decisões técnicas, roadmap
@@ -137,6 +148,9 @@ A arquitetura é desenhada em três fases. Leia antes de implementar qualquer m�
 - [Multi-tenant](docs/arquitetura/multi-tenant.md) — isolamento por estabelecimento via global scope
 - [Identificadores](docs/arquitetura/identificadores.md) — por que UUID v7 em todas as tabelas
 - [Sincronização](docs/arquitetura/sincronizacao.md) — protocolo de sync entre central e local (Fase 2)
+- [Vendas — eventos](docs/arquitetura/vendas-eventos.md) — DTOs, eventos/listeners, InventoryService, Deptrac
+- [Auditoria](docs/arquitetura/auditoria.md) — logs imutáveis, trait `LogsActivity`, AuditService
+- [Design system](docs/arquitetura/design-system.md) — tokens oklch, tema cookie-based, shell sidebar/topbar
 - [Roadmap](docs/arquitetura/roadmap.md) — o que está pronto, em andamento e planejado
 - [Contexto IA](docs/ia/contexto.md) — guia completo para agentes de IA
 
