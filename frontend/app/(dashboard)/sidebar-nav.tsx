@@ -46,6 +46,16 @@ const navItems = [
     exact: false,
   },
   {
+    href: '/reports',
+    label: 'Reports',
+    icon: (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-6a1 1 0 011-1h4a1 1 0 011 1v6m-9 4h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z" />
+      </svg>
+    ),
+    exact: false,
+  },
+  {
     href: '/customers',
     label: 'Customers',
     icon: (

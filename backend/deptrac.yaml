@@ -64,10 +64,17 @@ deptrac:
       collectors:
         - type: classNameRegex
           value: '#^App\\Services\\FinancialTransactionService$#'
+    # ReportService é leitura-apenas e agrega dados de vários models, incluindo
+    # os "donos de contexto" (FinancialTransaction). Camada própria para conceder
+    # o acesso de leitura sem afrouxar a fronteira dos demais Services.
+    - name: ReportService
+      collectors:
+        - type: classNameRegex
+          value: '#^App\\Services\\ReportService$#'
     - name: Services
       collectors:
         - type: classNameRegex
-          value: '#^App\\Services\\(?!InventoryService$)(?!AuditService$)(?!FinancialTransactionService$).*#'
+          value: '#^App\\Services\\(?!InventoryService$)(?!AuditService$)(?!FinancialTransactionService$)(?!ReportService$).*#'
 
     # ── Models ────────────────────────────────────────────────────────────
     - name: ModelConcerns
@@ -96,6 +103,7 @@ deptrac:
       - InventoryService
       - AuditService
       - FinancialService
+      - ReportService
       - Requests
       - Resources
       - DTOs
@@ -124,6 +132,11 @@ deptrac:
 
     FinancialService:
       - Models
+      - FinancialModel
+
+    ReportService:
+      - Models
+      - InventoryModel
       - FinancialModel
 
     DTOs: ~

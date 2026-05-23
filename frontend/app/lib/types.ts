@@ -219,6 +219,108 @@ export interface DashboardData {
   recent_orders: DashboardRecentOrder[]
 }
 
+export interface ReportPeriod {
+  date_from: string
+  date_to: string
+}
+
+export interface SalesReportOrder {
+  id: string
+  order_number: string
+  status: OrderStatus
+  payment_method: PaymentMethod | null
+  subtotal: number
+  discount: number
+  total: number
+  customer: string | null
+  user: string | null
+  created_at: string | null
+  paid_at: string | null
+}
+
+export interface SalesReport {
+  period: ReportPeriod
+  totals: {
+    orders: number
+    paid: number
+    pending: number
+    canceled: number
+    revenue: number
+    avg_ticket: number
+  }
+  by_status: Record<string, { count: number; total: number }>
+  by_day: Record<string, { count: number; revenue: number }>
+  by_payment_method: Record<string, { count: number; total: number }>
+  orders: SalesReportOrder[]
+}
+
+export interface TopProductsReportItem {
+  product_id: string
+  product_name: string
+  sku: string | null
+  quantity: number
+  revenue: number
+  orders_count: number
+  avg_per_order: number
+}
+
+export interface TopProductsReport {
+  period: ReportPeriod
+  totals: { products: number; quantity_sold: number; revenue: number }
+  items: TopProductsReportItem[]
+}
+
+export interface CashFlowDay {
+  date: string
+  income_realized: number
+  expense_realized: number
+  income_pending: number
+  expense_pending: number
+  net: number
+  running_balance: number
+}
+
+export interface CashFlowReport {
+  period: ReportPeriod
+  totals: {
+    income_realized: number
+    expense_realized: number
+    net_realized: number
+    income_pending: number
+    expense_pending: number
+    net_projected: number
+  }
+  by_day: CashFlowDay[]
+}
+
+export interface AccountsReportItem {
+  id: string
+  type: FinancialType
+  status: FinancialStatus
+  category: string | null
+  description: string
+  amount: number
+  due_date: string | null
+  payment_date: string | null
+  payment_method: PaymentMethod | null
+  customer: string | null
+  supplier: string | null
+  order_number: string | null
+}
+
+export interface AccountsReport {
+  filters: {
+    type: string | null
+    status: string | null
+    due_from: string | null
+    due_to: string | null
+  }
+  totals: { count: number; amount: number; overdue: number }
+  by_status: Record<string, { count: number; total: number }>
+  by_category: Record<string, { count: number; total: number }>
+  items: AccountsReportItem[]
+}
+
 export interface PaginationMeta {
   current_page: number
   last_page: number
