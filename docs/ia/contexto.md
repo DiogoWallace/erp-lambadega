@@ -233,7 +233,10 @@ erp-comercial/
 ├── Makefile                              atalhos: make test, make migrate, make shell…
 ├── docker-compose.yml                    local (monta tests/ e phpunit.xml como volumes)
 ├── docker-compose.dev.yml                dev (VPS, rede erp_shared)
-├── docker-compose.prod.yml               prod (VPS, cria rede erp_shared)
+├── docker-compose.prod.yml               prod (VPS, cria rede erp_shared); inclui sidecar db-backup
+│
+├── scripts/
+│   └── backup-mysql.sh                   loop diário (03:00 UTC) + mysqldump --single-transaction --no-tablespaces | gzip; retenção 7d (BACKUP_RETENTION_DAYS)
 │
 ├── .github/workflows/
 │   ├── deploy.yml                        push main → prod
@@ -405,6 +408,7 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - **Relatórios são camada Deptrac própria** (`ReportService`) — leitura-apenas com acesso a `FinancialModel` (e futuramente `InventoryModel`). Outros services continuam proibidos de tocar nesses models. Quando criar nova consulta agregada cross-model, adicionar no `ReportService` ao invés de afrouxar a fronteira de `Services`.
 - **CSV export no frontend usa route handler proxy** — `app/api/reports/export/route.ts` (GET) recebe `?type=sales|top-products|cash-flow|accounts` + filtros, chama a API com `Bearer ${token}` do cookie e repassa o stream com `Content-Disposition`. O browser não acessa `API_BASE_URL` (interno), por isso o proxy.
 - **`ReportController` retorna `JsonResponse|StreamedResponse`** — quando `?format=csv` está presente, devolve `streamDownload` com BOM UTF-8 (`\xEF\xBB\xBF`) para o Excel renderizar acentos. Cada relatório define cabeçalhos e callback de linha próprios.
+- **Backup do MySQL é um sidecar em `docker-compose.prod.yml`** — serviço `db-backup` (mesma imagem `mysql:8.0`) monta `scripts/backup-mysql.sh` como entrypoint e o volume nomeado `db_backups`. Roda loop diário em shell puro (sem cron) calculando o sleep até `BACKUP_HOUR_UTC`. Dumps usam `--single-transaction --no-tablespaces` (não precisa do privilégio PROCESS). Off-site ainda não configurado — backups vivem só no volume da VPS. Ver `docs/tutoriais/backup.md` para restauração.
 
 ---
 
@@ -437,7 +441,7 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - ~~Dashboard~~ ✓ (concluído — métricas de vendas, estoque crítico, seletor de período)
 - ~~Contas a pagar / receber (financeiro)~~ ✓ (backend + frontend + `finance:mark-overdue`)
 - ~~Relatórios básicos~~ ✓ (vendas por período, top produtos, fluxo de caixa, contas a pagar/receber com CSV)
-- Backup automatizado do MySQL em produção
+- ~~Backup automatizado do MySQL em produção~~ ✓ (sidecar `db-backup` em prod; diário às 03:00 UTC; retenção 7d em volume `db_backups`; `make backup-now`/`backup-list`/`backup-restore`)
 - Middleware `AuditModuleAccess` para rotas sensíveis (relatórios, exportações)
 - Comando `audit:prune` para retenção configurável (12 meses em prod via `AUDIT_RETENTION_DAYS`)
 
