@@ -1102,21 +1102,84 @@ select.input { appearance: none; background-image: url("data:image/svg+xml;utf8,
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .pdv-cart-sku { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-.pdv-cart-ctrl { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-.pdv-cart-price { width: 90px; text-align: right; padding: 0 8px; }
-.pdv-cart-qty   { width: 60px; text-align: center; padding: 0 6px; }
-.pdv-cart-total {
-  min-width: 84px; text-align: right;
-  font-weight: 600; font-size: 13px; color: var(--text);
+.pdv-cart-ctrl { display: flex; align-items: flex-end; gap: 10px; flex-shrink: 0; }
+.pdv-cart-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.pdv-cart-label {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1;
 }
+.pdv-cart-field-total { align-items: flex-end; }
+
+.pdv-cart-price { width: 92px; text-align: right; padding: 0 8px; }
+.pdv-cart-qty   { width: 44px; text-align: center; padding: 0 4px; border-radius: 0; border-left: 0; border-right: 0; }
+
+/* Esconde as setinhas nativas do <input type="number"> dentro do carrinho */
+.pdv-cart-qty::-webkit-outer-spin-button,
+.pdv-cart-qty::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.pdv-cart-qty { -moz-appearance: textfield; }
+
+.pdv-cart-stepper {
+  display: inline-flex;
+  align-items: stretch;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  overflow: hidden;
+}
+.pdv-cart-stepper:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent) 22%, transparent);
+}
+.pdv-cart-stepper .pdv-cart-qty {
+  height: 100%;
+  width: 44px;
+  border: 0;
+  background: transparent;
+  outline: none;
+}
+.pdv-cart-step-btn {
+  width: 30px;
+  border: 0;
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s, color 0.12s;
+}
+.pdv-cart-step-btn:hover:not(:disabled) { background: var(--surface-hover); }
+.pdv-cart-step-btn:disabled {
+  color: var(--text-faint);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.pdv-cart-total {
+  min-width: 92px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text);
+}
+
 .pdv-cart-remove {
-  width: 28px; height: 28px;
+  width: 32px; height: 32px;
   border: 0; background: transparent;
   border-radius: var(--r-sm);
   color: var(--text-faint);
   cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center;
   transition: background 0.12s, color 0.12s;
+  align-self: flex-end;
 }
 .pdv-cart-remove:hover { background: var(--danger-soft); color: var(--danger); }
 
@@ -1242,10 +1305,11 @@ select.input { appearance: none; background-image: url("data:image/svg+xml;utf8,
 
   /* PDV mobile: linha do carrinho em 2 níveis (nome em cima, controles embaixo) */
   .pdv-card-body { padding: 0 14px 14px; }
-  .pdv-cart-row { padding: 12px 14px; gap: 8px; }
+  .pdv-cart-row { padding: 12px 14px; gap: 10px; }
   .pdv-cart-info { flex: 1 1 100%; }
-  .pdv-cart-ctrl { flex: 1 1 100%; }
-  .pdv-cart-total { flex: 1 1 auto; }
+  .pdv-cart-ctrl { flex: 1 1 100%; flex-wrap: wrap; gap: 12px; }
+  .pdv-cart-field { flex: 1 1 auto; }
+  .pdv-cart-field-total { flex: 0 0 auto; margin-left: auto; }
   .pdv-discount, .pdv-totals { padding-left: 14px; padding-right: 14px; }
 
   /* Botão Registrar venda fica sticky no rodapé do viewport */

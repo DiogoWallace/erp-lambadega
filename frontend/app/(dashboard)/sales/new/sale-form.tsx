@@ -312,29 +312,57 @@ export function SaleForm({ action, products, customers }: Props) {
                     </div>
 
                     <div className="pdv-cart-ctrl">
-                      <NumericInput
-                        value={item.unitPrice}
-                        min={0.01}
-                        step={0.01}
-                        onCommit={(n) => updatePrice(item.productId, n)}
-                        className="input input-sm pdv-cart-price"
-                        title="Preço unitário"
-                        ariaLabel="Preço unitário"
-                      />
+                      <div className="pdv-cart-field">
+                        <span className="pdv-cart-label">Preço un.</span>
+                        <NumericInput
+                          value={item.unitPrice}
+                          min={0.01}
+                          step={0.01}
+                          onCommit={(n) => updatePrice(item.productId, n)}
+                          className="input input-sm pdv-cart-price"
+                          ariaLabel="Preço unitário"
+                        />
+                      </div>
 
-                      <NumericInput
-                        value={item.quantity}
-                        min={1}
-                        step={1}
-                        onCommit={(n) => updateQty(item.productId, n)}
-                        className="input input-sm pdv-cart-qty"
-                        title="Quantidade"
-                        ariaLabel="Quantidade"
-                      />
+                      <div className="pdv-cart-field">
+                        <span className="pdv-cart-label">Quantidade</span>
+                        <div className="pdv-cart-stepper">
+                          <button
+                            type="button"
+                            onClick={() => updateQty(item.productId, Math.max(1, item.quantity - 1))}
+                            disabled={item.quantity <= 1}
+                            className="pdv-cart-step-btn"
+                            aria-label="Diminuir quantidade"
+                            title="Diminuir"
+                          >
+                            <Icon name="minus" size={12} stroke={2.4} />
+                          </button>
+                          <NumericInput
+                            value={item.quantity}
+                            min={1}
+                            step={1}
+                            onCommit={(n) => updateQty(item.productId, n)}
+                            className="input input-sm pdv-cart-qty"
+                            ariaLabel="Quantidade"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => updateQty(item.productId, item.quantity + 1)}
+                            className="pdv-cart-step-btn"
+                            aria-label="Aumentar quantidade"
+                            title="Aumentar"
+                          >
+                            <Icon name="plus" size={12} stroke={2.4} />
+                          </button>
+                        </div>
+                      </div>
 
-                      <span className="tnum pdv-cart-total">
-                        {formatCurrency(item.quantity * item.unitPrice)}
-                      </span>
+                      <div className="pdv-cart-field pdv-cart-field-total">
+                        <span className="pdv-cart-label">Total</span>
+                        <span className="tnum pdv-cart-total">
+                          {formatCurrency(item.quantity * item.unitPrice)}
+                        </span>
+                      </div>
 
                       <button
                         type="button"
@@ -343,7 +371,7 @@ export function SaleForm({ action, products, customers }: Props) {
                         title="Remover"
                         aria-label="Remover item"
                       >
-                        <Icon name="x" size={14} stroke={2} />
+                        <Icon name="trash" size={14} stroke={2} />
                       </button>
                     </div>
                   </li>
