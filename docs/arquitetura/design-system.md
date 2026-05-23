@@ -55,9 +55,10 @@ app/(dashboard)/topbar.tsx  botão de toggle (Sun/Moon) chama toggleThemeAction
 
 | Arquivo | Papel |
 |---|---|
-| `app/(dashboard)/layout.tsx` | server async; busca `/auth/me`, lê `theme`, monta `app-shell` com sidebar + main |
-| `app/(dashboard)/sidebar-nav.tsx` | client; navegação com pin de favoritos, colapso de seções, ícones |
-| `app/(dashboard)/topbar.tsx` | client; breadcrumbs derivadas do `usePathname`, toggle de tema, logout |
+| `app/(dashboard)/layout.tsx` | server async; busca `/auth/me`, lê `theme`, delega o render para `DashboardShell` |
+| `app/(dashboard)/shell.tsx` | client; orquestra estado do drawer mobile (open/close) e fecha em navegação |
+| `app/(dashboard)/sidebar-nav.tsx` | client; navegação com pin de favoritos, colapso de seções, ícones; recebe `mobileOpen` |
+| `app/(dashboard)/topbar.tsx` | client; breadcrumbs por `usePathname`, toggle de tema, logout, **burger no mobile** |
 | `app/ui/icons.tsx` | componente `Icon` (SVG inline) com `IconName` enumerado |
 | `app/ui/skeletons.tsx` | `TableSkeleton`, `FormSkeleton` etc. para loading states |
 | `app/global-error.tsx` | root error boundary do Next.js (fallback fora do dashboard) |
@@ -87,14 +88,84 @@ export function Icon({ name, size = 16, stroke = 1.6, className = '' }: IconProp
 | Tela | Status |
 |---|---|
 | Dashboard (`/dashboard`) | ✓ design novo |
-| Vendas — listas e detalhe (`/sales`, `/sales/[id]`) | ✓ design novo |
+| Vendas — listas, detalhe e **PDV** (`/sales`, `/sales/[id]`, `/sales/new`) | ✓ design novo |
 | Clientes, Fornecedores, Categorias, Produtos, Estoque, Financeiro, Auditoria (listas) | ✓ design novo |
 | Relatórios (índice + 4 telas) | ✓ design novo |
+| **Forms (novo/editar) de todos os módulos** | ✓ design novo |
+| Modais (Pagamento e Cancelamento de venda) | ✓ design novo |
 | **Login** | ✗ ainda no estilo antigo |
-| **PDV (`/sales/new`)** | ✗ ainda no estilo antigo |
-| **Forms (novo/editar) de todos os módulos** | ✗ ainda no estilo antigo |
 
-Esses três blocos ficaram como follow-up: o handoff foi focado em telas de leitura.
+Login é o único bloco que segue como follow-up.
+
+---
+
+## Padrão de forms (novo/editar)
+
+Todos os forms de cadastro seguem a mesma estrutura:
+
+```tsx
+<div className="page page-form">
+  <div className="page-head">
+    <div>
+      <h1 className="page-title">…</h1>
+      <p className="page-subtitle">…</p>
+    </div>
+    {/* opcional: <DeleteXxxButton /> à direita */}
+  </div>
+
+  <form className="form-stack">
+    {state?.error && <div className="form-banner-error">…</div>}
+
+    <section className="card">
+      <div className="card-head"><div><h3>Título da seção</h3></div></div>
+      <div className="card-body form-grid">
+        <Field label="…" name="…">
+          <input className="input" />
+        </Field>
+        {/* span={2} para campos médios, span="full" para textareas */}
+      </div>
+    </section>
+
+    <div className="form-actions">
+      <a href="…" className="btn btn-outline">Cancelar</a>
+      <button type="submit" className="btn btn-primary">Salvar</button>
+    </div>
+  </form>
+</div>
+```
+
+Utilitários CSS principais:
+
+- `.form-grid` — `repeat(auto-fit, minmax(240px, 1fr))`. Renderiza 1/2/3/4+ colunas automaticamente conforme a largura disponível. Em ultrawide pode chegar a 6 colunas.
+- `.form-field-full` — `grid-column: 1 / -1` (linha inteira; use em textareas).
+- `.form-field-span-2` — `grid-column: span 2` (campos médios como "Nome", "Logradouro"). Em mobile reverte para `auto` (1 col por linha).
+- `.form-banner-error` — banner padrão de erro usando `--danger-soft` + `--danger`.
+- `.form-actions` — flex-end + flex-wrap. Em mobile, os botões esticam (`flex: 1 1 auto`).
+- `.btn-danger-outline` — botão "Excluir" no topo dos forms de edição.
+- `.btn-success` — botão "Registrar pagamento" (verde).
+- `.modal-backdrop` / `.modal-panel` / `.modal-title` / `.modal-sub` / `.modal-actions` — padrão para modais simples (pagamento, cancelamento).
+
+---
+
+## Responsividade
+
+O shell é mobile-first com três breakpoints:
+
+| Largura | Comportamento |
+|---|---|
+| ≥1024px (desktop) | Sidebar inline 248px (ou 64px se colapsada), topbar com search, conteúdo full |
+| 768–1023px (tablet) | Sidebar inline; paddings/typografia reduzidos; KPIs do dashboard em 2×2; PDV em coluna única |
+| <768px (mobile) | Sidebar vira **drawer off-canvas** (280px) com overlay; **burger no topbar** abre/fecha; search escondido; breadcrumb mostra só o segmento atual; tabelas com scroll horizontal (`.card:has(>.t-table)` aplica `overflow-x: auto`); filtros fluidos; botão "Registrar venda" do PDV fica **sticky** no rodapé do viewport |
+
+Convenções:
+
+- `height: 100dvh` no shell (não `100vh`) — evita salto causado pela URL bar do mobile.
+- Drawer fecha automaticamente em `usePathname` change (sem `useEffect` em cascata — comparação durante render, padrão React 19).
+- Body com `overflow: hidden` enquanto o drawer está aberto.
+- Componentes utilitários CSS:
+  - `.t-table-wrap` — wrapper opcional para isolar o scroll horizontal quando o card tem mais conteúdo abaixo da tabela (caso `/sales`, que tem footer de totais).
+  - `.dash-kpis`, `.dash-stats`, `.dash-bottom` — grids do dashboard com breakpoints próprios.
+  - `.pdv-*` — layout e linhas do carrinho do PDV; em mobile, cada item se reorganiza em 2 níveis (nome em cima, controles embaixo).
 
 ---
 

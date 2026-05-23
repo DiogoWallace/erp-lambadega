@@ -127,6 +127,7 @@ export default async function SalesPage({ searchParams }: Props) {
           </div>
         ) : (
           <>
+            <div className="t-table-wrap">
             <table className="t-table">
               <thead>
                 <tr>
@@ -167,7 +168,8 @@ export default async function SalesPage({ searchParams }: Props) {
                 ))}
               </tbody>
             </table>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 32, padding: '14px 18px', borderTop: '1px solid var(--border-soft)', background: 'var(--surface-2)' }}>
+            </div>
+            <div className="sales-totals" style={{ display: 'flex', justifyContent: 'flex-end', gap: 32, padding: '14px 18px', borderTop: '1px solid var(--border-soft)', background: 'var(--surface-2)' }}>
               <Total label="Bruto" value={formatCurrency(totals.gross)} muted />
               <Total label="Descontos" value={formatCurrency(totals.discount)} muted />
               <Total label="Líquido" value={formatCurrency(totals.net)} />

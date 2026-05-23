@@ -11,10 +11,12 @@ export default async function NewTransactionPage() {
   const { data: customers } = await custRes.json()
 
   return (
-    <div className="p-8 max-w-3xl">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-zinc-900">Novo lançamento</h1>
-        <p className="mt-1 text-sm text-zinc-500">Registre uma conta a pagar ou a receber.</p>
+    <div className="page page-form">
+      <div className="page-head">
+        <div>
+          <h1 className="page-title">Novo lançamento</h1>
+          <p className="page-subtitle">Registre uma conta a pagar ou a receber.</p>
+        </div>
       </div>
 
       <FinanceForm

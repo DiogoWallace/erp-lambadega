@@ -17,31 +17,33 @@ interface Props {
 function FieldError({ errors, field }: { errors?: Record<string, string[]>; field: string }) {
   const msg = errors?.[field]?.[0]
   if (!msg) return null
-  return <p className="mt-1 text-xs text-red-600">{msg}</p>
+  return <p className="form-field-error">{msg}</p>
 }
 
 function Field({
   label,
   name,
+  span,
   children,
   errors,
 }: {
   label: string
   name: string
+  span?: 2 | 'full'
   children: React.ReactNode
   errors?: Record<string, string[]>
 }) {
+  const cls =
+    span === 'full' ? 'form-field-full' :
+    span === 2 ? 'form-field-span-2' : ''
   return (
-    <div>
-      <label className="block text-xs font-medium text-zinc-600 mb-1">{label}</label>
+    <div className={`form-field ${cls}`}>
+      <label className="field-label" htmlFor={name}>{label}</label>
       {children}
       <FieldError errors={errors} field={name} />
     </div>
   )
 }
-
-const inputClass =
-  'w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent'
 
 const TYPE_LABELS: Record<string, string> = {
   in: 'Entrada (aumenta estoque)',
@@ -54,95 +56,102 @@ export function MovementForm({ action, products, defaultProductId }: Props) {
   const [type, setType] = useState('in')
 
   return (
-    <form action={formAction} className="space-y-6">
+    <form action={formAction} className="form-stack">
       {state?.error && (
-        <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-          {state.error}
+        <div className="form-banner-error">{state.error}</div>
+      )}
+
+      <section className="card">
+        <div className="card-head">
+          <div><h3>Movimentação</h3></div>
         </div>
-      )}
+        <div className="card-body form-grid">
+          <Field label="Produto *" name="product_id" errors={state?.errors} span={2}>
+            <select
+              id="product_id"
+              name="product_id"
+              defaultValue={defaultProductId ?? ''}
+              className="input"
+              required
+            >
+              <option value="">Selecione um produto</option>
+              {products.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                  {p.sku ? ` — SKU: ${p.sku}` : ''}
+                  {` (estoque: ${p.stock_quantity})`}
+                </option>
+              ))}
+            </select>
+          </Field>
 
-      <Field label="Produto *" name="product_id" errors={state?.errors}>
-        <select
-          name="product_id"
-          defaultValue={defaultProductId ?? ''}
-          className={inputClass}
-          required
-        >
-          <option value="">Selecione um produto</option>
-          {products.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-              {p.sku ? ` — SKU: ${p.sku}` : ''}
-              {` (estoque: ${p.stock_quantity})`}
-            </option>
-          ))}
-        </select>
-      </Field>
+          <Field label="Tipo de movimentação *" name="type" errors={state?.errors}>
+            <select
+              id="type"
+              name="type"
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+              className="input"
+              required
+            >
+              {Object.entries(TYPE_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
+          </Field>
 
-      <Field label="Tipo de movimentação *" name="type" errors={state?.errors}>
-        <select
-          name="type"
-          value={type}
-          onChange={(e) => setType(e.target.value)}
-          className={inputClass}
-          required
-        >
-          {Object.entries(TYPE_LABELS).map(([value, label]) => (
-            <option key={value} value={value}>{label}</option>
-          ))}
-        </select>
-      </Field>
+          <Field
+            label={type === 'adjustment' ? 'Quantidade total em estoque *' : 'Quantidade *'}
+            name="quantity"
+            errors={state?.errors}
+          >
+            <input
+              id="quantity"
+              type="number"
+              name="quantity"
+              min="0"
+              step="1"
+              placeholder={type === 'adjustment' ? 'Total contado' : 'Ex: 10'}
+              className="input tnum"
+              required
+            />
+            {type === 'adjustment' && (
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
+                Informe o total encontrado na contagem física. O estoque será ajustado para este valor.
+              </p>
+            )}
+          </Field>
 
-      <Field
-        label={type === 'adjustment' ? 'Quantidade total em estoque *' : 'Quantidade *'}
-        name="quantity"
-        errors={state?.errors}
-      >
-        <input
-          type="number"
-          name="quantity"
-          min="0"
-          step="1"
-          placeholder={type === 'adjustment' ? 'Informe a quantidade real contada' : 'Ex: 10'}
-          className={inputClass}
-          required
-        />
-        {type === 'adjustment' && (
-          <p className="mt-1 text-xs text-zinc-400">
-            Informe o total encontrado na contagem física. O estoque será ajustado para este valor.
-          </p>
-        )}
-      </Field>
+          {type === 'in' && (
+            <Field label="Preço de custo (R$)" name="cost_price" errors={state?.errors}>
+              <input
+                id="cost_price"
+                type="number"
+                name="cost_price"
+                min="0"
+                step="0.01"
+                placeholder="0,00"
+                className="input tnum"
+              />
+            </Field>
+          )}
 
-      {type === 'in' && (
-        <Field label="Preço de custo (R$)" name="cost_price" errors={state?.errors}>
-          <input
-            type="number"
-            name="cost_price"
-            min="0"
-            step="0.01"
-            placeholder="0,00"
-            className={inputClass}
-          />
-        </Field>
-      )}
+          <Field label="Descrição / motivo" name="description" errors={state?.errors} span="full">
+            <textarea
+              id="description"
+              name="description"
+              rows={3}
+              placeholder="Ex: Compra NF-e 1234, quebra de mercadoria, contagem mensal…"
+              className="input"
+            />
+          </Field>
+        </div>
+      </section>
 
-      <Field label="Descrição / motivo" name="description" errors={state?.errors}>
-        <textarea
-          name="description"
-          rows={3}
-          placeholder="Ex: Compra NF-e 1234, Quebra de mercadoria, Contagem mensal..."
-          className={inputClass}
-        />
-      </Field>
-
-      <div className="flex justify-end">
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-lg bg-zinc-900 px-6 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50 transition-colors"
-        >
-          {pending ? 'Registrando...' : 'Registrar movimentação'}
+      <div className="form-actions">
+        <a href="/stock-movements" className="btn btn-outline">Cancelar</a>
+        <button type="submit" disabled={pending} className="btn btn-primary">
+          {pending ? 'Registrando…' : 'Registrar movimentação'}
         </button>
       </div>
     </form>

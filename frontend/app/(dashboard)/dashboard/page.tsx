@@ -105,7 +105,7 @@ export default async function DashboardPage({ searchParams }: Props) {
       </div>
 
       {/* KPI strip */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 14, marginBottom: 20 }}>
+      <div className="dash-kpis">
         <MetricCard
           label="Receita"
           value={formatCurrency(data.revenue.current)}
@@ -142,7 +142,7 @@ export default async function DashboardPage({ searchParams }: Props) {
       </div>
 
       {/* Status breakdown */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 14, marginBottom: 20 }}>
+      <div className="dash-stats">
         {[
           { key: 'pending',  label: 'Pendentes',  count: data.orders.pending,  kind: 'warning' as const },
           { key: 'paid',     label: 'Pagos',      count: data.orders.paid,     kind: 'success' as const },
@@ -165,7 +165,7 @@ export default async function DashboardPage({ searchParams }: Props) {
       </div>
 
       {/* Bottom grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 14 }}>
+      <div className="dash-bottom">
         {/* Low stock */}
         <div className="card">
           <div className="card-head">

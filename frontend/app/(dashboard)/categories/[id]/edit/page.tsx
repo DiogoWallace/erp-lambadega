@@ -26,11 +26,11 @@ export default async function EditCategoryPage({ params }: Props) {
   const boundDelete = deleteCategoryAction.bind(null, category.id)
 
   return (
-    <div className="p-8 max-w-2xl">
-      <div className="mb-8 flex items-start justify-between">
+    <div className="page page-form">
+      <div className="page-head">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900">{category.name}</h1>
-          <p className="mt-1 text-sm text-zinc-500">Editar dados da categoria</p>
+          <h1 className="page-title">{category.name}</h1>
+          <p className="page-subtitle">Editar dados da categoria</p>
         </div>
         <DeleteCategoryButton action={boundDelete} />
       </div>

@@ -419,8 +419,10 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - **Tema light/dark via cookie `theme`** — resolvido server-side em `app/layout.tsx`, aplicado como classe `theme-light`/`theme-dark` no `<html>` (sem flash). `toggleThemeAction` em `app/lib/theme.ts` alterna e chama `revalidatePath('/', 'layout')` — a página inteira re-renderiza com o novo tema. Cookie tem `httpOnly: false` (precisa ser lido pelo `next/font` no SSR), `maxAge` 1 ano.
 - **Design tokens em `app/globals.css`** — `:root`/`.theme-light`/`.theme-dark` definem cores em `oklch`, raios, sombras (em `rgba` — o lightning CSS do Tailwind v4 dropa `oklch` em shadows), ring. Para criar componente novo, prefira `var(--token)` ou utilitários Tailwind que mapeiem para tokens em vez de cores hard-coded.
 - **Ícones inline em `app/ui/icons.tsx`** — não há dependência externa (lucide, heroicons). Componente `Icon` com `name: IconName` tipado e SVGs definidos em um `PATHS` interno. Para adicionar: estender `type IconName` + entrada em `PATHS` (24×24, `stroke="currentColor"`, sem `fill`).
-- **Escopo do design system** — aplicado em todas as listas (dashboard, sales, customers, suppliers, products, categories, stock-movements, finance, audit-logs), no detalhe de venda e nos 4 relatórios. Login, PDV (`/sales/new`) e forms (novo/editar) ainda usam o estilo antigo — follow-up explícito no roadmap.
-- **`sidebar-user.tsx` foi removido** no commit do design (`08e1b6d`). O `layout.tsx` agora carrega o usuário direto via `apiFetch('/auth/me')` e passa `userName`/`userRole`/`canAudit` por props para `SidebarNav` e `Topbar`.
+- **Escopo do design system** — aplicado em todas as listas (dashboard, sales, customers, suppliers, products, categories, stock-movements, finance, audit-logs), no detalhe de venda, nos 4 relatórios, no **PDV (`/sales/new`)** e nos **forms de novo/editar de todos os módulos** (customers, categories, suppliers, products, stock-movements, finance) mais modais de pagamento/cancelamento. Login é o único bloco restante.
+- **Padrão de forms** — wrapper `.page .page-form` + `.page-head`; cada seção é um `<section className="card">` com `.card-head` + `.card-body form-grid`. O grid usa `repeat(auto-fit, minmax(240px, 1fr))` — renderiza 1 a 6 colunas conforme a largura disponível, sem media query manual. Helper `Field` com prop `span={2}` (campos médios) ou `span="full"` (textareas). Utilitários: `.form-banner-error`, `.form-actions`, `.btn-danger-outline`, `.btn-success`, `.modal-backdrop/-panel/-title/-sub/-actions`.
+- **Shell responsivo** — `app/(dashboard)/shell.tsx` (client) envolve sidebar+topbar e gerencia o estado do drawer mobile. Breakpoints: ≥1024 desktop (sidebar inline), 768–1023 tablet (paddings reduzidos, dashboard 2×2, PDV em 1 coluna), <768 mobile (sidebar vira drawer off-canvas, burger no topbar, breadcrumb compacto, tabelas com scroll horizontal, filtros fluidos, botão "Registrar venda" do PDV sticky no rodapé). `height: 100dvh` em vez de `100vh` evita o salto da URL bar mobile. Drawer fecha em mudança de `usePathname` via comparação durante render (padrão React 19, sem `useEffect` em cascata).
+- **`sidebar-user.tsx` foi removido** no commit do design (`08e1b6d`). O `layout.tsx` agora carrega o usuário direto via `apiFetch('/auth/me')` e passa `userName`/`userRole`/`canAudit` por props para `DashboardShell` (que delega a `SidebarNav` e `Topbar`).
 - **Root error boundary em `app/global-error.tsx`** — Next.js exige que esse arquivo renderize a própria `<html>` (fora do shell do dashboard). Para erros dentro do dashboard, o boundary continua sendo `(dashboard)/error.tsx`, que mantém sidebar/topbar visíveis.
 
 ---
@@ -447,7 +449,7 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - Auth check na borda via `proxy.ts`
 - **Testes automatizados**: 118 feature tests PHPUnit (backend, inclui `OrderTest` cobrindo create/pay/cancel + disparo de eventos) + 21 testes unitários Vitest (frontend) — `make test` roda a suite completa. Backend cobre auth, permissões, CRUD e isolamento multi-tenant. CI (`tests.yml`) roda a suíte + Deptrac e **trava o deploy** se algo quebrar.
 - Error boundary no dashboard (`error.tsx`) + root error boundary (`global-error.tsx`) + proteção 5xx no `apiFetch`
-- **Design system Inovabi** (tokens oklch em `globals.css`, tema light/dark via cookie, sidebar com pin/favoritos/colapso, topbar com breadcrumbs e toggle de tema, ícones inline em `app/ui/icons.tsx`, tipografia Geist; aplicado em todas as listas + relatórios + detalhe de venda; login/PDV/forms ainda no estilo antigo). Ver [`docs/arquitetura/design-system.md`](../arquitetura/design-system.md).
+- **Design system Inovabi** (tokens oklch em `globals.css`, tema light/dark via cookie, sidebar com pin/favoritos/colapso, topbar com breadcrumbs e toggle de tema, ícones inline em `app/ui/icons.tsx`, tipografia Geist; aplicado em todas as listas + relatórios + detalhe de venda + **PDV (`/sales/new`)**; login/forms ainda no estilo antigo). **Shell responsivo** com drawer mobile (<768px), breakpoints de tablet/desktop, tabelas com scroll horizontal, dashboard em 2×2 no tablet. Ver [`docs/arquitetura/design-system.md`](../arquitetura/design-system.md).
 - Documentação completa em `docs/arquitetura/`
 
 **Pendente (próximos passos):**
@@ -457,7 +459,10 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - ~~Relatórios básicos~~ ✓ (vendas por período, top produtos, fluxo de caixa, contas a pagar/receber com CSV)
 - ~~Backup automatizado do MySQL em produção~~ ✓ (sidecar `db-backup` em prod; diário às 03:00 UTC; retenção 7d em volume `db_backups`; `make backup-now`/`backup-list`/`backup-restore`)
 - ~~Design system aplicado em listas, relatórios e detalhe de venda~~ ✓
-- **Estilizar login + PDV (`/sales/new`) + forms (novo/editar)** com o design system (follow-up explícito)
+- ~~Design system aplicado no PDV (`/sales/new`)~~ ✓ (carrinho com layout 2-níveis em mobile, botão sticky)
+- ~~Shell responsivo (drawer mobile, breakpoints tablet/desktop, tabelas com scroll horizontal)~~ ✓
+- ~~Forms de novo/editar de todos os módulos + modais de pagamento/cancelamento~~ ✓ (form-grid auto-fit, span-2/full, banner de erro, btn-danger-outline)
+- **Estilizar login** com o design system (follow-up restante)
 - Middleware `AuditModuleAccess` para rotas sensíveis (relatórios, exportações)
 - Comando `audit:prune` para retenção configurável (12 meses em prod via `AUDIT_RETENTION_DAYS`)
 

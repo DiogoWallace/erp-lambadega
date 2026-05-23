@@ -29,17 +29,24 @@ export default async function EditTransactionPage({ params }: Props) {
   const isFromSale = Boolean(transaction.order_id)
 
   return (
-    <div className="p-8 max-w-3xl">
-      <div className="mb-8 flex items-start justify-between">
+    <div className="page page-form">
+      <div className="page-head">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900">{transaction.description}</h1>
-          <p className="mt-1 text-sm text-zinc-500">Editar lançamento financeiro</p>
+          <h1 className="page-title">{transaction.description}</h1>
+          <p className="page-subtitle">Editar lançamento financeiro</p>
         </div>
         <DeleteTransactionButton action={boundDelete} />
       </div>
 
       {isFromSale && (
-        <div className="mb-6 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+        <div
+          className="form-banner-error"
+          style={{
+            marginBottom: 16,
+            background: 'var(--warning-soft)',
+            color: 'var(--warning)',
+          }}
+        >
           Este lançamento foi gerado por uma venda
           {transaction.order ? ` (${transaction.order.order_number})` : ''}. Edições manuais não alteram o pedido de origem.
         </div>

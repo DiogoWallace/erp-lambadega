@@ -46,7 +46,10 @@ Objetivo: sistema web funcional, operando em produção, com as fundações arqu
 - [x] Backup automatizado do MySQL (sidecar diário, retenção 7d)
 - [ ] Monitoramento de uptime
 - [ ] Página de manutenção
-- [ ] Estilizar login + PDV + forms (follow-up do design system)
+- [x] Estilizar PDV (`/sales/new`) com o design system + responsividade mobile/tablet
+- [x] Shell responsivo (sidebar vira drawer off-canvas em <768px, breakpoints de dashboard/tabelas/filtros)
+- [x] Estilizar forms de novo/editar de todos os módulos (customers, categories, suppliers, products, stock-movements, finance) + modais de pagamento/cancelamento
+- [ ] Estilizar login com o design system (follow-up restante)
 
 **Critério de saída:** sistema rodando em produção com pelo menos um estabelecimento real operando todos os módulos.
 

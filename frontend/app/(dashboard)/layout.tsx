@@ -1,7 +1,6 @@
 import { apiFetch } from '@/app/lib/api'
 import { getTheme } from '@/app/lib/theme'
-import { SidebarNav } from './sidebar-nav'
-import { Topbar } from './topbar'
+import { DashboardShell } from './shell'
 
 // Tudo aqui dentro depende do cookie 'token'; nunca pré-renderizar estático.
 export const dynamic = 'force-dynamic'
@@ -30,18 +29,15 @@ export default async function DashboardLayout({
   const theme = await getTheme()
 
   return (
-    <div className="app-shell">
-      <SidebarNav
-        canAudit={canAudit}
-        tenantName="Estabelecimento"
-        tenantMeta={`#${tenantId}`}
-        userName={userName}
-        userRole={userRole}
-      />
-      <main className="app-main">
-        <Topbar userName={userName} theme={theme} />
-        {children}
-      </main>
-    </div>
+    <DashboardShell
+      userName={userName}
+      userRole={userRole}
+      canAudit={canAudit}
+      tenantName="Estabelecimento"
+      tenantMeta={`#${tenantId}`}
+      theme={theme}
+    >
+      {children}
+    </DashboardShell>
   )
 }
