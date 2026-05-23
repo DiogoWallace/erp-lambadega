@@ -22,7 +22,7 @@ export default async function SettingsPage() {
   }
 
   const canEditCompany = permissions.includes('settings.edit')
-  const canManageUsers = permissions.includes('users.edit')
+  const canViewUsers = permissions.includes('users.view')
 
   const cards: Card[] = [
     {
@@ -35,10 +35,9 @@ export default async function SettingsPage() {
     {
       title: 'Usuários',
       description: 'Cadastro de colaboradores e atribuição de cargos.',
-      href: null,
+      href: canViewUsers ? '/settings/users' : null,
       icon: 'customers',
-      available: false,
-      badge: 'Em breve',
+      available: canViewUsers,
     },
     {
       title: 'Preferências',

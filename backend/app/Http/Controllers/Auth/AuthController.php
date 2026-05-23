@@ -56,9 +56,10 @@ class AuthController extends Controller
     {
         return [
             ...$user->toArray(),
-            'avatar_url'  => $user->avatarUrl(),
-            'roles'       => $user->getRoleNames(),
-            'permissions' => $user->getAllPermissions()->pluck('name'),
+            'avatar_url'           => $user->avatarUrl(),
+            'must_change_password' => (bool) $user->must_change_password,
+            'roles'                => $user->getRoleNames(),
+            'permissions'          => $user->getAllPermissions()->pluck('name'),
         ];
     }
 }

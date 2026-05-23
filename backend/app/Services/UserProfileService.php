@@ -36,7 +36,10 @@ class UserProfileService
             return false;
         }
 
-        $user->update(['password' => $newPassword]);
+        $user->update([
+            'password'             => $newPassword,
+            'must_change_password' => false,
+        ]);
 
         $currentTokenId = $user->currentAccessToken()?->id;
         $user->tokens()

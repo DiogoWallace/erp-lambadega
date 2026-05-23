@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\StockMovementController;
 use App\Http\Controllers\Api\SupplierController;
+use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Auth\AuthController;
 use Illuminate\Support\Facades\Route;
 
@@ -38,6 +39,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('establishment',  [EstablishmentController::class, 'show']);
     Route::put('establishment',  [EstablishmentController::class, 'update']);
+
+    Route::apiResource('users', UserController::class);
+    Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword']);
 
     Route::apiResource('customers', CustomerController::class);
     Route::apiResource('categories', CategoryController::class);

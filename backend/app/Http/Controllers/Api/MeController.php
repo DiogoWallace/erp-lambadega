@@ -20,13 +20,14 @@ class MeController extends Controller
 
         return response()->json([
             'data' => [
-                'id'          => $user->id,
-                'name'        => $user->name,
-                'email'       => $user->email,
-                'phone'       => $user->phone,
-                'avatar_url'  => $user->avatarUrl(),
-                'roles'       => $user->getRoleNames(),
-                'permissions' => $user->getAllPermissions()->pluck('name'),
+                'id'                   => $user->id,
+                'name'                 => $user->name,
+                'email'                => $user->email,
+                'phone'                => $user->phone,
+                'avatar_url'           => $user->avatarUrl(),
+                'must_change_password' => (bool) $user->must_change_password,
+                'roles'                => $user->getRoleNames(),
+                'permissions'          => $user->getAllPermissions()->pluck('name'),
             ],
         ]);
     }
