@@ -71,10 +71,18 @@ deptrac:
       collectors:
         - type: classNameRegex
           value: '#^App\\Services\\ReportService$#'
+    # NotificationService é cross-cutting: muitos services/commands precisam
+    # emitir notificações (estoque, financeiro, broadcast manual). Camada
+    # própria para que possam dependê-lo sem afrouxar a fronteira entre
+    # Services.
+    - name: NotificationService
+      collectors:
+        - type: classNameRegex
+          value: '#^App\\Services\\NotificationService$#'
     - name: Services
       collectors:
         - type: classNameRegex
-          value: '#^App\\Services\\(?!InventoryService$)(?!AuditService$)(?!FinancialTransactionService$)(?!ReportService$).*#'
+          value: '#^App\\Services\\(?!InventoryService$)(?!AuditService$)(?!FinancialTransactionService$)(?!ReportService$)(?!NotificationService$).*#'
 
     # ── Models ────────────────────────────────────────────────────────────
     - name: ModelConcerns
@@ -104,6 +112,7 @@ deptrac:
       - AuditService
       - FinancialService
       - ReportService
+      - NotificationService
       - Requests
       - Resources
       - DTOs
@@ -122,10 +131,15 @@ deptrac:
       - DTOs
       - Events
       - InventoryService
+      - NotificationService
 
     InventoryService:
       - Models
       - InventoryModel
+      - NotificationService
+
+    NotificationService:
+      - Models
 
     AuditService:
       - Models
@@ -160,6 +174,7 @@ deptrac:
 
     Commands:
       - FinancialService
+      - NotificationService
 
     ModelConcerns:
       - Models

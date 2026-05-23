@@ -1,4 +1,4 @@
-type IconName =
+export type IconName =
   | 'dashboard' | 'pos' | 'sales' | 'customers' | 'suppliers'
   | 'package' | 'bookmark' | 'inventory' | 'finance' | 'reports'
   | 'settings' | 'search' | 'bell' | 'plus' | 'minus' | 'pin' | 'pin_filled'

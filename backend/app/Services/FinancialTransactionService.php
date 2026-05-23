@@ -125,13 +125,43 @@ class FinancialTransactionService
      * Manutenção de sistema (roda sem auth, via comando agendado), por isso
      * ignora o escopo de tenant de propósito — processa todos os estabelecimentos.
      *
-     * @return int quantidade de transações atualizadas
+     * @return array<int, FinancialTransaction> as transações que viraram overdue
      */
-    public function markOverdue(): int
+    public function markOverdue(): array
     {
-        return FinancialTransaction::withoutGlobalScope('establishment')
+        $transactions = FinancialTransaction::withoutGlobalScope('establishment')
             ->where('status', 'pending')
             ->whereDate('due_date', '<', now()->toDateString())
+            ->get();
+
+        if ($transactions->isEmpty()) {
+            return [];
+        }
+
+        FinancialTransaction::withoutGlobalScope('establishment')
+            ->whereIn('id', $transactions->pluck('id'))
             ->update(['status' => 'overdue']);
+
+        return $transactions->all();
+    }
+
+    /**
+     * Lista contas pendentes que vencem nos próximos N dias (sem incluir as
+     * já vencidas — essas vêm em markOverdue). Usado pelo comando
+     * finance:notify-due-soon.
+     *
+     * @return array<int, FinancialTransaction>
+     */
+    public function dueWithin(int $days): array
+    {
+        $today    = now()->toDateString();
+        $deadline = now()->addDays($days)->toDateString();
+
+        return FinancialTransaction::withoutGlobalScope('establishment')
+            ->where('status', 'pending')
+            ->whereDate('due_date', '>=', $today)
+            ->whereDate('due_date', '<=', $deadline)
+            ->get()
+            ->all();
     }
 }

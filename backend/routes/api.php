@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\FinancialTransactionController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CustomerController;
@@ -35,6 +36,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('orders/{order}/cancel', [OrderController::class, 'cancel']);
     Route::apiResource('financial-transactions', FinancialTransactionController::class);
     Route::post('financial-transactions/{financial_transaction}/pay', [FinancialTransactionController::class, 'pay']);
+
+    Route::prefix('notifications')->group(function () {
+        Route::get('/',             [NotificationController::class, 'index']);
+        Route::get('unread-count',  [NotificationController::class, 'unreadCount']);
+        Route::get('dropdown',      [NotificationController::class, 'dropdown']);
+        Route::post('mark-all-read',[NotificationController::class, 'markAllRead']);
+        Route::post('broadcast',    [NotificationController::class, 'broadcast']);
+        Route::post('{notification}/read', [NotificationController::class, 'markRead']);
+    });
 
     Route::prefix('reports')->group(function () {
         Route::get('sales',         [ReportController::class, 'sales']);

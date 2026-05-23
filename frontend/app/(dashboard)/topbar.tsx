@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Icon } from '@/app/ui/icons'
 import { toggleThemeAction } from '@/app/lib/theme'
 import { logoutAction } from './actions'
+import { NotificationsBell } from './notifications-bell'
 
 const LABELS: Record<string, string> = {
   dashboard: 'Painel',
@@ -35,10 +36,11 @@ function humanize(segment: string): string {
 interface Props {
   userName: string
   theme: 'light' | 'dark'
+  canBroadcast: boolean
   onMenuClick?: () => void
 }
 
-export function Topbar({ userName, theme, onMenuClick }: Props) {
+export function Topbar({ userName, theme, canBroadcast, onMenuClick }: Props) {
   const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
   const menuWrapRef = useRef<HTMLDivElement>(null)
@@ -102,10 +104,7 @@ export function Topbar({ userName, theme, onMenuClick }: Props) {
             <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={16} />
           </button>
         </form>
-        <button type="button" className="topbar-ico-btn" title="Notificações" aria-label="Notificações">
-          <Icon name="bell" size={16} />
-          <span className="dot" />
-        </button>
+        <NotificationsBell canBroadcast={canBroadcast} />
         <div style={{ width: 1, height: 22, background: 'var(--border)', margin: '0 4px' }} />
         <div ref={menuWrapRef} style={{ position: 'relative' }}>
           <button

@@ -13,6 +13,7 @@ export default async function DashboardLayout({
   let userName = 'Usuário'
   let userRole = 'user'
   let canAudit = false
+  let canBroadcast = false
   let tenantId = '—'
 
   try {
@@ -20,7 +21,9 @@ export default async function DashboardLayout({
     const { data: user } = await res.json()
     userName = user?.name ?? 'Usuário'
     userRole = user?.roles?.[0] ?? 'user'
-    canAudit = (user?.permissions ?? []).includes('audit.view')
+    const permissions: string[] = user?.permissions ?? []
+    canAudit = permissions.includes('audit.view')
+    canBroadcast = permissions.includes('notification.broadcast')
     tenantId = (user?.establishment_id ?? '').slice(0, 8) || '—'
   } catch {
     // fail silently — layout still renders with placeholders
@@ -33,6 +36,7 @@ export default async function DashboardLayout({
       userName={userName}
       userRole={userRole}
       canAudit={canAudit}
+      canBroadcast={canBroadcast}
       tenantName="Estabelecimento"
       tenantMeta={`#${tenantId}`}
       theme={theme}

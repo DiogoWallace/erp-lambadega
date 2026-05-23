@@ -48,6 +48,9 @@ class RoleSeeder extends Seeder
 
             // Auditoria
             'audit.view',
+
+            // Notificações (broadcast — atualizações do sistema, novidades)
+            'notification.broadcast',
         ];
 
         foreach ($permissions as $permission) {
