@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { apiFetch } from '@/app/lib/api'
 import { FinancialTransaction, FinancialStatus, PaginatedResponse } from '@/app/lib/types'
-import { Icon } from '@/app/ui/icon'
+import { Icon } from '@/app/ui/icons'
 import { payTransactionAction } from './actions'
 import { PayTransactionButton } from './pay-button'
 

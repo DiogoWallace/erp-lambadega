@@ -3,6 +3,9 @@ import { getTheme } from '@/app/lib/theme'
 import { SidebarNav } from './sidebar-nav'
 import { Topbar } from './topbar'
 
+// Tudo aqui dentro depende do cookie 'token'; nunca pré-renderizar estático.
+export const dynamic = 'force-dynamic'
+
 export default async function DashboardLayout({
   children,
 }: {

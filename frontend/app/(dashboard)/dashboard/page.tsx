@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { apiFetch } from '@/app/lib/api'
 import { DashboardData } from '@/app/lib/types'
-import { Icon } from '@/app/ui/icon'
+import { Icon } from '@/app/ui/icons'
 import { PeriodSelector } from './period-selector'
 
 interface Props {

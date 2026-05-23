@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Icon } from '@/app/ui/icon'
+import { Icon } from '@/app/ui/icons'
 
 const reports = [
   {

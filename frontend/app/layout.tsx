@@ -18,6 +18,9 @@ export const metadata: Metadata = {
   description: "Sistema ERP Comercial multi-tenant",
 };
 
+// Lê cookie 'theme' a cada request para aplicar o tema no <html>.
+export const dynamic = 'force-dynamic'
+
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
