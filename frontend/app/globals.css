@@ -653,6 +653,125 @@ select.input { appearance: none; background-image: url("data:image/svg+xml;utf8,
 .dash-bottom { grid-template-columns: 1.4fr 1fr; }
 
 /* ============================================================== */
+/* PDV — Nova venda                                               */
+/* ============================================================== */
+.pdv-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 400px;
+  gap: 16px;
+  align-items: start;
+}
+.pdv-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.pdv-card-body { padding: 0 18px 16px; }
+
+/* Resultados de busca */
+.pdv-results {
+  margin-top: 10px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  overflow: hidden;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.pdv-result {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--border-soft);
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--text);
+  transition: background 0.12s;
+}
+.pdv-result:last-child { border-bottom: 0; }
+.pdv-result:hover:not(:disabled) { background: var(--surface-hover); }
+.pdv-result:disabled { opacity: 0.45; cursor: not-allowed; }
+.pdv-result-info { min-width: 0; }
+.pdv-result-name {
+  font-size: 13.5px; font-weight: 500; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pdv-result-meta {
+  display: flex; gap: 10px; flex-wrap: wrap;
+  margin-top: 3px; font-size: 11.5px; color: var(--text-muted);
+}
+.pdv-result-meta .mono { font-size: 11px; }
+.pdv-result-empty { color: var(--danger); }
+.pdv-result-price { font-weight: 600; font-size: 13px; color: var(--text); flex-shrink: 0; }
+
+/* Carrinho */
+.pdv-cart { list-style: none; margin: 0; padding: 0; }
+.pdv-cart-row {
+  display: flex; flex-wrap: wrap;
+  align-items: center; gap: 10px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--border-soft);
+}
+.pdv-cart-info { flex: 1 1 200px; min-width: 0; }
+.pdv-cart-name {
+  font-size: 13.5px; font-weight: 500; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pdv-cart-sku { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.pdv-cart-ctrl { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.pdv-cart-price { width: 90px; text-align: right; padding: 0 8px; }
+.pdv-cart-qty   { width: 60px; text-align: center; padding: 0 6px; }
+.pdv-cart-total {
+  min-width: 84px; text-align: right;
+  font-weight: 600; font-size: 13px; color: var(--text);
+}
+.pdv-cart-remove {
+  width: 28px; height: 28px;
+  border: 0; background: transparent;
+  border-radius: var(--r-sm);
+  color: var(--text-faint);
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background 0.12s, color 0.12s;
+}
+.pdv-cart-remove:hover { background: var(--danger-soft); color: var(--danger); }
+
+/* Desconto + totais (footer do card carrinho) */
+.pdv-discount {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  padding: 12px 18px;
+  border-top: 1px solid var(--border-soft);
+  background: var(--surface-2);
+}
+.pdv-totals {
+  padding: 12px 18px 16px;
+  border-top: 1px solid var(--border-soft);
+  background: var(--surface-2);
+}
+.pdv-totals-row {
+  display: flex; justify-content: space-between;
+  font-size: 13px; color: var(--text-soft);
+  padding: 3px 0;
+}
+.pdv-totals-strong {
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-size: 16px; font-weight: 700; color: var(--text);
+}
+
+.pdv-submit-wrap { display: flex; }
+.pdv-submit {
+  width: 100%;
+  height: 48px;
+  font-size: 15px;
+  font-weight: 600;
+  justify-content: center;
+}
+
+/* ============================================================== */
 /* Responsivo — mobile (<768px) e tablet (768–1023px)             */
 /* ============================================================== */
 
@@ -731,6 +850,30 @@ select.input { appearance: none; background-image: url("data:image/svg+xml;utf8,
 
   /* Totais do rodapé da lista de vendas: empilham com gap menor */
   .sales-totals { flex-wrap: wrap; gap: 18px !important; justify-content: flex-start !important; }
+
+  /* PDV mobile: linha do carrinho em 2 níveis (nome em cima, controles embaixo) */
+  .pdv-card-body { padding: 0 14px 14px; }
+  .pdv-cart-row { padding: 12px 14px; gap: 8px; }
+  .pdv-cart-info { flex: 1 1 100%; }
+  .pdv-cart-ctrl { flex: 1 1 100%; }
+  .pdv-cart-total { flex: 1 1 auto; }
+  .pdv-discount, .pdv-totals { padding-left: 14px; padding-right: 14px; }
+
+  /* Botão Registrar venda fica sticky no rodapé do viewport */
+  .pdv-submit-wrap {
+    position: sticky;
+    bottom: 0;
+    margin: 4px -14px -28px;
+    padding: 10px 14px 14px;
+    background: linear-gradient(to top, var(--bg) 70%, transparent);
+    z-index: 5;
+  }
+  .pdv-submit { height: 46px; font-size: 14.5px; }
+}
+
+/* PDV: empilha em coluna única para tablets também (carrinho 400px não cabe) */
+@media (max-width: 1023px) {
+  .pdv-grid { grid-template-columns: 1fr; gap: 14px; }
 }
 
 /* Tablet: encolhe paddings e tipografia, sidebar inline (default desktop) */

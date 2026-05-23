@@ -47,9 +47,10 @@ frontend/
 │   ├── global-error.tsx         root error boundary (Next.js) — renderiza <html> próprio
 │   ├── (dashboard)/             route group — rotas autenticadas (não aparece na URL)
 │   │   ├── __tests__/           testes Vitest para os build-body de todos os módulos
-│   │   ├── layout.tsx           async; força dynamic; carrega /auth/me + tema; renderiza SidebarNav + Topbar
-│   │   ├── sidebar-nav.tsx      client; navegação com pin, favoritos, colapso de seções
-│   │   ├── topbar.tsx           client; breadcrumbs por pathname, toggle de tema, logout
+│   │   ├── layout.tsx           async; força dynamic; carrega /auth/me + tema; delega para DashboardShell
+│   │   ├── shell.tsx            client; orquestra o drawer mobile (open/close + reset em navegação)
+│   │   ├── sidebar-nav.tsx      client; navegação com pin, favoritos, colapso; recebe mobileOpen
+│   │   ├── topbar.tsx           client; breadcrumbs por pathname, toggle de tema, logout, burger no mobile
 │   │   ├── error.tsx            error boundary do dashboard (client)
 │   │   ├── actions.ts           logoutAction
 │   │   ├── customers/           CRUD de clientes
@@ -154,8 +155,9 @@ Sistema próprio do projeto (não é lib externa). Vive em `app/globals.css` + c
 - **Tema light/dark via cookie** — `app/lib/theme.ts` expõe `getTheme()` (server) e `toggleThemeAction()` (server action). A classe `theme-light`/`theme-dark` é aplicada no `<html>` em SSR — sem flash de troca.
 - **Tipografia Geist** — `Geist` + `Geist_Mono` via `next/font/google`, expostas como `--font-geist-sans` / `--font-geist-mono`.
 - **Ícones** — componente `Icon` em `app/ui/icons.tsx` com `IconName` tipado. SVG inline, sem dependência externa. Para adicionar ícone: incluir no `type IconName` + `PATHS`.
-- **Shell do dashboard** — `SidebarNav` (com pin/favoritos/colapso) + `Topbar` (breadcrumbs por `usePathname` + toggle de tema + logout).
-- **Escopo aplicado** — todas as listas, relatórios e detalhe de venda. **Login, PDV (`/sales/new`) e forms (novo/editar) ficaram no estilo antigo** — follow-up explícito.
+- **Shell do dashboard** — `DashboardShell` (client) envolve `SidebarNav` (pin/favoritos/colapso) + `Topbar` (breadcrumbs, toggle de tema, logout, burger no mobile) e gerencia o estado do drawer mobile.
+- **Responsivo** — três breakpoints (≥1024 desktop, 768–1023 tablet, <768 mobile). No mobile: sidebar vira drawer off-canvas com overlay, burger no topbar, breadcrumb compacto, search escondido, tabelas com scroll horizontal (`.card:has(>.t-table)`), grids do dashboard em 2 cols, filtros fluidos, botão "Registrar venda" do PDV sticky no rodapé. `height: 100dvh` no shell evita o salto da URL bar mobile.
+- **Escopo aplicado** — todas as listas, relatórios, detalhe de venda e **PDV (`/sales/new`)**. **Login e forms (novo/editar) ainda no estilo antigo** — follow-up restante.
 
 ---
 

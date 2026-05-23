@@ -15,12 +15,14 @@ export default async function NewSalePage() {
   const activeProducts = products.filter((p) => p.is_active)
 
   return (
-    <div className="p-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-zinc-900">Nova venda</h1>
-        <p className="mt-0.5 text-sm text-zinc-500">
-          Adicione produtos ao carrinho e registre a venda.
-        </p>
+    <div className="page">
+      <div className="page-head">
+        <div>
+          <h1 className="page-title">Nova venda</h1>
+          <p className="page-subtitle">
+            Adicione produtos ao carrinho e registre a venda.
+          </p>
+        </div>
       </div>
 
       <SaleForm
