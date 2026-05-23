@@ -9,6 +9,7 @@ interface ProfileData {
   email: string
   phone: string | null
   avatar_url: string | null
+  must_change_password: boolean
   roles: string[]
 }
 
@@ -26,6 +27,12 @@ export default async function ProfilePage() {
           </p>
         </div>
       </div>
+
+      {user.must_change_password && (
+        <div className="form-banner-error" style={{ background: 'var(--warning-soft)', color: 'var(--warning)', marginBottom: 16 }}>
+          Sua senha foi resetada pelo administrador. Defina uma nova senha no formulário "Alterar senha" abaixo.
+        </div>
+      )}
 
       <AvatarForm user={user} />
 

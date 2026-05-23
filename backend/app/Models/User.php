@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToEstablishment;
 use App\Models\Concerns\HasUuidV7;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -14,20 +15,21 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['establishment_id', 'name', 'email', 'password', 'phone', 'avatar_path', 'is_active'])]
+#[Fillable(['establishment_id', 'name', 'email', 'password', 'phone', 'avatar_path', 'is_active', 'must_change_password'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, HasUuidV7, Notifiable, SoftDeletes, HasRoles;
+    use BelongsToEstablishment, HasApiTokens, HasFactory, HasUuidV7, Notifiable, SoftDeletes, HasRoles;
 
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
-            'password'          => 'hashed',
-            'is_active'         => 'boolean',
-            'deleted_at'        => 'datetime',
+            'email_verified_at'    => 'datetime',
+            'password'             => 'hashed',
+            'is_active'            => 'boolean',
+            'must_change_password' => 'boolean',
+            'deleted_at'           => 'datetime',
         ];
     }
 
