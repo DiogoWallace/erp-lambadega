@@ -91,10 +91,59 @@ export function Icon({ name, size = 16, stroke = 1.6, className = '' }: IconProp
 | Vendas — listas, detalhe e **PDV** (`/sales`, `/sales/[id]`, `/sales/new`) | ✓ design novo |
 | Clientes, Fornecedores, Categorias, Produtos, Estoque, Financeiro, Auditoria (listas) | ✓ design novo |
 | Relatórios (índice + 4 telas) | ✓ design novo |
+| **Forms (novo/editar) de todos os módulos** | ✓ design novo |
+| Modais (Pagamento e Cancelamento de venda) | ✓ design novo |
 | **Login** | ✗ ainda no estilo antigo |
-| **Forms (novo/editar) de todos os módulos** | ✗ ainda no estilo antigo |
 
-Os dois blocos restantes ficaram como follow-up.
+Login é o único bloco que segue como follow-up.
+
+---
+
+## Padrão de forms (novo/editar)
+
+Todos os forms de cadastro seguem a mesma estrutura:
+
+```tsx
+<div className="page page-form">
+  <div className="page-head">
+    <div>
+      <h1 className="page-title">…</h1>
+      <p className="page-subtitle">…</p>
+    </div>
+    {/* opcional: <DeleteXxxButton /> à direita */}
+  </div>
+
+  <form className="form-stack">
+    {state?.error && <div className="form-banner-error">…</div>}
+
+    <section className="card">
+      <div className="card-head"><div><h3>Título da seção</h3></div></div>
+      <div className="card-body form-grid">
+        <Field label="…" name="…">
+          <input className="input" />
+        </Field>
+        {/* span={2} para campos médios, span="full" para textareas */}
+      </div>
+    </section>
+
+    <div className="form-actions">
+      <a href="…" className="btn btn-outline">Cancelar</a>
+      <button type="submit" className="btn btn-primary">Salvar</button>
+    </div>
+  </form>
+</div>
+```
+
+Utilitários CSS principais:
+
+- `.form-grid` — `repeat(auto-fit, minmax(240px, 1fr))`. Renderiza 1/2/3/4+ colunas automaticamente conforme a largura disponível. Em ultrawide pode chegar a 6 colunas.
+- `.form-field-full` — `grid-column: 1 / -1` (linha inteira; use em textareas).
+- `.form-field-span-2` — `grid-column: span 2` (campos médios como "Nome", "Logradouro"). Em mobile reverte para `auto` (1 col por linha).
+- `.form-banner-error` — banner padrão de erro usando `--danger-soft` + `--danger`.
+- `.form-actions` — flex-end + flex-wrap. Em mobile, os botões esticam (`flex: 1 1 auto`).
+- `.btn-danger-outline` — botão "Excluir" no topo dos forms de edição.
+- `.btn-success` — botão "Registrar pagamento" (verde).
+- `.modal-backdrop` / `.modal-panel` / `.modal-title` / `.modal-sub` / `.modal-actions` — padrão para modais simples (pagamento, cancelamento).
 
 ---
 

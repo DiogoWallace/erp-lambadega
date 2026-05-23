@@ -18,114 +18,113 @@ interface Props {
 function FieldError({ errors, field }: { errors?: Record<string, string[]>; field: string }) {
   const msg = errors?.[field]?.[0]
   if (!msg) return null
-  return <p className="mt-1 text-xs text-red-600">{msg}</p>
+  return <p className="form-field-error">{msg}</p>
 }
 
 function Field({
   label,
   name,
+  span,
   children,
   errors,
 }: {
   label: string
   name: string
+  span?: 2 | 'full'
   children: React.ReactNode
   errors?: Record<string, string[]>
 }) {
+  const cls =
+    span === 'full' ? 'form-field-full' :
+    span === 2 ? 'form-field-span-2' : ''
   return (
-    <div>
-      <label className="block text-xs font-medium text-zinc-600 mb-1">{label}</label>
+    <div className={`form-field ${cls}`}>
+      <label className="field-label" htmlFor={name}>{label}</label>
       {children}
       <FieldError errors={errors} field={name} />
     </div>
   )
 }
 
-const inputClass =
-  'w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent'
-
 export function CategoryForm({ action, category, categories, submitLabel }: Props) {
   const [state, formAction, pending] = useActionState(action, null)
 
   return (
-    <form action={formAction} className="space-y-6">
+    <form action={formAction} className="form-stack">
       {state?.error && (
-        <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-          {state.error}
-        </div>
+        <div className="form-banner-error">{state.error}</div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="Nome *" name="name" errors={state?.errors}>
-          <input
-            name="name"
-            type="text"
-            defaultValue={category?.name ?? ''}
-            placeholder="Nome da categoria"
-            className={inputClass}
-          />
-        </Field>
+      <section className="card">
+        <div className="card-head">
+          <div><h3>Dados da categoria</h3></div>
+        </div>
+        <div className="card-body form-grid">
+          <Field label="Nome *" name="name" errors={state?.errors} span={2}>
+            <input
+              id="name"
+              name="name"
+              type="text"
+              defaultValue={category?.name ?? ''}
+              placeholder="Nome da categoria"
+              className="input"
+            />
+          </Field>
 
-        <Field label="Status" name="is_active" errors={state?.errors}>
-          <select
-            name="is_active"
-            defaultValue={category ? String(category.is_active) : 'true'}
-            className={inputClass}
-          >
-            <option value="true">Ativa</option>
-            <option value="false">Inativa</option>
-          </select>
-        </Field>
+          <Field label="Status" name="is_active" errors={state?.errors}>
+            <select
+              id="is_active"
+              name="is_active"
+              defaultValue={category ? String(category.is_active) : 'true'}
+              className="input"
+            >
+              <option value="true">Ativa</option>
+              <option value="false">Inativa</option>
+            </select>
+          </Field>
 
-        <Field label="Categoria pai" name="parent_id" errors={state?.errors}>
-          <select
-            name="parent_id"
-            defaultValue={category?.parent_id ?? ''}
-            className={inputClass}
-          >
-            <option value="">Nenhuma (raiz)</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name}
-              </option>
-            ))}
-          </select>
-        </Field>
+          <Field label="Ordem" name="sort_order" errors={state?.errors}>
+            <input
+              id="sort_order"
+              name="sort_order"
+              type="number"
+              min={0}
+              defaultValue={category?.sort_order ?? 0}
+              className="input"
+            />
+          </Field>
 
-        <Field label="Ordem" name="sort_order" errors={state?.errors}>
-          <input
-            name="sort_order"
-            type="number"
-            min={0}
-            defaultValue={category?.sort_order ?? 0}
-            className={inputClass}
-          />
-        </Field>
-      </div>
+          <Field label="Categoria pai" name="parent_id" errors={state?.errors} span={2}>
+            <select
+              id="parent_id"
+              name="parent_id"
+              defaultValue={category?.parent_id ?? ''}
+              className="input"
+            >
+              <option value="">Nenhuma (raiz)</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
+              ))}
+            </select>
+          </Field>
 
-      <Field label="Descrição" name="description" errors={state?.errors}>
-        <textarea
-          name="description"
-          defaultValue={category?.description ?? ''}
-          rows={3}
-          placeholder="Descrição opcional da categoria..."
-          className={`${inputClass} resize-none`}
-        />
-      </Field>
+          <Field label="Descrição" name="description" errors={state?.errors} span={2}>
+            <textarea
+              id="description"
+              name="description"
+              defaultValue={category?.description ?? ''}
+              rows={3}
+              placeholder="Descrição opcional da categoria…"
+              className="input"
+            />
+          </Field>
+        </div>
+      </section>
 
-      <div className="flex justify-end gap-3 pt-2">
-        <a
-          href="/categories"
-          className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 transition-colors"
-        >
-          Cancelar
-        </a>
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50 transition-colors"
-        >
-          {pending ? 'Salvando...' : submitLabel}
+      <div className="form-actions">
+        <a href="/categories" className="btn btn-outline">Cancelar</a>
+        <button type="submit" disabled={pending} className="btn btn-primary">
+          {pending ? 'Salvando…' : submitLabel}
         </button>
       </div>
     </form>

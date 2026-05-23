@@ -157,7 +157,8 @@ Sistema próprio do projeto (não é lib externa). Vive em `app/globals.css` + c
 - **Ícones** — componente `Icon` em `app/ui/icons.tsx` com `IconName` tipado. SVG inline, sem dependência externa. Para adicionar ícone: incluir no `type IconName` + `PATHS`.
 - **Shell do dashboard** — `DashboardShell` (client) envolve `SidebarNav` (pin/favoritos/colapso) + `Topbar` (breadcrumbs, toggle de tema, logout, burger no mobile) e gerencia o estado do drawer mobile.
 - **Responsivo** — três breakpoints (≥1024 desktop, 768–1023 tablet, <768 mobile). No mobile: sidebar vira drawer off-canvas com overlay, burger no topbar, breadcrumb compacto, search escondido, tabelas com scroll horizontal (`.card:has(>.t-table)`), grids do dashboard em 2 cols, filtros fluidos, botão "Registrar venda" do PDV sticky no rodapé. `height: 100dvh` no shell evita o salto da URL bar mobile.
-- **Escopo aplicado** — todas as listas, relatórios, detalhe de venda e **PDV (`/sales/new`)**. **Login e forms (novo/editar) ainda no estilo antigo** — follow-up restante.
+- **Escopo aplicado** — todas as listas, relatórios, detalhe de venda, **PDV (`/sales/new`)** e **forms de novo/editar de todos os módulos** (customers, categories, suppliers, products, stock-movements, finance) mais modais de pagamento/cancelamento. **Login** é o único bloco restante.
+- **Padrão de forms** — `.page .page-form` + `.page-head` + cards por seção; `.form-grid` usa `repeat(auto-fit, minmax(240px, 1fr))` (1–6 cols conforme largura); `Field` aceita `span={2}` ou `span="full"`.
 
 ---
 

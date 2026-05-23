@@ -8,10 +8,12 @@ export default async function NewCategoryPage() {
   const { data: categories }: { data: Category[] } = await res.json()
 
   return (
-    <div className="p-8 max-w-2xl">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-zinc-900">Nova categoria</h1>
-        <p className="mt-1 text-sm text-zinc-500">Preencha os dados da categoria abaixo.</p>
+    <div className="page page-form">
+      <div className="page-head">
+        <div>
+          <h1 className="page-title">Nova categoria</h1>
+          <p className="page-subtitle">Preencha os dados da categoria abaixo.</p>
+        </div>
       </div>
 
       <CategoryForm action={createCategoryAction} categories={categories} submitLabel="Criar categoria" />
