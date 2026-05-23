@@ -35,9 +35,10 @@ function humanize(segment: string): string {
 interface Props {
   userName: string
   theme: 'light' | 'dark'
+  onMenuClick?: () => void
 }
 
-export function Topbar({ userName, theme }: Props) {
+export function Topbar({ userName, theme, onMenuClick }: Props) {
   const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
   const menuWrapRef = useRef<HTMLDivElement>(null)
@@ -67,6 +68,14 @@ export function Topbar({ userName, theme }: Props) {
 
   return (
     <div className="topbar">
+      <button
+        type="button"
+        className="topbar-burger"
+        onClick={onMenuClick}
+        aria-label="Abrir menu"
+      >
+        <Icon name="menu" size={18} />
+      </button>
       <nav className="breadcrumbs" aria-label="Breadcrumb">
         <Link href="/dashboard">Início</Link>
         {crumbs.map((c, i) => (

@@ -251,9 +251,19 @@ select.input { appearance: none; background-image: url("data:image/svg+xml;utf8,
 .app-shell {
   display: flex;
   flex-direction: row;
-  height: 100vh;
-  min-height: 100vh;
+  height: 100dvh;
+  min-height: 100dvh;
   width: 100%;
+}
+.app-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  border: 0;
+  padding: 0;
+  z-index: 90;
+  cursor: pointer;
+  display: none;
 }
 .app-main {
   flex: 1 1 auto;
@@ -526,6 +536,21 @@ select.input { appearance: none; background-image: url("data:image/svg+xml;utf8,
   gap: 20px;
   flex-shrink: 0;
 }
+.topbar-burger {
+  display: none;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: 0;
+  border-radius: var(--r-md);
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  cursor: pointer;
+  margin-right: -4px;
+  flex-shrink: 0;
+}
+.topbar-burger:hover { background: var(--surface-2); }
 .topbar-search { flex: 1 1 auto; max-width: 480px; position: relative; }
 .topbar-search .input {
   height: 36px;
@@ -587,6 +612,11 @@ select.input { appearance: none; background-image: url("data:image/svg+xml;utf8,
 /* ============================================================== */
 /* Tables                                                         */
 /* ============================================================== */
+/* Card que envolve uma tabela rola horizontalmente quando o conteúdo não cabe. */
+.card:has(> .t-table),
+.card:has(> .t-table-wrap),
+.t-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
 .t-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .t-table th {
   text-align: left;
@@ -611,3 +641,107 @@ select.input { appearance: none; background-image: url("data:image/svg+xml;utf8,
 .t-table tbody tr:hover td { background: var(--surface-hover); }
 .t-table tbody tr:last-child td { border-bottom: none; }
 .t-table .t-num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ============================================================== */
+/* Dashboard — grids                                              */
+/* ============================================================== */
+.dash-kpis,
+.dash-stats,
+.dash-bottom { display: grid; gap: 14px; }
+.dash-kpis   { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 20px; }
+.dash-stats  { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 20px; }
+.dash-bottom { grid-template-columns: 1.4fr 1fr; }
+
+/* ============================================================== */
+/* Responsivo — mobile (<768px) e tablet (768–1023px)             */
+/* ============================================================== */
+
+/* Mobile: drawer off-canvas, sem search no topbar, paddings menores */
+@media (max-width: 767px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100dvh;
+    width: 280px;
+    flex-basis: 280px;
+    z-index: 100;
+    transform: translateX(-100%);
+    transition: transform 0.22s ease;
+    box-shadow: var(--shadow-lg);
+  }
+  .sidebar.mobile-open { transform: translateX(0); }
+  /* No mobile, ignora o estado "collapsed" do desktop — drawer sempre full */
+  .sidebar.collapsed {
+    width: 280px;
+    flex-basis: 280px;
+  }
+  .sidebar.collapsed .sb-brand-name,
+  .sidebar.collapsed .sb-brand-tag,
+  .sidebar.collapsed .sb-tenant-info,
+  .sidebar.collapsed .sb-section-title span,
+  .sidebar.collapsed .sb-label,
+  .sidebar.collapsed .sb-pin,
+  .sidebar.collapsed .sb-user-info,
+  .sidebar.collapsed .sb-badge { display: revert; }
+  .sidebar.collapsed .sb-item { justify-content: flex-start; padding: 0 10px; width: 100%; margin: 0; }
+  .sidebar.collapsed .sb-tenant { justify-content: flex-start; padding: 8px 10px; margin: 10px; width: auto; }
+  /* Esconde o botão "Recolher" no rodapé — só faz sentido no desktop */
+  .sb-foot > .sb-item:first-child { display: none; }
+
+  .app-shell.mobile-open .app-overlay { display: block; }
+
+  .topbar {
+    padding: 0 14px;
+    gap: 10px;
+  }
+  .topbar-burger { display: inline-flex; }
+  .topbar-search { display: none; }
+  .topbar-actions { gap: 2px; }
+  .topbar-ico-btn { width: 36px; height: 36px; }
+
+  /* Breadcrumb compacto: só o último segmento */
+  .breadcrumbs { flex: 1 1 auto; min-width: 0; overflow: hidden; }
+  .breadcrumbs > a:first-child,
+  .breadcrumbs > span:not(:last-child) { display: none; }
+  .breadcrumbs > span:last-child .sep { display: none; }
+  .breadcrumbs > span:last-child .current {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .page { padding: 18px 14px 28px; }
+  .page-head { margin-bottom: 18px; gap: 12px; }
+  .page-title { font-size: 20px; }
+  .page-subtitle { font-size: 12.5px; }
+
+  /* Filtros das listas: inputs/selects ocupam espaço fluido em vez do width fixo inline */
+  .page > form > .input,
+  .page > form > .input-sm {
+    flex: 1 1 140px;
+    width: auto !important;
+    min-width: 0 !important;
+  }
+
+  /* Dashboard: 2 colunas para KPIs e status, 1 coluna no bottom */
+  .dash-kpis   { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .dash-stats  { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .dash-bottom { grid-template-columns: 1fr; }
+
+  /* Totais do rodapé da lista de vendas: empilham com gap menor */
+  .sales-totals { flex-wrap: wrap; gap: 18px !important; justify-content: flex-start !important; }
+}
+
+/* Tablet: encolhe paddings e tipografia, sidebar inline (default desktop) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .topbar { padding: 0 18px; gap: 14px; }
+  .topbar-search { max-width: 280px; }
+  .page { padding: 22px 22px 32px; }
+  .page-title { font-size: 22px; }
+
+  /* Dashboard: 2x2 KPIs, status em linha, bottom em coluna única */
+  .dash-kpis   { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dash-bottom { grid-template-columns: 1fr; }
+}
+

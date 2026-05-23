@@ -68,9 +68,19 @@ interface Props {
   tenantMeta: string
   userName: string
   userRole: string
+  mobileOpen?: boolean
+  onNavigate?: () => void
 }
 
-export function SidebarNav({ canAudit = false, tenantName, tenantMeta, userName, userRole }: Props) {
+export function SidebarNav({
+  canAudit = false,
+  tenantName,
+  tenantMeta,
+  userName,
+  userRole,
+  mobileOpen = false,
+  onNavigate,
+}: Props) {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
   const [pinned, setPinned] = useState<string[]>([])
@@ -125,6 +135,7 @@ export function SidebarNav({ canAudit = false, tenantName, tenantMeta, userName,
         href={it.href ?? '#'}
         className={`sb-item ${active ? 'active' : ''}`}
         title={collapsed ? it.label : undefined}
+        onClick={() => onNavigate?.()}
       >
         <Icon name={it.icon} size={16} className="sb-icon" />
         <span className="sb-label">{it.label}</span>
@@ -147,7 +158,7 @@ export function SidebarNav({ canAudit = false, tenantName, tenantMeta, userName,
   }
 
   return (
-    <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
+    <aside className={`sidebar ${collapsed ? 'collapsed' : ''} ${mobileOpen ? 'mobile-open' : ''}`}>
       <div className="sb-brand">
         <div className="sb-brand-mark">i</div>
         <div className="flex flex-col min-w-0">
