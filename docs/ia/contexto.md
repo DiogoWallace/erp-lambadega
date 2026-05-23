@@ -451,6 +451,7 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - Error boundary no dashboard (`error.tsx`) + root error boundary (`global-error.tsx`) + proteção 5xx no `apiFetch`
 - **Design system Inovabi** (tokens oklch em `globals.css`, tema light/dark via cookie, sidebar com pin/favoritos/colapso, topbar com breadcrumbs e toggle de tema, ícones inline em `app/ui/icons.tsx`, tipografia Geist; aplicado em todas as listas + relatórios + detalhe de venda + **PDV (`/sales/new`)**; login/forms ainda no estilo antigo). **Shell responsivo** com drawer mobile (<768px), breakpoints de tablet/desktop, tabelas com scroll horizontal, dashboard em 2×2 no tablet. Ver [`docs/arquitetura/design-system.md`](../arquitetura/design-system.md).
 - **Módulo de Notificações** (tabelas `notifications` + pivot `notification_reads`; `NotificationService` único dono da criação com dedup; broadcasts/`user_id NULL` usam pivot para leitura per-user. Triggers automáticos: `InventoryService` → `stock.out`/`stock.critical`; `finance:mark-overdue` → `finance.overdue`; novo `finance:notify-due-soon --days=3` → `finance.due_soon`. Frontend: sino na topbar com polling de 60s, dropdown com últimas 10, página `/notifications` com filtros, e `/notifications/admin/new` para broadcast manual gated por `notification.broadcast`).
+- **Meu perfil + Configurações** (`MeController` self-only: `GET/PUT /me/profile` para name/email/phone, `POST /me/password` exige `current_password` e revoga os demais tokens Sanctum. `EstablishmentController` singleton: `GET/PUT /establishment` gated por `settings.view`/`settings.edit` via `EstablishmentPolicy`. Frontend: dropdown da topbar (`user-menu` em `globals.css`) abre `Meu perfil` + `Configurações` (gated) + `Sair`. `/profile` tem dois forms (dados + senha). `/settings` é índice com cards. `/settings/company` edita o estabelecimento (modo leitura quando usuário só tem `settings.view`). `/settings/preferences` agrupa tema/idioma. Follow-ups: avatar/upload e CRUD de `/settings/users`).
 - Documentação completa em `docs/arquitetura/`
 
 **Pendente (próximos passos):**
@@ -464,7 +465,10 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - ~~Shell responsivo (drawer mobile, breakpoints tablet/desktop, tabelas com scroll horizontal)~~ ✓
 - ~~Forms de novo/editar de todos os módulos + modais de pagamento/cancelamento~~ ✓ (form-grid auto-fit, span-2/full, banner de erro, btn-danger-outline)
 - ~~Módulo de Notificações~~ ✓ (estoque crítico/zerado, financeiro vencido/vencendo, broadcasts manuais; sino com polling + página /notifications)
+- ~~Meu perfil + Configurações (fase 1)~~ ✓ (/profile com dados + senha; /settings índice; /settings/company; /settings/preferences; dropdown da topbar)
 - **Estilizar login** com o design system (follow-up restante)
+- **Avatar de usuário** (upload de imagem) — depende de configurar filesystem `public` + symlink em todos os ambientes
+- **CRUD de usuários em `/settings/users`** — UserController/Service/Policy + gerenciamento de roles (próximo módulo grande)
 - Middleware `AuditModuleAccess` para rotas sensíveis (relatórios, exportações)
 - Comando `audit:prune` para retenção configurável (12 meses em prod via `AUDIT_RETENTION_DAYS`)
 

@@ -87,6 +87,8 @@ backend/
 | Produtos | `GET/POST /products`, `GET/PUT/DELETE /products/{id}` | `?all=1` para dropdown (limite 500) |
 | Estoque | `GET/POST /stock-movements`, `GET /stock-movements/{id}` | Imutável — sem update/delete |
 | Notificações | `GET /notifications`, `GET /notifications/unread-count`, `GET /notifications/dropdown`, `POST /notifications/{id}/read`, `POST /notifications/mark-all-read`, `POST /notifications/broadcast` | Pessoais (user_id setado) + broadcast (user_id NULL, leitura por pivot). `broadcast` requer permissão `notification.broadcast`. |
+| Meu perfil | `GET /me/profile`, `PUT /me/profile`, `POST /me/password` | Self-only (sem id). `POST /me/password` exige `current_password` e revoga os demais tokens Sanctum. |
+| Empresa | `GET /establishment`, `PUT /establishment` | Singleton do tenant — derivado do `establishment_id` do usuário. Leitura requer `settings.view`, escrita requer `settings.edit`. |
 
 Todas as rotas (exceto auth) exigem `Authorization: Bearer {token}`.
 
