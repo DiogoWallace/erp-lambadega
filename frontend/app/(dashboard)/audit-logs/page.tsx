@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { apiFetch } from '@/app/lib/api'
 import { AuditLog, PaginatedResponse } from '@/app/lib/types'
+import { Icon } from '@/app/ui/icon'
 
 interface Props {
   searchParams: Promise<{
@@ -13,34 +14,22 @@ interface Props {
 }
 
 const EVENT_LABEL: Record<string, string> = {
-  created:    'Criado',
-  updated:    'Editado',
-  deleted:    'Deletado',
-  login:      'Login',
-  logout:     'Logout',
+  created: 'Criado', updated: 'Editado', deleted: 'Deletado', login: 'Login', logout: 'Logout',
 }
 
-const EVENT_CLASS: Record<string, string> = {
-  created:    'bg-green-100 text-green-700',
-  updated:    'bg-blue-100 text-blue-700',
-  deleted:    'bg-red-100 text-red-700',
-  login:      'bg-purple-100 text-purple-700',
-  logout:     'bg-zinc-100 text-zinc-600',
+const EVENT_BADGE: Record<string, string> = {
+  created: 'badge-success', updated: 'badge-info', deleted: 'badge-danger',
+  login: 'badge-accent', logout: 'badge',
 }
 
 const MODULE_LABEL: Record<string, string> = {
-  customers:  'Clientes',
-  suppliers:  'Fornecedores',
-  categories: 'Categorias',
-  products:   'Produtos',
-  stock:      'Estoque',
-  auth:       'Autenticação',
+  customers: 'Clientes', suppliers: 'Fornecedores', categories: 'Categorias',
+  products: 'Produtos', stock: 'Estoque', sales: 'Vendas', finance: 'Financeiro', auth: 'Autenticação',
 }
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleString('pt-BR', {
-    day: '2-digit', month: '2-digit', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
+    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
   })
 }
 
@@ -52,13 +41,7 @@ function formatValues(values: Record<string, unknown> | null): string {
 }
 
 export default async function AuditLogsPage({ searchParams }: Props) {
-  const {
-    event     = '',
-    module    = '',
-    date_from = '',
-    date_to   = '',
-    page      = '1',
-  } = await searchParams
+  const { event = '', module = '', date_from = '', date_to = '', page = '1' } = await searchParams
 
   const params = new URLSearchParams({ page })
   if (event)     params.set('event', event)
@@ -79,160 +62,82 @@ export default async function AuditLogsPage({ searchParams }: Props) {
   }
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-6">
+    <div className="page">
+      <div className="page-head">
         <div>
-          <h1 className="text-xl font-semibold text-zinc-900">Audit Logs</h1>
-          <p className="text-sm text-zinc-500 mt-0.5">{meta.total} registros</p>
+          <h1 className="page-title">Auditoria</h1>
+          <p className="page-subtitle">{meta.total} registro(s) · log imutável de quem criou/editou/deletou</p>
         </div>
       </div>
 
-      {/* Filtros */}
-      <form method="GET" className="flex flex-wrap gap-3 mb-6">
-        <select
-          name="event"
-          defaultValue={event}
-          className="h-9 rounded-lg border border-zinc-200 bg-white px-3 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-900"
-        >
+      <form method="GET" style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
+        <select name="event" defaultValue={event} className="input input-sm" style={{ width: 180 }}>
           <option value="">Todos os eventos</option>
-          {Object.entries(EVENT_LABEL).map(([v, l]) => (
-            <option key={v} value={v}>{l}</option>
-          ))}
+          {Object.entries(EVENT_LABEL).map(([v, l]) => (<option key={v} value={v}>{l}</option>))}
         </select>
-
-        <select
-          name="module"
-          defaultValue={module}
-          className="h-9 rounded-lg border border-zinc-200 bg-white px-3 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-900"
-        >
+        <select name="module" defaultValue={module} className="input input-sm" style={{ width: 180 }}>
           <option value="">Todos os módulos</option>
-          {Object.entries(MODULE_LABEL).map(([v, l]) => (
-            <option key={v} value={v}>{l}</option>
-          ))}
+          {Object.entries(MODULE_LABEL).map(([v, l]) => (<option key={v} value={v}>{l}</option>))}
         </select>
-
-        <input
-          type="date"
-          name="date_from"
-          defaultValue={date_from}
-          className="h-9 rounded-lg border border-zinc-200 bg-white px-3 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-900"
-        />
-
-        <input
-          type="date"
-          name="date_to"
-          defaultValue={date_to}
-          className="h-9 rounded-lg border border-zinc-200 bg-white px-3 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-900"
-        />
-
-        <button
-          type="submit"
-          className="h-9 px-4 rounded-lg bg-zinc-900 text-sm font-medium text-white hover:bg-zinc-700 transition-colors"
-        >
-          Filtrar
-        </button>
-
+        <input type="date" name="date_from" defaultValue={date_from} className="input input-sm" style={{ width: 150 }} />
+        <input type="date" name="date_to" defaultValue={date_to} className="input input-sm" style={{ width: 150 }} />
+        <button type="submit" className="btn btn-outline btn-sm"><Icon name="filter" size={12} /> Filtrar</button>
         {(event || module || date_from || date_to) && (
-          <Link
-            href="/audit-logs"
-            className="h-9 px-4 rounded-lg border border-zinc-200 text-sm font-medium text-zinc-600 hover:bg-zinc-50 flex items-center transition-colors"
-          >
-            Limpar
-          </Link>
+          <a href="/audit-logs" className="btn btn-ghost btn-sm"><Icon name="x" size={12} /> Limpar</a>
         )}
       </form>
 
-      {/* Tabela */}
-      <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-zinc-100 bg-zinc-50 text-left text-xs font-medium text-zinc-500 uppercase tracking-wide">
-              <th className="px-4 py-3">Quando</th>
-              <th className="px-4 py-3">Usuário</th>
-              <th className="px-4 py-3">Evento</th>
-              <th className="px-4 py-3">Módulo</th>
-              <th className="px-4 py-3">Registro</th>
-              <th className="px-4 py-3">Campos alterados</th>
-              <th className="px-4 py-3">IP</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-100">
-            {logs.length === 0 ? (
+      <div className="card">
+        {logs.length === 0 ? (
+          <div style={{ padding: '64px 24px', textAlign: 'center' }}>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Nenhum registro encontrado.</p>
+          </div>
+        ) : (
+          <table className="t-table">
+            <thead>
               <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-zinc-400 text-sm">
-                  Nenhum registro encontrado.
-                </td>
+                <th>Quando</th>
+                <th>Usuário</th>
+                <th>Evento</th>
+                <th>Módulo</th>
+                <th>Registro</th>
+                <th>Campos alterados</th>
+                <th>IP</th>
               </tr>
-            ) : (
-              logs.map((log) => (
-                <tr key={log.id} className="hover:bg-zinc-50 transition-colors">
-                  <td className="px-4 py-3 text-zinc-700 whitespace-nowrap">
-                    {formatDate(log.created_at)}
+            </thead>
+            <tbody>
+              {logs.map((log) => (
+                <tr key={log.id}>
+                  <td style={{ whiteSpace: 'nowrap', color: 'var(--text-soft)', fontSize: 12 }}>{formatDate(log.created_at)}</td>
+                  <td>{log.user?.name ?? <span style={{ color: 'var(--text-faint)' }}>—</span>}</td>
+                  <td><span className={`badge ${EVENT_BADGE[log.event] ?? ''}`}>{EVENT_LABEL[log.event] ?? log.event}</span></td>
+                  <td style={{ color: 'var(--text-soft)' }}>{MODULE_LABEL[log.module] ?? log.module}</td>
+                  <td className="mono" style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
+                    {log.model_type ?? <span style={{ color: 'var(--text-faint)' }}>—</span>}
                   </td>
-                  <td className="px-4 py-3 text-zinc-700">
-                    {log.user?.name ?? <span className="text-zinc-400">—</span>}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${EVENT_CLASS[log.event] ?? 'bg-zinc-100 text-zinc-600'}`}>
-                      {EVENT_LABEL[log.event] ?? log.event}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-zinc-700">
-                    {MODULE_LABEL[log.module] ?? log.module}
-                  </td>
-                  <td className="px-4 py-3 text-zinc-500 font-mono text-xs">
-                    {log.model_type ? (
-                      <span title={log.model_id ?? ''}>
-                        {log.model_type}
-                      </span>
-                    ) : (
-                      <span className="text-zinc-400">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-zinc-500 text-xs">
+                  <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                     {log.event === 'updated' ? (
-                      <span title={JSON.stringify(log.old_values)}>
-                        {formatValues(log.old_values)} → {formatValues(log.new_values)}
-                      </span>
+                      <span>{formatValues(log.old_values)} → {formatValues(log.new_values)}</span>
                     ) : log.event === 'created' ? (
-                      <span className="text-zinc-400">{formatValues(log.new_values)}</span>
+                      formatValues(log.new_values)
                     ) : (
-                      <span className="text-zinc-400">—</span>
+                      <span style={{ color: 'var(--text-faint)' }}>—</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-zinc-400 font-mono text-xs">
-                    {log.ip_address ?? '—'}
-                  </td>
+                  <td className="mono" style={{ fontSize: 11.5, color: 'var(--text-faint)' }}>{log.ip_address ?? '—'}</td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
-      {/* Paginação */}
       {meta.last_page > 1 && (
-        <div className="flex items-center justify-between mt-4">
-          <p className="text-sm text-zinc-500">
-            Página {meta.current_page} de {meta.last_page}
-          </p>
-          <div className="flex gap-2">
-            {meta.current_page > 1 && (
-              <Link
-                href={pageUrl(meta.current_page - 1)}
-                className="px-3 py-1.5 rounded-lg border border-zinc-200 text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
-              >
-                Anterior
-              </Link>
-            )}
-            {meta.current_page < meta.last_page && (
-              <Link
-                href={pageUrl(meta.current_page + 1)}
-                className="px-3 py-1.5 rounded-lg border border-zinc-200 text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
-              >
-                Próxima
-              </Link>
-            )}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 20 }}>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Página {meta.current_page} de {meta.last_page}</p>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {meta.current_page > 1 && (<Link href={pageUrl(meta.current_page - 1)} className="btn btn-outline btn-sm">← Anterior</Link>)}
+            {meta.current_page < meta.last_page && (<Link href={pageUrl(meta.current_page + 1)} className="btn btn-outline btn-sm">Próxima →</Link>)}
           </div>
         </div>
       )}
