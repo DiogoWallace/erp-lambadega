@@ -321,6 +321,21 @@ export interface AccountsReport {
   items: AccountsReportItem[]
 }
 
+export type NotificationSeverity = 'info' | 'warning' | 'critical'
+
+export interface Notification {
+  id: string
+  type: string
+  severity: NotificationSeverity
+  title: string
+  body: string | null
+  action_url: string | null
+  data: Record<string, unknown> | null
+  broadcast: boolean
+  read_at: string | null
+  created_at: string
+}
+
 export interface PaginationMeta {
   current_page: number
   last_page: number

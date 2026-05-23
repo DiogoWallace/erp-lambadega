@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\DB;
  */
 class InventoryService
 {
+    public function __construct(private NotificationService $notifications) {}
+
     public function paginate(array $filters): LengthAwarePaginator
     {
         $query = StockMovement::query()
@@ -78,6 +80,8 @@ class InventoryService
 
             $locked->update(['stock_quantity' => $stockAfter]);
 
+            $this->maybeNotifyStockLevel($locked->fresh());
+
             return $movement->load(['product:id,name', 'user:id,name']);
         });
     }
@@ -91,7 +95,7 @@ class InventoryService
         $stockBefore = $product->stock_quantity;
         $product->decrement('stock_quantity', $quantity);
 
-        return StockMovement::create([
+        $movement = StockMovement::create([
             'product_id'     => $product->id,
             'user_id'        => $user->id,
             'reference_type' => Order::class,
@@ -102,6 +106,10 @@ class InventoryService
             'stock_after'    => $stockBefore - $quantity,
             'description'    => "Venda {$order->order_number}",
         ]);
+
+        $this->maybeNotifyStockLevel($product->fresh());
+
+        return $movement;
     }
 
     /**
@@ -124,5 +132,45 @@ class InventoryService
             'stock_after'    => $stockBefore + $quantity,
             'description'    => "Cancelamento {$order->order_number}",
         ]);
+    }
+
+    /**
+     * Emite broadcast quando o estoque do produto atinge zero ou cai abaixo
+     * do mínimo. Dedup é feito pelo NotificationService (mesmo produto+tipo
+     * em 24h não dispara de novo). Apenas para produtos ativos.
+     */
+    private function maybeNotifyStockLevel(Product $product): void
+    {
+        if (!$product->is_active) {
+            return;
+        }
+
+        $stock = (int) $product->stock_quantity;
+        $min   = (int) $product->min_stock_quantity;
+
+        if ($stock <= 0) {
+            $this->notifications->createBroadcast(
+                establishmentId: $product->establishment_id,
+                type:            'stock.out',
+                title:           "Estoque zerado: {$product->name}",
+                severity:        'critical',
+                body:            "O produto \"{$product->name}\" está sem estoque.",
+                actionUrl:       "/products/{$product->id}/edit",
+                data:            ['product_id' => $product->id],
+            );
+            return;
+        }
+
+        if ($min > 0 && $stock <= $min) {
+            $this->notifications->createBroadcast(
+                establishmentId: $product->establishment_id,
+                type:            'stock.critical',
+                title:           "Estoque crítico: {$product->name}",
+                severity:        'warning',
+                body:            "Restam {$stock} unidades (mínimo: {$min}).",
+                actionUrl:       "/products/{$product->id}/edit",
+                data:            ['product_id' => $product->id],
+            );
+        }
     }
 }

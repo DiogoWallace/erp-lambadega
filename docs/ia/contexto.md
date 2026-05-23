@@ -450,6 +450,7 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - **Testes automatizados**: 118 feature tests PHPUnit (backend, inclui `OrderTest` cobrindo create/pay/cancel + disparo de eventos) + 21 testes unitários Vitest (frontend) — `make test` roda a suite completa. Backend cobre auth, permissões, CRUD e isolamento multi-tenant. CI (`tests.yml`) roda a suíte + Deptrac e **trava o deploy** se algo quebrar.
 - Error boundary no dashboard (`error.tsx`) + root error boundary (`global-error.tsx`) + proteção 5xx no `apiFetch`
 - **Design system Inovabi** (tokens oklch em `globals.css`, tema light/dark via cookie, sidebar com pin/favoritos/colapso, topbar com breadcrumbs e toggle de tema, ícones inline em `app/ui/icons.tsx`, tipografia Geist; aplicado em todas as listas + relatórios + detalhe de venda + **PDV (`/sales/new`)**; login/forms ainda no estilo antigo). **Shell responsivo** com drawer mobile (<768px), breakpoints de tablet/desktop, tabelas com scroll horizontal, dashboard em 2×2 no tablet. Ver [`docs/arquitetura/design-system.md`](../arquitetura/design-system.md).
+- **Módulo de Notificações** (tabelas `notifications` + pivot `notification_reads`; `NotificationService` único dono da criação com dedup; broadcasts/`user_id NULL` usam pivot para leitura per-user. Triggers automáticos: `InventoryService` → `stock.out`/`stock.critical`; `finance:mark-overdue` → `finance.overdue`; novo `finance:notify-due-soon --days=3` → `finance.due_soon`. Frontend: sino na topbar com polling de 60s, dropdown com últimas 10, página `/notifications` com filtros, e `/notifications/admin/new` para broadcast manual gated por `notification.broadcast`).
 - Documentação completa em `docs/arquitetura/`
 
 **Pendente (próximos passos):**
@@ -462,6 +463,7 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - ~~Design system aplicado no PDV (`/sales/new`)~~ ✓ (carrinho com layout 2-níveis em mobile, botão sticky)
 - ~~Shell responsivo (drawer mobile, breakpoints tablet/desktop, tabelas com scroll horizontal)~~ ✓
 - ~~Forms de novo/editar de todos os módulos + modais de pagamento/cancelamento~~ ✓ (form-grid auto-fit, span-2/full, banner de erro, btn-danger-outline)
+- ~~Módulo de Notificações~~ ✓ (estoque crítico/zerado, financeiro vencido/vencendo, broadcasts manuais; sino com polling + página /notifications)
 - **Estilizar login** com o design system (follow-up restante)
 - Middleware `AuditModuleAccess` para rotas sensíveis (relatórios, exportações)
 - Comando `audit:prune` para retenção configurável (12 meses em prod via `AUDIT_RETENTION_DAYS`)
