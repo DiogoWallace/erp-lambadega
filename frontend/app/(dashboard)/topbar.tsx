@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { Icon } from '@/app/ui/icon'
+import { Icon } from '@/app/ui/icons'
 import { toggleThemeAction } from '@/app/lib/theme'
 import { logoutAction } from './actions'
 

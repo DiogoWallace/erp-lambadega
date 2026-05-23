@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { apiFetch } from '@/app/lib/api'
 import { Order } from '@/app/lib/types'
-import { Icon } from '@/app/ui/icon'
+import { Icon } from '@/app/ui/icons'
 import { PayForm } from './pay-form'
 import { CancelForm } from './cancel-form'
 
