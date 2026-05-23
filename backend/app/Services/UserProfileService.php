@@ -3,11 +3,15 @@
 namespace App\Services;
 
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 /**
- * Operações do próprio usuário sobre seus dados: atualização de perfil e
- * troca de senha. Sempre opera sobre $user atual (auth()) — não recebe id.
+ * Operações do próprio usuário sobre seus dados: atualização de perfil,
+ * troca de senha e upload/remoção de avatar. Sempre opera sobre $user
+ * atual (auth()) — não recebe id.
  */
 class UserProfileService
 {
@@ -40,5 +44,40 @@ class UserProfileService
             ->delete();
 
         return true;
+    }
+
+    /**
+     * Salva o avatar no disco `public` e atualiza users.avatar_path.
+     * Deleta o avatar anterior se existir.
+     */
+    public function updateAvatar(User $user, UploadedFile $file): User
+    {
+        $extension = $file->getClientOriginalExtension() ?: $file->extension();
+        $filename  = Str::uuid7() . '.' . strtolower($extension);
+        $path      = "users/{$user->id}/{$filename}";
+
+        Storage::disk('public')->putFileAs("users/{$user->id}", $file, $filename);
+
+        $this->deleteAvatarFile($user->avatar_path);
+
+        $user->update(['avatar_path' => $path]);
+
+        return $user->fresh();
+    }
+
+    public function removeAvatar(User $user): User
+    {
+        $this->deleteAvatarFile($user->avatar_path);
+
+        $user->update(['avatar_path' => null]);
+
+        return $user->fresh();
+    }
+
+    private function deleteAvatarFile(?string $path): void
+    {
+        if ($path && Storage::disk('public')->exists($path)) {
+            Storage::disk('public')->delete($path);
+        }
     }
 }

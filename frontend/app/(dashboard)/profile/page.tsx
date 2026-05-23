@@ -1,4 +1,5 @@
 import { apiFetch } from '@/app/lib/api'
+import { AvatarForm } from './avatar-form'
 import { ProfileForm } from './profile-form'
 import { PasswordForm } from './password-form'
 
@@ -7,6 +8,7 @@ interface ProfileData {
   name: string
   email: string
   phone: string | null
+  avatar_url: string | null
   roles: string[]
 }
 
@@ -24,6 +26,10 @@ export default async function ProfilePage() {
           </p>
         </div>
       </div>
+
+      <AvatarForm user={user} />
+
+      <div style={{ height: 12 }} />
 
       <ProfileForm user={user} />
 

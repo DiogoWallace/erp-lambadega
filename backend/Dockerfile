@@ -13,4 +13,8 @@ COPY . .
 
 RUN composer install --optimize-autoloader --no-dev --no-interaction
 
+# Symlink public/storage → ../storage/app/public para servir uploads (avatares etc).
+# A pasta storage/ vira volume em runtime; o symlink em public/ persiste no bind-mount.
+RUN php artisan storage:link
+
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache

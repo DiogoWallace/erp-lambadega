@@ -12,6 +12,7 @@ import { Topbar } from './topbar'
 interface Props {
   userName: string
   userRole: string
+  userAvatar: string | null
   canAudit: boolean
   canBroadcast: boolean
   canSettings: boolean
@@ -24,6 +25,7 @@ interface Props {
 export function DashboardShell({
   userName,
   userRole,
+  userAvatar,
   canAudit,
   canBroadcast,
   canSettings,
@@ -70,6 +72,7 @@ export function DashboardShell({
         <Topbar
           userName={userName}
           userRole={userRole}
+          userAvatar={userAvatar}
           theme={theme}
           canBroadcast={canBroadcast}
           canSettings={canSettings}

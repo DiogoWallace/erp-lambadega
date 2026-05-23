@@ -36,13 +36,14 @@ function humanize(segment: string): string {
 interface Props {
   userName: string
   userRole: string
+  userAvatar: string | null
   theme: 'light' | 'dark'
   canBroadcast: boolean
   canSettings: boolean
   onMenuClick?: () => void
 }
 
-export function Topbar({ userName, userRole, theme, canBroadcast, canSettings, onMenuClick }: Props) {
+export function Topbar({ userName, userRole, userAvatar, theme, canBroadcast, canSettings, onMenuClick }: Props) {
   const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
   const menuWrapRef = useRef<HTMLDivElement>(null)
@@ -117,16 +118,25 @@ export function Topbar({ userName, userRole, theme, canBroadcast, canSettings, o
             aria-haspopup="menu"
             aria-expanded={menuOpen}
           >
-            <span
-              style={{
-                width: 26, height: 26, borderRadius: '50%',
-                background: 'linear-gradient(135deg, oklch(0.65 0.13 28), oklch(0.55 0.16 18))',
-                color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontWeight: 600, fontSize: 11,
-              }}
-            >
-              {initials || 'U'}
-            </span>
+            {userAvatar ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={userAvatar}
+                alt=""
+                style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover' }}
+              />
+            ) : (
+              <span
+                style={{
+                  width: 26, height: 26, borderRadius: '50%',
+                  background: 'linear-gradient(135deg, oklch(0.65 0.13 28), oklch(0.55 0.16 18))',
+                  color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontWeight: 600, fontSize: 11,
+                }}
+              >
+                {initials || 'U'}
+              </span>
+            )}
             <Icon name="caret_down" size={12} />
           </button>
           {menuOpen && (
