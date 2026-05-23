@@ -16,7 +16,7 @@ export function CancelForm({ orderId }: Props) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
+        className="btn btn-outline btn-sm"
       >
         Cancelar venda
       </button>
@@ -24,10 +24,10 @@ export function CancelForm({ orderId }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm">
-        <h2 className="text-base font-semibold text-zinc-900 mb-2">Cancelar venda?</h2>
-        <p className="text-sm text-zinc-500 mb-4">
+    <div className="modal-backdrop">
+      <div className="modal-panel">
+        <h2 className="modal-title">Cancelar venda?</h2>
+        <p className="modal-sub">
           O estoque dos produtos será devolvido. Esta ação não pode ser desfeita.
         </p>
 
@@ -35,23 +35,17 @@ export function CancelForm({ orderId }: Props) {
           <input type="hidden" name="order_id" value={orderId} />
 
           {state?.error && (
-            <p className="mb-3 text-sm text-red-600">{state.error}</p>
+            <div className="form-banner-error" style={{ marginBottom: 12 }}>
+              {state.error}
+            </div>
           )}
 
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="flex-1 rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
-            >
+          <div className="modal-actions">
+            <button type="button" onClick={() => setOpen(false)} className="btn btn-outline">
               Voltar
             </button>
-            <button
-              type="submit"
-              disabled={pending}
-              className="flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
-            >
-              {pending ? 'Cancelando...' : 'Confirmar cancelamento'}
+            <button type="submit" disabled={pending} className="btn btn-danger">
+              {pending ? 'Cancelando…' : 'Confirmar cancelamento'}
             </button>
           </div>
         </form>

@@ -14,12 +14,14 @@ export default async function NewStockMovementPage({ searchParams }: Props) {
   const { data: products }: { data: Product[] } = await res.json()
 
   return (
-    <div className="p-8 max-w-2xl">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-zinc-900">Registrar movimentação</h1>
-        <p className="mt-1 text-sm text-zinc-500">
-          Registre uma entrada, saída ou ajuste de inventário.
-        </p>
+    <div className="page page-form">
+      <div className="page-head">
+        <div>
+          <h1 className="page-title">Registrar movimentação</h1>
+          <p className="page-subtitle">
+            Registre uma entrada, saída ou ajuste de inventário.
+          </p>
+        </div>
       </div>
 
       <MovementForm

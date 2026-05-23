@@ -23,88 +23,93 @@ interface Props {
 function FieldError({ errors, field }: { errors?: Record<string, string[]>; field: string }) {
   const msg = errors?.[field]?.[0]
   if (!msg) return null
-  return <p className="mt-1 text-xs text-red-600">{msg}</p>
+  return <p className="form-field-error">{msg}</p>
 }
 
 function Field({
   label,
   name,
+  span,
   children,
   errors,
 }: {
   label: string
   name: string
+  span?: 2 | 'full'
   children: React.ReactNode
   errors?: Record<string, string[]>
 }) {
+  const cls =
+    span === 'full' ? 'form-field-full' :
+    span === 2 ? 'form-field-span-2' : ''
   return (
-    <div>
-      <label className="block text-xs font-medium text-zinc-600 mb-1">{label}</label>
+    <div className={`form-field ${cls}`}>
+      <label className="field-label" htmlFor={name}>{label}</label>
       {children}
       <FieldError errors={errors} field={name} />
     </div>
   )
 }
 
-const inputClass =
-  'w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent'
-
 export function CustomerForm({ action, customer, submitLabel }: Props) {
   const [state, formAction, pending] = useActionState(action, null)
   const [type, setType] = useState<'individual' | 'company'>(customer?.type ?? 'individual')
 
   return (
-    <form action={formAction} className="space-y-8">
+    <form action={formAction} className="form-stack">
       {state?.error && (
-        <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-          {state.error}
-        </div>
+        <div className="form-banner-error">{state.error}</div>
       )}
 
-      {/* Main data */}
-      <section>
-        <h2 className="text-sm font-semibold text-zinc-900 mb-4">Main data</h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="Type *" name="type" errors={state?.errors}>
+      <section className="card">
+        <div className="card-head">
+          <div><h3>Dados principais</h3></div>
+        </div>
+        <div className="card-body form-grid">
+          <Field label="Tipo *" name="type" errors={state?.errors}>
             <select
+              id="type"
               name="type"
               defaultValue={customer?.type ?? 'individual'}
               onChange={(e) => setType(e.target.value as 'individual' | 'company')}
-              className={inputClass}
+              className="input"
             >
-              <option value="individual">Individual (CPF)</option>
-              <option value="company">Company (CNPJ)</option>
+              <option value="individual">Pessoa física (CPF)</option>
+              <option value="company">Pessoa jurídica (CNPJ)</option>
             </select>
           </Field>
 
           <Field label="Status" name="is_active" errors={state?.errors}>
             <select
+              id="is_active"
               name="is_active"
               defaultValue={customer ? String(customer.is_active) : 'true'}
-              className={inputClass}
+              className="input"
             >
-              <option value="true">Active</option>
-              <option value="false">Inactive</option>
+              <option value="true">Ativo</option>
+              <option value="false">Inativo</option>
             </select>
           </Field>
 
-          <Field label="Name / Company name *" name="name" errors={state?.errors}>
+          <Field label="Nome / Razão social *" name="name" errors={state?.errors} span={2}>
             <input
+              id="name"
               name="name"
               type="text"
               defaultValue={customer?.name ?? ''}
-              placeholder="Full name or company name"
-              className={inputClass}
+              placeholder="Nome completo ou razão social"
+              className="input"
             />
           </Field>
 
-          <Field label="Trade name" name="trade_name" errors={state?.errors}>
+          <Field label="Nome fantasia" name="trade_name" errors={state?.errors} span={2}>
             <input
+              id="trade_name"
               name="trade_name"
               type="text"
               defaultValue={customer?.trade_name ?? ''}
-              placeholder="Trade name"
-              className={inputClass}
+              placeholder="Nome fantasia"
+              className="input"
             />
           </Field>
 
@@ -114,140 +119,145 @@ export function CustomerForm({ action, customer, submitLabel }: Props) {
             errors={state?.errors}
           >
             <input
+              id="document"
               name="document"
               type="text"
               defaultValue={customer?.document ?? ''}
               placeholder={type === 'individual' ? '00000000000' : '00000000000000'}
-              className={inputClass}
+              className="input"
             />
           </Field>
 
           <Field label="Email" name="email" errors={state?.errors}>
             <input
+              id="email"
               name="email"
               type="email"
               defaultValue={customer?.email ?? ''}
-              placeholder="email@example.com"
-              className={inputClass}
+              placeholder="email@exemplo.com"
+              className="input"
             />
           </Field>
 
-          <Field label="Phone" name="phone" errors={state?.errors}>
+          <Field label="Telefone" name="phone" errors={state?.errors}>
             <input
+              id="phone"
               name="phone"
               type="text"
               defaultValue={customer?.phone ?? ''}
               placeholder="(11) 99999-9999"
-              className={inputClass}
+              className="input"
             />
           </Field>
         </div>
       </section>
 
-      {/* Address */}
-      <section>
-        <h2 className="text-sm font-semibold text-zinc-900 mb-4">Address</h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="ZIP code" name="zip_code" errors={state?.errors}>
+      <section className="card">
+        <div className="card-head">
+          <div><h3>Endereço</h3></div>
+        </div>
+        <div className="card-body form-grid">
+          <Field label="CEP" name="zip_code" errors={state?.errors}>
             <input
+              id="zip_code"
               name="zip_code"
               type="text"
               defaultValue={customer?.zip_code ?? ''}
-              placeholder="00000000"
-              className={inputClass}
+              placeholder="00000-000"
+              className="input"
             />
           </Field>
 
-          <Field label="Street" name="address" errors={state?.errors}>
-            <input
-              name="address"
-              type="text"
-              defaultValue={customer?.address ?? ''}
-              placeholder="Street, Avenue..."
-              className={inputClass}
-            />
-          </Field>
-
-          <Field label="Number" name="address_number" errors={state?.errors}>
-            <input
-              name="address_number"
-              type="text"
-              defaultValue={customer?.address_number ?? ''}
-              placeholder="123"
-              className={inputClass}
-            />
-          </Field>
-
-          <Field label="Complement" name="address_complement" errors={state?.errors}>
-            <input
-              name="address_complement"
-              type="text"
-              defaultValue={customer?.address_complement ?? ''}
-              placeholder="Apt, suite..."
-              className={inputClass}
-            />
-          </Field>
-
-          <Field label="Neighborhood" name="neighborhood" errors={state?.errors}>
-            <input
-              name="neighborhood"
-              type="text"
-              defaultValue={customer?.neighborhood ?? ''}
-              placeholder="Neighborhood"
-              className={inputClass}
-            />
-          </Field>
-
-          <Field label="City" name="city" errors={state?.errors}>
-            <input
-              name="city"
-              type="text"
-              defaultValue={customer?.city ?? ''}
-              placeholder="City"
-              className={inputClass}
-            />
-          </Field>
-
-          <Field label="State" name="state" errors={state?.errors}>
+          <Field label="UF" name="state" errors={state?.errors}>
             <select
+              id="state"
               name="state"
               defaultValue={customer?.state ?? ''}
-              className={inputClass}
+              className="input"
             >
-              <option value="">Select...</option>
+              <option value="">Selecionar…</option>
               {STATES.map((uf) => (
                 <option key={uf} value={uf}>{uf}</option>
               ))}
             </select>
           </Field>
+
+          <Field label="Logradouro" name="address" errors={state?.errors} span={2}>
+            <input
+              id="address"
+              name="address"
+              type="text"
+              defaultValue={customer?.address ?? ''}
+              placeholder="Rua, avenida…"
+              className="input"
+            />
+          </Field>
+
+          <Field label="Número" name="address_number" errors={state?.errors}>
+            <input
+              id="address_number"
+              name="address_number"
+              type="text"
+              defaultValue={customer?.address_number ?? ''}
+              placeholder="123"
+              className="input"
+            />
+          </Field>
+
+          <Field label="Complemento" name="address_complement" errors={state?.errors}>
+            <input
+              id="address_complement"
+              name="address_complement"
+              type="text"
+              defaultValue={customer?.address_complement ?? ''}
+              placeholder="Apto, sala…"
+              className="input"
+            />
+          </Field>
+
+          <Field label="Bairro" name="neighborhood" errors={state?.errors}>
+            <input
+              id="neighborhood"
+              name="neighborhood"
+              type="text"
+              defaultValue={customer?.neighborhood ?? ''}
+              placeholder="Bairro"
+              className="input"
+            />
+          </Field>
+
+          <Field label="Cidade" name="city" errors={state?.errors}>
+            <input
+              id="city"
+              name="city"
+              type="text"
+              defaultValue={customer?.city ?? ''}
+              placeholder="Cidade"
+              className="input"
+            />
+          </Field>
         </div>
       </section>
 
-      {/* Notes */}
-      <section>
-        <h2 className="text-sm font-semibold text-zinc-900 mb-4">Notes</h2>
-        <textarea
-          name="notes"
-          defaultValue={customer?.notes ?? ''}
-          rows={3}
-          placeholder="Internal notes about this customer..."
-          className={`${inputClass} resize-none`}
-        />
+      <section className="card">
+        <div className="card-head">
+          <div><h3>Observações</h3></div>
+        </div>
+        <div className="card-body">
+          <textarea
+            name="notes"
+            defaultValue={customer?.notes ?? ''}
+            rows={3}
+            placeholder="Anotações internas sobre este cliente…"
+            className="input"
+          />
+        </div>
       </section>
 
-      <div className="flex justify-end gap-3 pt-2">
-        <a
-          href="/customers"
-          className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 transition-colors"
-        >
-          Cancel
-        </a>
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50 transition-colors"
-        >
-          {pending ? 'Saving...' : submitLabel}
+      <div className="form-actions">
+        <a href="/customers" className="btn btn-outline">Cancelar</a>
+        <button type="submit" disabled={pending} className="btn btn-primary">
+          {pending ? 'Salvando…' : submitLabel}
         </button>
       </div>
     </form>

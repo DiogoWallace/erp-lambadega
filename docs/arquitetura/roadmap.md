@@ -48,7 +48,8 @@ Objetivo: sistema web funcional, operando em produção, com as fundações arqu
 - [ ] Página de manutenção
 - [x] Estilizar PDV (`/sales/new`) com o design system + responsividade mobile/tablet
 - [x] Shell responsivo (sidebar vira drawer off-canvas em <768px, breakpoints de dashboard/tabelas/filtros)
-- [ ] Estilizar login + forms (novo/editar) com o design system (follow-up restante)
+- [x] Estilizar forms de novo/editar de todos os módulos (customers, categories, suppliers, products, stock-movements, finance) + modais de pagamento/cancelamento
+- [ ] Estilizar login com o design system (follow-up restante)
 
 **Critério de saída:** sistema rodando em produção com pelo menos um estabelecimento real operando todos os módulos.
 
