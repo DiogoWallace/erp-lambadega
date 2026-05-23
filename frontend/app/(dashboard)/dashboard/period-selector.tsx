@@ -1,6 +1,6 @@
 'use client'
 
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 const PERIODS = [
@@ -30,47 +30,55 @@ export function PeriodSelector({ currentPeriod, currentDateFrom, currentDateTo }
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <div className="flex rounded-lg border border-zinc-200 bg-white overflow-hidden">
-        {PERIODS.map((p) => (
-          <button
-            key={p.value}
-            type="button"
-            onClick={() => {
-              setPeriod(p.value)
-              if (p.value !== 'custom') navigate(p.value)
-            }}
-            className={`px-3 py-1.5 text-sm font-medium transition-colors ${
-              period === p.value
-                ? 'bg-zinc-900 text-white'
-                : 'text-zinc-600 hover:bg-zinc-50'
-            }`}
-          >
-            {p.label}
-          </button>
-        ))}
+    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+      <div style={{ display: 'flex', borderRadius: 'var(--r-md)', border: '1px solid var(--border)', background: 'var(--surface)', overflow: 'hidden' }}>
+        {PERIODS.map((p) => {
+          const active = period === p.value
+          return (
+            <button
+              key={p.value}
+              type="button"
+              onClick={() => {
+                setPeriod(p.value)
+                if (p.value !== 'custom') navigate(p.value)
+              }}
+              style={{
+                padding: '7px 12px', fontSize: 12.5, fontWeight: 500,
+                background: active ? 'var(--text)' : 'transparent',
+                color: active ? 'var(--text-invert)' : 'var(--text-soft)',
+                border: 'none', cursor: 'pointer',
+                transition: 'background .12s, color .12s',
+              }}
+            >
+              {p.label}
+            </button>
+          )
+        })}
       </div>
 
       {period === 'custom' && (
-        <div className="flex items-center gap-2">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <input
             type="date"
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
-            className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900"
+            className="input input-sm"
+            style={{ width: 'auto' }}
           />
-          <span className="text-zinc-400 text-sm">até</span>
+          <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>até</span>
           <input
             type="date"
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
-            className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900"
+            className="input input-sm"
+            style={{ width: 'auto' }}
           />
           <button
             type="button"
             onClick={() => navigate('custom', dateFrom, dateTo)}
             disabled={!dateFrom || !dateTo}
-            className="rounded-lg bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-40 transition-colors"
+            className="btn btn-primary btn-sm"
+            style={{ opacity: !dateFrom || !dateTo ? 0.4 : 1 }}
           >
             Aplicar
           </button>

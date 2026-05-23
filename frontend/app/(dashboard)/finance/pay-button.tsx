@@ -14,7 +14,8 @@ export function PayTransactionButton({ action }: Props) {
     >
       <button
         type="submit"
-        className="text-xs font-medium text-green-600 hover:text-green-700 transition-colors"
+        className="btn btn-ghost btn-sm"
+        style={{ color: 'var(--success)' }}
       >
         Marcar paga
       </button>

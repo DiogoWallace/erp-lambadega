@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { apiFetch } from '@/app/lib/api'
 import { FinancialTransaction, FinancialStatus, PaginatedResponse } from '@/app/lib/types'
+import { Icon } from '@/app/ui/icon'
 import { payTransactionAction } from './actions'
 import { PayTransactionButton } from './pay-button'
 
@@ -8,11 +9,11 @@ interface Props {
   searchParams: Promise<{ search?: string; page?: string; type?: string; status?: string }>
 }
 
-const STATUS_STYLES: Record<FinancialStatus, string> = {
-  pending: 'bg-amber-100 text-amber-700',
-  paid: 'bg-green-100 text-green-700',
-  overdue: 'bg-red-100 text-red-700',
-  canceled: 'bg-zinc-100 text-zinc-500',
+const STATUS_BADGE: Record<FinancialStatus, string> = {
+  pending: 'badge-warning',
+  paid: 'badge-success',
+  overdue: 'badge-danger',
+  canceled: 'badge',
 }
 
 const STATUS_LABELS: Record<FinancialStatus, string> = {
@@ -37,125 +38,92 @@ export default async function FinancePage({ searchParams }: Props) {
 
   const params = new URLSearchParams({ page })
   if (search) params.set('search', search)
-  if (type) params.set('type', type)
+  if (type)   params.set('type', type)
   if (status) params.set('status', status)
 
   const res = await apiFetch(`/financial-transactions?${params}`)
   const { data: transactions, meta }: PaginatedResponse<FinancialTransaction> = await res.json()
 
   return (
-    <div className="p-8">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+    <div className="page">
+      <div className="page-head">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900">Financeiro</h1>
-          <p className="mt-0.5 text-sm text-zinc-500">{meta.total} lançamentos · contas a pagar e receber</p>
+          <h1 className="page-title">Financeiro</h1>
+          <p className="page-subtitle">{meta.total} lançamento(s) · contas a pagar e receber</p>
         </div>
-        <Link
-          href="/finance/new"
-          className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 transition-colors"
-        >
-          + Novo lançamento
+        <Link href="/finance/new" className="btn btn-primary btn-sm">
+          <Icon name="plus" size={13} stroke={2} /> Novo lançamento
         </Link>
       </div>
 
-      {/* Filters */}
-      <form method="GET" className="flex gap-3 mb-6">
+      <form method="GET" style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
         <input
           name="search"
           type="text"
           defaultValue={search}
           placeholder="Buscar por descrição..."
-          className="flex-1 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900"
+          className="input input-sm"
+          style={{ flex: 1, minWidth: 240 }}
         />
-        <select
-          name="type"
-          defaultValue={type}
-          className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900"
-        >
+        <select name="type" defaultValue={type} className="input input-sm" style={{ width: 180 }}>
           <option value="">Todos os tipos</option>
           <option value="income">Receitas</option>
           <option value="expense">Despesas</option>
         </select>
-        <select
-          name="status"
-          defaultValue={status}
-          className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900"
-        >
+        <select name="status" defaultValue={status} className="input input-sm" style={{ width: 180 }}>
           <option value="">Todos os status</option>
           <option value="pending">Pendente</option>
           <option value="paid">Paga</option>
           <option value="overdue">Vencida</option>
           <option value="canceled">Cancelada</option>
         </select>
-        <button
-          type="submit"
-          className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
-        >
-          Filtrar
-        </button>
-        {(search || type || status) && (
-          <a
-            href="/finance"
-            className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-500 hover:bg-zinc-50 transition-colors"
-          >
-            Limpar
-          </a>
-        )}
+        <button type="submit" className="btn btn-outline btn-sm"><Icon name="filter" size={12} /> Filtrar</button>
+        {(search || type || status) && (<a href="/finance" className="btn btn-ghost btn-sm"><Icon name="x" size={12} /> Limpar</a>)}
       </form>
 
-      {/* Table */}
-      <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden">
+      <div className="card">
         {transactions.length === 0 ? (
-          <div className="px-6 py-16 text-center">
-            <p className="text-sm text-zinc-500">Nenhum lançamento encontrado.</p>
+          <div style={{ padding: '64px 24px', textAlign: 'center' }}>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Nenhum lançamento encontrado.</p>
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <table className="t-table">
             <thead>
-              <tr className="border-b border-zinc-100 bg-zinc-50 text-left">
-                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide">Vencimento</th>
-                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide">Descrição</th>
-                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide">Vínculo</th>
-                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide text-right">Valor</th>
-                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide">Status</th>
-                <th className="px-4 py-3"></th>
+              <tr>
+                <th>Vencimento</th>
+                <th>Descrição</th>
+                <th>Vínculo</th>
+                <th className="t-num">Valor</th>
+                <th>Status</th>
+                <th></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100">
+            <tbody>
               {transactions.map((tx) => {
                 const isIncome = tx.type === 'income'
                 const link = tx.supplier?.company_name ?? tx.customer?.name ?? (tx.order ? `Venda ${tx.order.order_number}` : '—')
                 const canPay = tx.status === 'pending' || tx.status === 'overdue'
-
                 return (
-                  <tr key={tx.id} className="hover:bg-zinc-50 transition-colors">
-                    <td className="px-4 py-3 text-zinc-600">{formatDate(tx.due_date)}</td>
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-zinc-900">{tx.description}</p>
+                  <tr key={tx.id}>
+                    <td style={{ color: 'var(--text-soft)' }}>{formatDate(tx.due_date)}</td>
+                    <td>
+                      <div style={{ fontWeight: 500, color: 'var(--text)' }}>{tx.description}</div>
                       {tx.installment_count && (
-                        <p className="text-xs text-zinc-400">
+                        <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 2 }}>
                           Parcela {tx.installment_number}/{tx.installment_count}
-                        </p>
+                        </div>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-zinc-500">{link}</td>
-                    <td className={`px-4 py-3 text-right font-medium ${isIncome ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    <td style={{ color: 'var(--text-muted)' }}>{link}</td>
+                    <td className="t-num tnum" style={{ fontWeight: 500, color: isIncome ? 'var(--success)' : 'var(--danger)' }}>
                       {isIncome ? '+' : '−'} {formatBRL(tx.amount)}
                     </td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_STYLES[tx.status]}`}>
-                        {STATUS_LABELS[tx.status]}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-3">
+                    <td><span className={`badge ${STATUS_BADGE[tx.status]}`}>{STATUS_LABELS[tx.status]}</span></td>
+                    <td style={{ textAlign: 'right' }}>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
                         {canPay && <PayTransactionButton action={payTransactionAction.bind(null, tx.id)} />}
-                        <Link
-                          href={`/finance/${tx.id}/edit`}
-                          className="text-xs font-medium text-zinc-500 hover:text-zinc-900 transition-colors"
-                        >
-                          Editar
+                        <Link href={`/finance/${tx.id}/edit`} className="btn btn-ghost btn-sm">
+                          <Icon name="edit" size={11} /> Editar
                         </Link>
                       </div>
                     </td>
@@ -167,13 +135,10 @@ export default async function FinancePage({ searchParams }: Props) {
         )}
       </div>
 
-      {/* Pagination */}
       {meta.last_page > 1 && (
-        <div className="flex items-center justify-between mt-6">
-          <p className="text-sm text-zinc-500">
-            Página {meta.current_page} de {meta.last_page}
-          </p>
-          <div className="flex gap-2">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 20 }}>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Página {meta.current_page} de {meta.last_page}</p>
+          <div style={{ display: 'flex', gap: 8 }}>
             {meta.current_page > 1 && (
               <PaginationLink page={meta.current_page - 1} search={search} type={type} status={status} label="← Anterior" />
             )}
@@ -187,30 +152,12 @@ export default async function FinancePage({ searchParams }: Props) {
   )
 }
 
-function PaginationLink({
-  page,
-  search,
-  type,
-  status,
-  label,
-}: {
-  page: number
-  search: string
-  type: string
-  status: string
-  label: string
+function PaginationLink({ page, search, type, status, label }: {
+  page: number; search: string; type: string; status: string; label: string
 }) {
   const params = new URLSearchParams({ page: String(page) })
   if (search) params.set('search', search)
-  if (type) params.set('type', type)
+  if (type)   params.set('type', type)
   if (status) params.set('status', status)
-
-  return (
-    <Link
-      href={`/finance?${params}`}
-      className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
-    >
-      {label}
-    </Link>
-  )
+  return <Link href={`/finance?${params}`} className="btn btn-outline btn-sm">{label}</Link>
 }

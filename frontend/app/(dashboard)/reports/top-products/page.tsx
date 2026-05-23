@@ -16,24 +16,23 @@ export default async function TopProductsReportPage({ searchParams }: Props) {
   const { data }: { data: TopProductsReport } = await res.json()
 
   const exportHref = buildExportHref('top-products', { date_from, date_to, limit })
+  const maxRevenue = Math.max(...data.items.map((it) => it.revenue), 1)
 
   return (
-    <div className="p-8 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-zinc-900">Top produtos</h1>
-        <p className="mt-0.5 text-sm text-zinc-500">
-          {formatDate(data.period.date_from)} — {formatDate(data.period.date_to)}
-        </p>
+    <div className="page">
+      <div className="page-head">
+        <div>
+          <h1 className="page-title">Top produtos</h1>
+          <p className="page-subtitle">
+            {formatDate(data.period.date_from)} — {formatDate(data.period.date_to)}
+          </p>
+        </div>
       </div>
 
       <DateRangeFilter action="/reports/top-products" date_from={date_from} date_to={date_to} exportHref={exportHref}>
-        <div>
-          <label className="block text-xs font-medium text-zinc-500 mb-1">Limite</label>
-          <select
-            name="limit"
-            defaultValue={limit}
-            className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900"
-          >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <label className="field-label">Limite</label>
+          <select name="limit" defaultValue={limit} className="input input-sm" style={{ width: 120 }}>
             <option value="10">Top 10</option>
             <option value="20">Top 20</option>
             <option value="50">Top 50</option>
@@ -42,51 +41,63 @@ export default async function TopProductsReportPage({ searchParams }: Props) {
         </div>
       </DateRangeFilter>
 
-      <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl border border-zinc-200 p-5">
-          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide">Produtos vendidos</p>
-          <p className="mt-2 text-2xl font-bold text-zinc-900">{data.totals.products}</p>
-        </div>
-        <div className="bg-white rounded-xl border border-zinc-200 p-5">
-          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide">Itens (unidades)</p>
-          <p className="mt-2 text-2xl font-bold text-zinc-900">{data.totals.quantity_sold}</p>
-        </div>
-        <div className="bg-white rounded-xl border border-zinc-200 p-5">
-          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide">Receita total</p>
-          <p className="mt-2 text-2xl font-bold text-zinc-900">{formatBRL(data.totals.revenue)}</p>
-        </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 14, marginBottom: 20 }}>
+        <SummaryCard label="Produtos vendidos" value={String(data.totals.products)} />
+        <SummaryCard label="Itens (unidades)" value={String(data.totals.quantity_sold)} />
+        <SummaryCard label="Receita total" value={formatBRL(data.totals.revenue)} />
       </div>
 
-      <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden">
+      <div className="card">
         {data.items.length === 0 ? (
-          <p className="px-5 py-10 text-sm text-zinc-400 text-center">Nenhuma venda paga no período.</p>
+          <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Nenhuma venda paga no período.</p>
+          </div>
         ) : (
-          <table className="w-full text-sm">
+          <table className="t-table">
             <thead>
-              <tr className="border-b border-zinc-100 bg-zinc-50 text-left">
-                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide">#</th>
-                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide">Produto</th>
-                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide">SKU</th>
-                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide text-right">Quantidade</th>
-                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide text-right">Pedidos</th>
-                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide text-right">Receita</th>
+              <tr>
+                <th style={{ width: 40 }}>#</th>
+                <th>Produto</th>
+                <th>SKU</th>
+                <th className="t-num">Quantidade</th>
+                <th className="t-num">Pedidos</th>
+                <th>Receita</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-50">
-              {data.items.map((it, idx) => (
-                <tr key={it.product_id} className="hover:bg-zinc-50 transition-colors">
-                  <td className="px-4 py-3 text-zinc-400">{idx + 1}</td>
-                  <td className="px-4 py-3 font-medium text-zinc-900">{it.product_name}</td>
-                  <td className="px-4 py-3 text-zinc-500 font-mono text-xs">{it.sku ?? '—'}</td>
-                  <td className="px-4 py-3 text-right text-zinc-700">{it.quantity}</td>
-                  <td className="px-4 py-3 text-right text-zinc-500">{it.orders_count}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-zinc-900">{formatBRL(it.revenue)}</td>
-                </tr>
-              ))}
+            <tbody>
+              {data.items.map((it, idx) => {
+                const pct = (it.revenue / maxRevenue) * 100
+                return (
+                  <tr key={it.product_id}>
+                    <td style={{ color: 'var(--text-faint)' }}>{idx + 1}</td>
+                    <td style={{ fontWeight: 500 }}>{it.product_name}</td>
+                    <td className="mono" style={{ fontSize: 12, color: 'var(--text-muted)' }}>{it.sku ?? '—'}</td>
+                    <td className="t-num tnum" style={{ color: 'var(--text-soft)' }}>{it.quantity}</td>
+                    <td className="t-num" style={{ color: 'var(--text-muted)' }}>{it.orders_count}</td>
+                    <td style={{ minWidth: 200 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span className="tnum" style={{ fontWeight: 600, minWidth: 90, textAlign: 'right' }}>{formatBRL(it.revenue)}</span>
+                        <div style={{ flex: 1, height: 5, background: 'var(--surface-2)', borderRadius: 999, overflow: 'hidden' }}>
+                          <div style={{ width: `${pct}%`, height: '100%', background: 'var(--accent)' }} />
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         )}
       </div>
+    </div>
+  )
+}
+
+function SummaryCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="card" style={{ padding: 18 }}>
+      <div className="mono" style={{ fontSize: 11, letterSpacing: '0.06em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>{label}</div>
+      <div className="tnum" style={{ fontWeight: 700, fontSize: 22, marginTop: 8, color: 'var(--text)', letterSpacing: '-0.02em' }}>{value}</div>
     </div>
   )
 }
