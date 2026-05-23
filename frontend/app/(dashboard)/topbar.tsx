@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Icon } from '@/app/ui/icons'
 import { toggleThemeAction } from '@/app/lib/theme'
 import { logoutAction } from './actions'
+import { NotificationsBell } from './notifications-bell'
 
 const LABELS: Record<string, string> = {
   dashboard: 'Painel',
@@ -34,11 +35,15 @@ function humanize(segment: string): string {
 
 interface Props {
   userName: string
+  userRole: string
+  userAvatar: string | null
   theme: 'light' | 'dark'
+  canBroadcast: boolean
+  canSettings: boolean
   onMenuClick?: () => void
 }
 
-export function Topbar({ userName, theme, onMenuClick }: Props) {
+export function Topbar({ userName, userRole, userAvatar, theme, canBroadcast, canSettings, onMenuClick }: Props) {
   const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
   const menuWrapRef = useRef<HTMLDivElement>(null)
@@ -102,10 +107,7 @@ export function Topbar({ userName, theme, onMenuClick }: Props) {
             <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={16} />
           </button>
         </form>
-        <button type="button" className="topbar-ico-btn" title="Notificações" aria-label="Notificações">
-          <Icon name="bell" size={16} />
-          <span className="dot" />
-        </button>
+        <NotificationsBell canBroadcast={canBroadcast} />
         <div style={{ width: 1, height: 22, background: 'var(--border)', margin: '0 4px' }} />
         <div ref={menuWrapRef} style={{ position: 'relative' }}>
           <button
@@ -116,40 +118,52 @@ export function Topbar({ userName, theme, onMenuClick }: Props) {
             aria-haspopup="menu"
             aria-expanded={menuOpen}
           >
-            <span
-              style={{
-                width: 26, height: 26, borderRadius: '50%',
-                background: 'linear-gradient(135deg, oklch(0.65 0.13 28), oklch(0.55 0.16 18))',
-                color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontWeight: 600, fontSize: 11,
-              }}
-            >
-              {initials || 'U'}
-            </span>
+            {userAvatar ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={userAvatar}
+                alt=""
+                style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover' }}
+              />
+            ) : (
+              <span
+                style={{
+                  width: 26, height: 26, borderRadius: '50%',
+                  background: 'linear-gradient(135deg, oklch(0.65 0.13 28), oklch(0.55 0.16 18))',
+                  color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontWeight: 600, fontSize: 11,
+                }}
+              >
+                {initials || 'U'}
+              </span>
+            )}
             <Icon name="caret_down" size={12} />
           </button>
           {menuOpen && (
-            <div
-              role="menu"
-              style={{
-                position: 'absolute', right: 0, top: 'calc(100% + 6px)',
-                minWidth: 200, padding: 6,
-                background: 'var(--surface)', border: '1px solid var(--border)',
-                borderRadius: 'var(--r-md)', boxShadow: 'var(--shadow-md)',
-                zIndex: 50,
-              }}
-            >
-              <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border-soft)', marginBottom: 4 }}>
-                <div style={{ fontSize: 12.5, fontWeight: 500, color: 'var(--text)' }}>{userName}</div>
+            <div role="menu" className="user-menu">
+              <div className="user-menu-head">
+                <div className="user-menu-name">{userName}</div>
+                <div className="user-menu-role">{userRole}</div>
               </div>
+
+              <Link href="/profile" className="user-menu-item" onClick={() => setMenuOpen(false)}>
+                <Icon name="customers" size={14} />
+                <span>Meu perfil</span>
+              </Link>
+
+              {canSettings && (
+                <Link href="/settings" className="user-menu-item" onClick={() => setMenuOpen(false)}>
+                  <Icon name="settings" size={14} />
+                  <span>Configurações</span>
+                </Link>
+              )}
+
+              <div className="user-menu-sep" />
+
               <form action={logoutAction}>
-                <button
-                  type="submit"
-                  className="sb-item"
-                  style={{ width: '100%', cursor: 'pointer' }}
-                >
-                  <Icon name="logout" size={14} className="sb-icon" />
-                  <span className="sb-label">Sair</span>
+                <button type="submit" className="user-menu-item user-menu-item-danger" style={{ width: '100%' }}>
+                  <Icon name="logout" size={14} />
+                  <span>Sair</span>
                 </button>
               </form>
             </div>

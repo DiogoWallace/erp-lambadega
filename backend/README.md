@@ -28,6 +28,10 @@ docker compose exec backend composer install
 # Criar banco e rodar seeders
 docker compose exec backend php artisan migrate:fresh --seed
 
+# Criar symlink para servir uploads (avatares etc.) — já está no Dockerfile,
+# só é necessário em containers pré-existentes / após recriar volumes:
+docker compose exec backend php artisan storage:link
+
 # Rodar os testes
 make test-backend
 # ou diretamente:
@@ -86,6 +90,10 @@ backend/
 | Fornecedores | `GET/POST /suppliers`, `GET/PUT/DELETE /suppliers/{id}` | `?all=1` para dropdown (limite 500) |
 | Produtos | `GET/POST /products`, `GET/PUT/DELETE /products/{id}` | `?all=1` para dropdown (limite 500) |
 | Estoque | `GET/POST /stock-movements`, `GET /stock-movements/{id}` | Imutável — sem update/delete |
+| Notificações | `GET /notifications`, `GET /notifications/unread-count`, `GET /notifications/dropdown`, `POST /notifications/{id}/read`, `POST /notifications/mark-all-read`, `POST /notifications/broadcast` | Pessoais (user_id setado) + broadcast (user_id NULL, leitura por pivot). `broadcast` requer permissão `notification.broadcast`. |
+| Meu perfil | `GET /me/profile`, `PUT /me/profile`, `POST /me/password`, `POST /me/avatar`, `DELETE /me/avatar` | Self-only (sem id). `POST /me/password` exige `current_password` e revoga os demais tokens Sanctum. Avatar via multipart (JPG/PNG/WEBP, máx 2MB, 2000×2000), salvo em `storage/app/public/users/{uuid}/`. |
+| Empresa | `GET /establishment`, `PUT /establishment` | Singleton do tenant — derivado do `establishment_id` do usuário. Leitura requer `settings.view`, escrita requer `settings.edit`. |
+| Usuários | `GET/POST /users`, `GET/PUT/DELETE /users/{id}`, `POST /users/{id}/reset-password` | Multi-tenant escopado por `BelongsToEstablishment`. Gated por `users.*`. Reset-password gera senha de 12 chars, marca `must_change_password` e revoga tokens. Admin não pode deletar/resetar a si mesmo. |
 
 Todas as rotas (exceto auth) exigem `Authorization: Bearer {token}`.
 
@@ -138,6 +146,15 @@ public function viewAny(User $user): bool
 - **Policy** — autorização; delega para Spatie (`$user->can(...)`)
 - **Service** — regras de negócio, queries, transações
 - **Resource** — transforma model em JSON
+
+### Notificações
+
+- Schema: `notifications` (UUID PK, `user_id` NULL = broadcast para todos do estabelecimento) + pivot `notification_reads(notification_id, user_id, read_at)` para marcar leitura per-user em broadcasts. Pessoais usam o `read_at` da própria linha.
+- `NotificationService` é o único ponto de criação — pessoais (`createForUser`) e broadcast (`createBroadcast`, com dedup por 24h sobre `type` + chaves de `data`).
+- Triggers automáticos:
+  - **Estoque** — `InventoryService` emite `stock.out` (≤ 0) ou `stock.critical` (≤ `min_stock_quantity`) ao final de `record()` e `decreaseForOrder()`.
+  - **Financeiro** — `finance:mark-overdue` emite `finance.overdue` por transação que vira `overdue`; `finance:notify-due-soon --days=3` emite `finance.due_soon` para pendentes próximas do vencimento. Ambos rodam no scheduler diário.
+- Broadcast manual (atualizações do sistema, novidades) via `POST /notifications/broadcast`. Requer permissão `notification.broadcast` (apenas admin no `RoleSeeder`).
 
 ---
 

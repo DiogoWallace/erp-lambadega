@@ -49,6 +49,11 @@ Objetivo: sistema web funcional, operando em produção, com as fundações arqu
 - [x] Estilizar PDV (`/sales/new`) com o design system + responsividade mobile/tablet
 - [x] Shell responsivo (sidebar vira drawer off-canvas em <768px, breakpoints de dashboard/tabelas/filtros)
 - [x] Estilizar forms de novo/editar de todos os módulos (customers, categories, suppliers, products, stock-movements, finance) + modais de pagamento/cancelamento
+- [x] Módulo de notificações (estoque crítico/zerado, financeiro vencido/vencendo, broadcast manual) com sino na topbar + página `/notifications`
+- [x] Meu perfil + Configurações fase 1 (`/profile` dados+senha; `/settings` índice; `/settings/company` editar estabelecimento; `/settings/preferences`)
+- [x] Avatar de usuário no perfil (disco `public`, symlink no Dockerfile, JPG/PNG/WEBP até 2MB; mostrado na topbar)
+- [x] CRUD de usuários em `/settings/users` (UserController/Service/Policy + atribuição de cargos + reset de senha com `must_change_password`)
+- [ ] Backup de uploads: estender sidecar `db-backup` para incluir o volume `storage_local` (avatares e futuros uploads)
 - [ ] Estilizar login com o design system (follow-up restante)
 
 **Critério de saída:** sistema rodando em produção com pelo menos um estabelecimento real operando todos os módulos.

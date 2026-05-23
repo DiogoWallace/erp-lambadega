@@ -12,7 +12,10 @@ import { Topbar } from './topbar'
 interface Props {
   userName: string
   userRole: string
+  userAvatar: string | null
   canAudit: boolean
+  canBroadcast: boolean
+  canSettings: boolean
   tenantName: string
   tenantMeta: string
   theme: 'light' | 'dark'
@@ -22,7 +25,10 @@ interface Props {
 export function DashboardShell({
   userName,
   userRole,
+  userAvatar,
   canAudit,
+  canBroadcast,
+  canSettings,
   tenantName,
   tenantMeta,
   theme,
@@ -65,7 +71,11 @@ export function DashboardShell({
       <main className="app-main">
         <Topbar
           userName={userName}
+          userRole={userRole}
+          userAvatar={userAvatar}
           theme={theme}
+          canBroadcast={canBroadcast}
+          canSettings={canSettings}
           onMenuClick={() => setMobileOpen((v) => !v)}
         />
         {children}
