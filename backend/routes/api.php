@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\StockMovementController;
 use App\Http\Controllers\Api\SupplierController;
 use App\Http\Controllers\Auth\AuthController;
@@ -34,4 +35,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('orders/{order}/cancel', [OrderController::class, 'cancel']);
     Route::apiResource('financial-transactions', FinancialTransactionController::class);
     Route::post('financial-transactions/{financial_transaction}/pay', [FinancialTransactionController::class, 'pay']);
+
+    Route::prefix('reports')->group(function () {
+        Route::get('sales',         [ReportController::class, 'sales']);
+        Route::get('top-products',  [ReportController::class, 'topProducts']);
+        Route::get('cash-flow',     [ReportController::class, 'cashFlow']);
+        Route::get('accounts',      [ReportController::class, 'accounts']);
+    });
 });

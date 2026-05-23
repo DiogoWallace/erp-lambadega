@@ -98,6 +98,7 @@ erp-comercial/
 │   │   │   ├── InventoryService.php     dono ÚNICO das escritas de estoque (record manual + decreaseForOrder/restoreForOrder); usa DB::transaction + lockForUpdate
 │   │   │   ├── OrderService.php         orquestra estado do pedido + despacha eventos (OrderCreated/Paid/Cancelled); recebe DTOs; delega estoque ao InventoryService; NÃO toca StockMovement/FinancialTransaction
 │   │   │   ├── DashboardService.php     metrics(period, dateFrom, dateTo); agrega receita, pedidos, ticket médio, low stock, últimas vendas
+│   │   │   ├── ReportService.php        leitura-apenas; salesByPeriod / topProducts / cashFlow / accountsStatus — camada Deptrac própria com acesso a FinancialModel
 │   │   │   └── AuditService.php         singleton; logModel(), log(), queueUpdate()/dequeuePendingUpdate()
 │   │   ├── DataTransferObjects/         DTOs readonly tipados (fromArray): CreateOrderDTO, OrderItemDTO, PayOrderDTO
 │   │   ├── Events/                      eventos de domínio: OrderCreated, OrderPaid, OrderCancelled
@@ -200,10 +201,20 @@ erp-comercial/
 │   │   │   │       ├── loading.tsx       TableSkeleton
 │   │   │   │       ├── pay-form.tsx      client; modal com payment_method + parcelas (crédito)
 │   │   │   │       └── cancel-form.tsx   client; modal de confirmação; avisa que estoque será devolvido
-│   │   │   └── audit-logs/               rota: /audit-logs (visível só para admin)
-│   │   │       ├── page.tsx              lista server-side; filtros: evento, módulo, período
-│   │   │       └── loading.tsx           TableSkeleton
-│   │   ├── api/auth/clear/route.ts       limpa cookie inválido
+│   │   │   ├── audit-logs/               rota: /audit-logs (visível só para admin)
+│   │   │   │   ├── page.tsx              lista server-side; filtros: evento, módulo, período
+│   │   │   │   └── loading.tsx           TableSkeleton
+│   │   │   └── reports/                  rota: /reports (requer reports.view)
+│   │   │       ├── page.tsx              índice com 4 cards (sales, top-products, cash-flow, accounts)
+│   │   │       ├── _lib.ts               formatBRL, formatDate, defaultDateRange, buildExportHref
+│   │   │       ├── _filters.tsx          DateRangeFilter — form GET com date_from/date_to + slot + botão "Exportar CSV"
+│   │   │       ├── sales/page.tsx        cards resumo, breakdown por payment_method, tabela de pedidos
+│   │   │       ├── top-products/page.tsx tabela ranking por receita (ignora pedidos não pagos)
+│   │   │       ├── cash-flow/page.tsx    realizado vs projetado + tabela diária com saldo acumulado
+│   │   │       └── accounts/page.tsx     cards por status + tabela detalhada; filtros: tipo, status, due_from/due_to
+│   │   ├── api/
+│   │   │   ├── auth/clear/route.ts       limpa cookie inválido
+│   │   │   └── reports/export/route.ts   proxy de download CSV (busca da API com ?format=csv e repassa headers)
 │   │   ├── lib/
 │   │   │   ├── api.ts                    apiFetch (token do cookie; 401→clear, 403→dashboard, 5xx→throw)
 │   │   │   └── types.ts                  Customer, Category, Supplier, Product, StockMovement, AuditLog, PaginatedResponse
@@ -222,7 +233,10 @@ erp-comercial/
 ├── Makefile                              atalhos: make test, make migrate, make shell…
 ├── docker-compose.yml                    local (monta tests/ e phpunit.xml como volumes)
 ├── docker-compose.dev.yml                dev (VPS, rede erp_shared)
-├── docker-compose.prod.yml               prod (VPS, cria rede erp_shared)
+├── docker-compose.prod.yml               prod (VPS, cria rede erp_shared); inclui sidecar db-backup
+│
+├── scripts/
+│   └── backup-mysql.sh                   loop diário (03:00 UTC) + mysqldump --single-transaction --no-tablespaces | gzip; retenção 7d (BACKUP_RETENTION_DAYS)
 │
 ├── .github/workflows/
 │   ├── deploy.yml                        push main → prod
@@ -391,6 +405,10 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - **`DashboardController` usa `$this->authorize('dashboard.view')` sem Policy** — para endpoints de agregação sem model associado, o padrão é checar a Gate ability diretamente (Spatie registra cada permission como Gate). Não existe DashboardPolicy; a string `'dashboard.view'` é suficiente. Isso é diferente dos outros controllers que usam `$this->authorize('viewAny', Model::class)`.
 - **`DashboardController` retorna `response()->json()` diretamente** — exceção aceita: endpoints de agregação não têm model, então não há JsonResource correspondente. O formato ainda segue a convenção `{ "data": {...} }`.
 - **Dashboard usa `useRouter().push()` em vez de form GET** — o seletor de período é um componente client que usa `useRouter` para navegação instantânea. Isso é uma exceção ao padrão de filtros por `<form method="GET">` dos módulos de listagem; adequado aqui pois os filtros de período têm lógica condicional (campos de data só aparecem no modo `custom`).
+- **Relatórios são camada Deptrac própria** (`ReportService`) — leitura-apenas com acesso a `FinancialModel` (e futuramente `InventoryModel`). Outros services continuam proibidos de tocar nesses models. Quando criar nova consulta agregada cross-model, adicionar no `ReportService` ao invés de afrouxar a fronteira de `Services`.
+- **CSV export no frontend usa route handler proxy** — `app/api/reports/export/route.ts` (GET) recebe `?type=sales|top-products|cash-flow|accounts` + filtros, chama a API com `Bearer ${token}` do cookie e repassa o stream com `Content-Disposition`. O browser não acessa `API_BASE_URL` (interno), por isso o proxy.
+- **`ReportController` retorna `JsonResponse|StreamedResponse`** — quando `?format=csv` está presente, devolve `streamDownload` com BOM UTF-8 (`\xEF\xBB\xBF`) para o Excel renderizar acentos. Cada relatório define cabeçalhos e callback de linha próprios.
+- **Backup do MySQL é um sidecar em `docker-compose.prod.yml`** — serviço `db-backup` (mesma imagem `mysql:8.0`) monta `scripts/backup-mysql.sh` como entrypoint e o volume nomeado `db_backups`. Roda loop diário em shell puro (sem cron) calculando o sleep até `BACKUP_HOUR_UTC`. Dumps usam `--single-transaction --no-tablespaces` (não precisa do privilégio PROCESS). Off-site ainda não configurado — backups vivem só no volume da VPS. Ver `docs/tutoriais/backup.md` para restauração.
 
 ---
 
@@ -421,9 +439,9 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 **Pendente (próximos passos):**
 - ~~PDV web / Vendas~~ ✓ (concluído — carrinho, busca de produto, desconto, pagamento, parcelamento, cancelamento)
 - ~~Dashboard~~ ✓ (concluído — métricas de vendas, estoque crítico, seletor de período)
-- Contas a pagar / receber (financeiro)
-- Relatórios básicos (vendas por período, top produtos, fluxo de caixa)
-- Backup automatizado do MySQL em produção
+- ~~Contas a pagar / receber (financeiro)~~ ✓ (backend + frontend + `finance:mark-overdue`)
+- ~~Relatórios básicos~~ ✓ (vendas por período, top produtos, fluxo de caixa, contas a pagar/receber com CSV)
+- ~~Backup automatizado do MySQL em produção~~ ✓ (sidecar `db-backup` em prod; diário às 03:00 UTC; retenção 7d em volume `db_backups`; `make backup-now`/`backup-list`/`backup-restore`)
 - Middleware `AuditModuleAccess` para rotas sensíveis (relatórios, exportações)
 - Comando `audit:prune` para retenção configurável (12 meses em prod via `AUDIT_RETENTION_DAYS`)
 
