@@ -50,6 +50,9 @@ Objetivo: sistema web funcional, operando em produção, com as fundações arqu
 - [x] Shell responsivo (sidebar vira drawer off-canvas em <768px, breakpoints de dashboard/tabelas/filtros)
 - [x] Estilizar forms de novo/editar de todos os módulos (customers, categories, suppliers, products, stock-movements, finance) + modais de pagamento/cancelamento
 - [x] Módulo de notificações (estoque crítico/zerado, financeiro vencido/vencendo, broadcast manual) com sino na topbar + página `/notifications`
+- [x] Meu perfil + Configurações fase 1 (`/profile` dados+senha; `/settings` índice; `/settings/company` editar estabelecimento; `/settings/preferences`)
+- [ ] Avatar de usuário no perfil (requer filesystem `public` + symlink)
+- [ ] CRUD de usuários em `/settings/users` (UserController/Service/Policy + atribuição de cargos)
 - [ ] Estilizar login com o design system (follow-up restante)
 
 **Critério de saída:** sistema rodando em produção com pelo menos um estabelecimento real operando todos os módulos.

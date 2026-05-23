@@ -14,6 +14,7 @@ interface Props {
   userRole: string
   canAudit: boolean
   canBroadcast: boolean
+  canSettings: boolean
   tenantName: string
   tenantMeta: string
   theme: 'light' | 'dark'
@@ -25,6 +26,7 @@ export function DashboardShell({
   userRole,
   canAudit,
   canBroadcast,
+  canSettings,
   tenantName,
   tenantMeta,
   theme,
@@ -67,8 +69,10 @@ export function DashboardShell({
       <main className="app-main">
         <Topbar
           userName={userName}
+          userRole={userRole}
           theme={theme}
           canBroadcast={canBroadcast}
+          canSettings={canSettings}
           onMenuClick={() => setMobileOpen((v) => !v)}
         />
         {children}

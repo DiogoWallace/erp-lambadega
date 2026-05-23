@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\EstablishmentController;
 use App\Http\Controllers\Api\FinancialTransactionController;
+use App\Http\Controllers\Api\MeController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\CategoryController;
@@ -25,6 +27,16 @@ Route::prefix('auth')->group(function () {
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index']);
+
+    Route::prefix('me')->group(function () {
+        Route::get('profile',     [MeController::class, 'profile']);
+        Route::put('profile',     [MeController::class, 'updateProfile']);
+        Route::post('password',   [MeController::class, 'changePassword']);
+    });
+
+    Route::get('establishment',  [EstablishmentController::class, 'show']);
+    Route::put('establishment',  [EstablishmentController::class, 'update']);
+
     Route::apiResource('customers', CustomerController::class);
     Route::apiResource('categories', CategoryController::class);
     Route::apiResource('suppliers', SupplierController::class);

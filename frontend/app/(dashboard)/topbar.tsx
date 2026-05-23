@@ -35,12 +35,14 @@ function humanize(segment: string): string {
 
 interface Props {
   userName: string
+  userRole: string
   theme: 'light' | 'dark'
   canBroadcast: boolean
+  canSettings: boolean
   onMenuClick?: () => void
 }
 
-export function Topbar({ userName, theme, canBroadcast, onMenuClick }: Props) {
+export function Topbar({ userName, userRole, theme, canBroadcast, canSettings, onMenuClick }: Props) {
   const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
   const menuWrapRef = useRef<HTMLDivElement>(null)
@@ -128,27 +130,30 @@ export function Topbar({ userName, theme, canBroadcast, onMenuClick }: Props) {
             <Icon name="caret_down" size={12} />
           </button>
           {menuOpen && (
-            <div
-              role="menu"
-              style={{
-                position: 'absolute', right: 0, top: 'calc(100% + 6px)',
-                minWidth: 200, padding: 6,
-                background: 'var(--surface)', border: '1px solid var(--border)',
-                borderRadius: 'var(--r-md)', boxShadow: 'var(--shadow-md)',
-                zIndex: 50,
-              }}
-            >
-              <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border-soft)', marginBottom: 4 }}>
-                <div style={{ fontSize: 12.5, fontWeight: 500, color: 'var(--text)' }}>{userName}</div>
+            <div role="menu" className="user-menu">
+              <div className="user-menu-head">
+                <div className="user-menu-name">{userName}</div>
+                <div className="user-menu-role">{userRole}</div>
               </div>
+
+              <Link href="/profile" className="user-menu-item" onClick={() => setMenuOpen(false)}>
+                <Icon name="customers" size={14} />
+                <span>Meu perfil</span>
+              </Link>
+
+              {canSettings && (
+                <Link href="/settings" className="user-menu-item" onClick={() => setMenuOpen(false)}>
+                  <Icon name="settings" size={14} />
+                  <span>Configurações</span>
+                </Link>
+              )}
+
+              <div className="user-menu-sep" />
+
               <form action={logoutAction}>
-                <button
-                  type="submit"
-                  className="sb-item"
-                  style={{ width: '100%', cursor: 'pointer' }}
-                >
-                  <Icon name="logout" size={14} className="sb-icon" />
-                  <span className="sb-label">Sair</span>
+                <button type="submit" className="user-menu-item user-menu-item-danger" style={{ width: '100%' }}>
+                  <Icon name="logout" size={14} />
+                  <span>Sair</span>
                 </button>
               </form>
             </div>
