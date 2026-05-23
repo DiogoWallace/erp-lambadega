@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { apiFetch } from '@/app/lib/api'
 import { DashboardData } from '@/app/lib/types'
+import { Icon } from '@/app/ui/icons'
 import { PeriodSelector } from './period-selector'
 
 interface Props {
@@ -12,20 +13,15 @@ interface Props {
 }
 
 const STATUS_LABEL: Record<string, string> = {
-  pending:  'Pendente',
-  paid:     'Pago',
-  canceled: 'Cancelado',
+  pending: 'Pendente', paid: 'Pago', canceled: 'Cancelado',
 }
-
-const STATUS_CLASS: Record<string, string> = {
-  pending:  'bg-yellow-100 text-yellow-700',
-  paid:     'bg-green-100 text-green-700',
-  canceled: 'bg-red-100 text-red-700',
+const STATUS_BADGE: Record<string, string> = {
+  pending: 'badge-warning', paid: 'badge-success', canceled: 'badge-danger',
 }
 
 function formatCurrency(value: string | number): string {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-    typeof value === 'string' ? parseFloat(value) : value
+    typeof value === 'string' ? parseFloat(value) : value,
   )
 }
 
@@ -35,44 +31,47 @@ function formatDate(iso: string): string {
   })
 }
 
-function ChangeIndicator({ value }: { value: number | null }) {
-  if (value === null) return null
-  const positive = value >= 0
-  return (
-    <span className={`inline-flex items-center gap-0.5 text-xs font-medium ${positive ? 'text-green-600' : 'text-red-600'}`}>
-      {positive ? '↑' : '↓'} {Math.abs(value)}%
-    </span>
-  )
-}
-
 function MetricCard({
-  title, value, sub, change, href, icon,
+  label, value, sub, change, href, icon, kind,
 }: {
-  title: string
+  label: string
   value: string
   sub?: string
   change?: number | null
   href?: string
-  icon: React.ReactNode
+  icon: Parameters<typeof Icon>[0]['name']
+  kind: 'success' | 'warning' | 'danger' | 'accent'
 }) {
-  const content = (
-    <div className="bg-white rounded-xl border border-zinc-200 p-5 flex flex-col gap-3 hover:border-zinc-300 transition-colors">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wide">{title}</span>
-        <span className="text-zinc-300">{icon}</span>
+  const iconBg = `var(--${kind}-soft)`
+  const iconColor = `var(--${kind})`
+  const deltaColor = change == null ? 'var(--text-muted)' : change >= 0 ? 'var(--success)' : 'var(--danger)'
+  const card = (
+    <div className="card" style={{ padding: 18 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div className="mono" style={{ fontSize: 11.5, letterSpacing: '0.06em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+          {label}
+        </div>
+        <div style={{
+          width: 28, height: 28, borderRadius: 'var(--r-sm)',
+          background: iconBg, color: iconColor,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <Icon name={icon} size={14} />
+        </div>
       </div>
-      <div>
-        <p className="text-2xl font-bold text-zinc-900">{value}</p>
-        {(sub || change !== undefined) && (
-          <div className="flex items-center gap-2 mt-1">
-            {sub && <p className="text-xs text-zinc-400">{sub}</p>}
-            {change !== undefined && <ChangeIndicator value={change} />}
-          </div>
-        )}
+      <div className="tnum" style={{ fontWeight: 600, fontSize: 28, lineHeight: 1.1, letterSpacing: '-0.025em', marginTop: 12, color: 'var(--text)' }}>
+        {value}
+      </div>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 6, marginTop: 8,
+        fontSize: 12, fontWeight: 500, color: deltaColor,
+      }}>
+        {change != null && <Icon name={change >= 0 ? 'trend_up' : 'trend_dn'} size={12} stroke={2} />}
+        {sub}
       </div>
     </div>
   )
-  return href ? <Link href={href}>{content}</Link> : <>{content}</>
+  return href ? <Link href={href}>{card}</Link> : card
 }
 
 export default async function DashboardPage({ searchParams }: Props) {
@@ -85,17 +84,18 @@ export default async function DashboardPage({ searchParams }: Props) {
   const res = await apiFetch(`/dashboard?${params}`)
   const { data }: { data: DashboardData } = await res.json()
 
-  const vsLabel = data.revenue.previous !== null
-    ? `vs ${formatCurrency(data.revenue.previous)} período anterior`
-    : undefined
+  const revenueDelta = data.revenue.change_percent
+  const ordersDelta = data.orders.change_percent
+  const previousLabel = data.revenue.previous !== null
+    ? `vs ${formatCurrency(data.revenue.previous)} antes`
+    : '—'
 
   return (
-    <div className="p-8 space-y-6">
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className="page">
+      <div className="page-head">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900">Dashboard</h1>
-          <p className="mt-0.5 text-sm text-zinc-500">{data.period.label}</p>
+          <h1 className="page-title">Painel</h1>
+          <p className="page-subtitle">Resumo da operação · {data.period.label}</p>
         </div>
         <PeriodSelector
           currentPeriod={period}
@@ -104,147 +104,162 @@ export default async function DashboardPage({ searchParams }: Props) {
         />
       </div>
 
-      {/* Metric cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* KPI strip */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 14, marginBottom: 20 }}>
         <MetricCard
-          title="Receita"
+          label="Receita"
           value={formatCurrency(data.revenue.current)}
-          sub={vsLabel}
-          change={data.revenue.change_percent}
+          sub={revenueDelta != null ? `${revenueDelta > 0 ? '+' : ''}${revenueDelta}% · ${previousLabel}` : previousLabel}
+          change={revenueDelta}
           href="/sales?status=paid"
-          icon={
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          }
+          icon="sales"
+          kind="success"
         />
-
         <MetricCard
-          title="Pedidos pagos"
+          label="Pedidos pagos"
           value={String(data.orders.paid)}
-          sub={`${data.orders.total} total no período`}
-          change={data.orders.change_percent}
+          sub={ordersDelta != null ? `${ordersDelta > 0 ? '+' : ''}${ordersDelta}% · ${data.orders.total} no período` : `${data.orders.total} no período`}
+          change={ordersDelta}
           href="/sales?status=paid"
-          icon={
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          }
+          icon="invoices"
+          kind="accent"
         />
-
         <MetricCard
-          title="Ticket médio"
+          label="Ticket médio"
           value={formatCurrency(data.avg_ticket.current)}
           sub="por pedido pago"
-          icon={
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
-            </svg>
-          }
+          icon="finance"
+          kind="warning"
         />
-
         <MetricCard
-          title="Estoque crítico"
+          label="Estoque baixo"
           value={String(data.low_stock_count)}
           sub={data.low_stock_count > 0 ? 'produto(s) abaixo do mínimo' : 'tudo em ordem'}
           href="/products?low_stock=1"
-          icon={
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-            </svg>
-          }
+          icon="package"
+          kind={data.low_stock_count > 0 ? 'danger' : 'success'}
         />
       </div>
 
       {/* Status breakdown */}
-      <div className="grid grid-cols-3 gap-3">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 14, marginBottom: 20 }}>
         {[
-          { key: 'pending',  label: 'Pendentes', count: data.orders.pending,  color: 'bg-yellow-50 border-yellow-100' },
-          { key: 'paid',     label: 'Pagos',     count: data.orders.paid,     color: 'bg-green-50 border-green-100' },
-          { key: 'canceled', label: 'Cancelados',count: data.orders.canceled, color: 'bg-red-50 border-red-100' },
+          { key: 'pending',  label: 'Pendentes',  count: data.orders.pending,  kind: 'warning' as const },
+          { key: 'paid',     label: 'Pagos',      count: data.orders.paid,     kind: 'success' as const },
+          { key: 'canceled', label: 'Cancelados', count: data.orders.canceled, kind: 'danger'  as const },
         ].map((s) => (
           <Link
             key={s.key}
             href={`/sales?status=${s.key}`}
-            className={`rounded-xl border p-4 ${s.color} hover:opacity-80 transition-opacity`}
+            className="card"
+            style={{ padding: 16, textDecoration: 'none', display: 'block' }}
           >
-            <p className="text-2xl font-bold text-zinc-900">{s.count}</p>
-            <p className="text-xs text-zinc-500 mt-0.5">{s.label}</p>
+            <div className="mono" style={{ fontSize: 11, letterSpacing: '0.05em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+              {s.label}
+            </div>
+            <div className="tnum" style={{ fontWeight: 700, fontSize: 24, color: `var(--${s.kind})`, marginTop: 6 }}>
+              {s.count}
+            </div>
           </Link>
         ))}
       </div>
 
       {/* Bottom grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent orders */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-zinc-200 overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-100">
-            <p className="text-sm font-semibold text-zinc-700">Últimas vendas</p>
-            <Link href="/sales" className="text-xs text-zinc-400 hover:text-zinc-700 transition-colors">
-              Ver todas →
+      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 14 }}>
+        {/* Low stock */}
+        <div className="card">
+          <div className="card-head">
+            <div>
+              <h3>Estoque crítico</h3>
+              <div className="card-sub">
+                Produtos abaixo do mínimo · <code style={{ background: 'var(--surface-2)', padding: '1px 6px', borderRadius: 4, fontSize: 11.5 }}>stock_quantity &lt; min_stock_quantity</code>
+              </div>
+            </div>
+            <Link href="/products?low_stock=1" style={{ fontSize: 12.5, fontWeight: 500, color: 'var(--accent)' }}>
+              Ver produtos →
             </Link>
           </div>
-          {data.recent_orders.length === 0 ? (
-            <p className="px-5 py-10 text-sm text-zinc-400 text-center">Nenhuma venda ainda.</p>
+          {data.low_stock.length === 0 ? (
+            <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Nenhum produto crítico.</p>
+            </div>
           ) : (
-            <table className="w-full text-sm">
-              <tbody className="divide-y divide-zinc-50">
-                {data.recent_orders.map((order) => (
-                  <tr key={order.id} className="hover:bg-zinc-50 transition-colors">
-                    <td className="px-5 py-3">
-                      <Link href={`/sales/${order.id}`} className="font-mono font-semibold text-zinc-900 hover:underline">
-                        {order.order_number}
-                      </Link>
-                      <p className="text-xs text-zinc-400">{order.customer?.name ?? 'Consumidor final'}</p>
-                    </td>
-                    <td className="px-5 py-3 text-xs text-zinc-400 whitespace-nowrap">
-                      {formatDate(order.created_at)}
-                    </td>
-                    <td className="px-5 py-3 text-right font-semibold text-zinc-900">
-                      {formatCurrency(order.total_amount)}
-                    </td>
-                    <td className="px-5 py-3">
-                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_CLASS[order.status]}`}>
-                        {STATUS_LABEL[order.status]}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+            <table className="t-table">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Produto</th>
+                  <th className="t-num">Saldo</th>
+                  <th className="t-num">Mínimo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.low_stock.map((p) => {
+                  const critical = p.stock_quantity === 0
+                  return (
+                    <tr key={p.id}>
+                      <td style={{ width: 24 }}>
+                        <span style={{ display: 'block', width: 8, height: 8, borderRadius: '50%', background: critical ? 'var(--danger)' : 'var(--warning)' }} />
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: 500, color: 'var(--text)' }}>{p.name}</div>
+                        {p.sku && <div className="mono" style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 4 }}>{p.sku}</div>}
+                      </td>
+                      <td className="t-num">
+                        <span className={`badge ${critical ? 'badge-danger' : 'badge-warning'}`}>
+                          {p.stock_quantity} {p.unit}
+                        </span>
+                      </td>
+                      <td className="t-num tnum" style={{ color: 'var(--text-muted)' }}>{p.min_stock_quantity} {p.unit}</td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           )}
         </div>
 
-        {/* Low stock */}
-        <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-100">
-            <p className="text-sm font-semibold text-zinc-700">Estoque crítico</p>
-            <Link href="/products?low_stock=1" className="text-xs text-zinc-400 hover:text-zinc-700 transition-colors">
-              Ver todos →
+        {/* Recent orders */}
+        <div className="card">
+          <div className="card-head">
+            <div><h3>Últimas vendas</h3></div>
+            <Link href="/sales" style={{ fontSize: 12.5, fontWeight: 500, color: 'var(--accent)' }}>
+              Ver todas →
             </Link>
           </div>
-          {data.low_stock.length === 0 ? (
-            <div className="px-5 py-10 text-center">
-              <p className="text-2xl mb-1">✓</p>
-              <p className="text-sm text-zinc-400">Nenhum produto crítico.</p>
+          {data.recent_orders.length === 0 ? (
+            <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Nenhuma venda ainda.</p>
             </div>
           ) : (
-            <ul className="divide-y divide-zinc-50">
-              {data.low_stock.map((p) => (
-                <li key={p.id} className="flex items-center justify-between px-5 py-3 hover:bg-zinc-50 transition-colors">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-zinc-900 truncate">{p.name}</p>
-                    <p className="text-xs text-zinc-400">
-                      {p.sku ? `SKU: ${p.sku} · ` : ''}
-                      mín: {p.min_stock_quantity} {p.unit}
-                    </p>
+            <div>
+              {data.recent_orders.map((o, i) => (
+                <Link
+                  key={o.id}
+                  href={`/sales/${o.id}`}
+                  style={{
+                    display: 'grid', gridTemplateColumns: '100px 1fr auto', gap: 12, padding: '12px 18px',
+                    borderTop: i === 0 ? '1px solid var(--border-soft)' : 'none',
+                    borderBottom: i < data.recent_orders.length - 1 ? '1px solid var(--border-soft)' : 'none',
+                    alignItems: 'center', textDecoration: 'none',
+                  }}
+                >
+                  <span className="mono" style={{ fontSize: 12, fontWeight: 500, color: 'var(--accent)', letterSpacing: '0.02em' }}>{o.order_number}</span>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 12.5, fontWeight: 500, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {o.customer?.name ?? 'Balcão'}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{formatDate(o.created_at)}</div>
                   </div>
-                  <span className={`ml-3 shrink-0 text-sm font-bold ${p.stock_quantity === 0 ? 'text-red-600' : 'text-orange-500'}`}>
-                    {p.stock_quantity}
-                  </span>
-                </li>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span className="tnum" style={{ fontSize: 12.5, fontWeight: 500, color: 'var(--text)' }}>
+                      {formatCurrency(o.total_amount)}
+                    </span>
+                    <span className={`badge ${STATUS_BADGE[o.status]}`}>{STATUS_LABEL[o.status]}</span>
+                  </div>
+                </Link>
               ))}
-            </ul>
+            </div>
           )}
         </div>
       </div>

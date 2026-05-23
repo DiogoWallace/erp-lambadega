@@ -43,11 +43,14 @@ frontend/
 ├── proxy.ts                     auth check na borda (substitui middleware.ts no Next.js 16)
 ├── vitest.config.ts             config de testes unitários
 ├── app/
+│   ├── layout.tsx               root layout; força dynamic (lê cookie 'theme'); aplica classe theme-light/dark no <html>
+│   ├── global-error.tsx         root error boundary (Next.js) — renderiza <html> próprio
 │   ├── (dashboard)/             route group — rotas autenticadas (não aparece na URL)
 │   │   ├── __tests__/           testes Vitest para os build-body de todos os módulos
-│   │   ├── layout.tsx           sidebar + Suspense para SidebarUser
-│   │   ├── sidebar-user.tsx     server component; carrega usuário via apiFetch
-│   │   ├── sidebar-nav.tsx      client component (precisa de usePathname)
+│   │   ├── layout.tsx           async; força dynamic; carrega /auth/me + tema; renderiza SidebarNav + Topbar
+│   │   ├── sidebar-nav.tsx      client; navegação com pin, favoritos, colapso de seções
+│   │   ├── topbar.tsx           client; breadcrumbs por pathname, toggle de tema, logout
+│   │   ├── error.tsx            error boundary do dashboard (client)
 │   │   ├── actions.ts           logoutAction
 │   │   ├── customers/           CRUD de clientes
 │   │   │   ├── page.tsx         lista server-side com paginação e busca
@@ -60,12 +63,20 @@ frontend/
 │   │   ├── categories/          CRUD de categorias + subcategorias
 │   │   ├── suppliers/           CRUD de fornecedores
 │   │   ├── products/            CRUD de produtos + link "+ Mov." p/ estoque
-│   │   └── stock-movements/     registro e histórico de movimentações
+│   │   ├── stock-movements/     registro e histórico de movimentações
+│   │   ├── sales/               PDV web + lista + detalhe (pay/cancel)
+│   │   ├── finance/             contas a pagar/receber
+│   │   ├── audit-logs/          logs de auditoria (admin only)
+│   │   └── reports/             4 relatórios (sales, top-products, cash-flow, accounts) + CSV
 │   ├── api/auth/clear/route.ts  route handler — limpa cookie e redireciona para /login
 │   ├── lib/
 │   │   ├── api.ts               apiFetch: injeta token, trata 401/403/5xx
+│   │   ├── theme.ts             getTheme() + toggleThemeAction() (cookie 'theme')
 │   │   └── types.ts             interfaces TypeScript de todos os modelos
-│   ├── ui/skeletons.tsx         TableSkeleton, FormSkeleton (loading states)
+│   ├── ui/
+│   │   ├── icons.tsx            componente Icon (SVG inline) com IconName tipado
+│   │   └── skeletons.tsx        TableSkeleton, FormSkeleton (loading states)
+│   ├── globals.css              tokens do design system (oklch), tema light/dark, tipografia Geist
 │   ├── login/                   tela pública de login
 │   └── page.tsx                 home pública
 └── next.config.ts
@@ -119,9 +130,41 @@ Cada módulo tem um `build-body.ts` com a função pura `buildBody(formData: For
 
 `proxy.ts` verifica só a existência do cookie `token`. Não faz chamada à API (rodaria em todo prefetch). Token inválido é tratado pelos Server Components via `apiFetch`.
 
+### Layouts dependem de cookies → `force-dynamic`
+
+`app/layout.tsx` lê o cookie `theme` e `app/(dashboard)/layout.tsx` lê `token` + `theme`. Ambos declaram:
+
+```ts
+export const dynamic = 'force-dynamic'
+```
+
+Sem isso, o Next.js pode tentar pré-renderizar e o tema/usuário ficam indisponíveis em build.
+
 ### Tipos
 
 Todos os IDs são `string` (UUID v7). Nunca `number`. Interfaces em `app/lib/types.ts`.
+
+---
+
+## Design system
+
+Sistema próprio do projeto (não é lib externa). Vive em `app/globals.css` + componentes em `app/(dashboard)/` e `app/ui/`. Detalhes em [`docs/arquitetura/design-system.md`](../docs/arquitetura/design-system.md).
+
+- **Tokens em CSS** — `:root`/`.theme-light`/`.theme-dark` definem cores (`oklch`), raios, sombras (`rgba` por causa do lightning CSS), ring.
+- **Tema light/dark via cookie** — `app/lib/theme.ts` expõe `getTheme()` (server) e `toggleThemeAction()` (server action). A classe `theme-light`/`theme-dark` é aplicada no `<html>` em SSR — sem flash de troca.
+- **Tipografia Geist** — `Geist` + `Geist_Mono` via `next/font/google`, expostas como `--font-geist-sans` / `--font-geist-mono`.
+- **Ícones** — componente `Icon` em `app/ui/icons.tsx` com `IconName` tipado. SVG inline, sem dependência externa. Para adicionar ícone: incluir no `type IconName` + `PATHS`.
+- **Shell do dashboard** — `SidebarNav` (com pin/favoritos/colapso) + `Topbar` (breadcrumbs por `usePathname` + toggle de tema + logout).
+- **Escopo aplicado** — todas as listas, relatórios e detalhe de venda. **Login, PDV (`/sales/new`) e forms (novo/editar) ficaram no estilo antigo** — follow-up explícito.
+
+---
+
+## Error boundaries
+
+| Arquivo | Quando dispara |
+|---|---|
+| `app/global-error.tsx` | erro fora do dashboard ou no root layout — renderiza `<html>` próprio |
+| `app/(dashboard)/error.tsx` | erro dentro do dashboard — fica dentro do shell (sidebar/topbar) |
 
 ---
 

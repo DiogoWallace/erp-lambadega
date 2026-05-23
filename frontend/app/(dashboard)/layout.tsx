@@ -1,35 +1,47 @@
-import { Suspense } from 'react'
 import { apiFetch } from '@/app/lib/api'
+import { getTheme } from '@/app/lib/theme'
 import { SidebarNav } from './sidebar-nav'
-import { SidebarUser } from './sidebar-user'
-import { SidebarUserSkeleton } from '@/app/ui/skeletons'
+import { Topbar } from './topbar'
+
+// Tudo aqui dentro depende do cookie 'token'; nunca pré-renderizar estático.
+export const dynamic = 'force-dynamic'
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  let userName = 'Usuário'
+  let userRole = 'user'
   let canAudit = false
+  let tenantId = '—'
+
   try {
     const res = await apiFetch('/auth/me')
     const { data: user } = await res.json()
+    userName = user?.name ?? 'Usuário'
+    userRole = user?.roles?.[0] ?? 'user'
     canAudit = (user?.permissions ?? []).includes('audit.view')
+    tenantId = (user?.establishment_id ?? '').slice(0, 8) || '—'
   } catch {
-    // fail silently — sidebar renders without audit link
+    // fail silently — layout still renders with placeholders
   }
 
+  const theme = await getTheme()
+
   return (
-    <div className="flex h-screen overflow-hidden bg-zinc-50">
-      <aside className="w-56 shrink-0 bg-white border-r border-zinc-200 flex flex-col h-full">
-        <div className="px-5 py-4 border-b border-zinc-100">
-          <span className="text-sm font-bold text-zinc-900 tracking-tight">ERP Comercial</span>
-        </div>
-        <SidebarNav canAudit={canAudit} />
-        <Suspense fallback={<SidebarUserSkeleton />}>
-          <SidebarUser />
-        </Suspense>
-      </aside>
-      <main className="flex-1 overflow-y-auto">{children}</main>
+    <div className="app-shell">
+      <SidebarNav
+        canAudit={canAudit}
+        tenantName="Estabelecimento"
+        tenantMeta={`#${tenantId}`}
+        userName={userName}
+        userRole={userRole}
+      />
+      <main className="app-main">
+        <Topbar userName={userName} theme={theme} />
+        {children}
+      </main>
     </div>
   )
 }

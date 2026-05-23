@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Icon } from '@/app/ui/icons'
 
 interface DateRangeFilterProps {
   action: string
@@ -16,38 +17,21 @@ export function DateRangeFilter({
   children,
 }: DateRangeFilterProps) {
   return (
-    <form method="GET" action={action} className="flex flex-wrap items-end gap-3 mb-6">
-      <div>
-        <label className="block text-xs font-medium text-zinc-500 mb-1">De</label>
-        <input
-          type="date"
-          name={fromName}
-          defaultValue={date_from}
-          className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900"
-        />
+    <form method="GET" action={action} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: 12, marginBottom: 20 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <label className="field-label">De</label>
+        <input type="date" name={fromName} defaultValue={date_from} className="input input-sm" style={{ width: 160 }} />
       </div>
-      <div>
-        <label className="block text-xs font-medium text-zinc-500 mb-1">Até</label>
-        <input
-          type="date"
-          name={toName}
-          defaultValue={date_to}
-          className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900"
-        />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <label className="field-label">Até</label>
+        <input type="date" name={toName} defaultValue={date_to} className="input input-sm" style={{ width: 160 }} />
       </div>
       {children}
-      <button
-        type="submit"
-        className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 transition-colors"
-      >
-        Filtrar
+      <button type="submit" className="btn btn-primary btn-sm">
+        <Icon name="filter" size={12} /> Filtrar
       </button>
-      <Link
-        href={exportHref}
-        className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
-        prefetch={false}
-      >
-        ↓ Exportar CSV
+      <Link href={exportHref} className="btn btn-outline btn-sm" prefetch={false}>
+        <Icon name="download" size={12} /> Exportar CSV
       </Link>
     </form>
   )

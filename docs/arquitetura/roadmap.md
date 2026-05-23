@@ -25,8 +25,9 @@ Objetivo: sistema web funcional, operando em produção, com as fundações arqu
 - [x] Movimentação de estoque (in/out/adjustment, log imutável, transação atômica)
 - [x] Vendas (PDV web — carrinho, busca de produto, desconto, pagamento, parcelamento, cancelamento)
 - [x] Dashboard (métricas de vendas por período, pedidos por status, ticket médio, estoque crítico, últimas vendas)
-- [ ] Contas a pagar / receber (financeiro)
-- [ ] Relatórios básicos (top produtos, fluxo de caixa)
+- [x] Contas a pagar / receber (financeiro)
+- [x] Relatórios básicos (vendas, top produtos, fluxo de caixa, contas a pagar/receber com CSV)
+- [x] **Design system** (tokens oklch, tema light/dark cookie-based, sidebar/topbar, ícones — telas de lista + relatórios + detalhe de venda; ver [design-system.md](design-system.md))
 
 ### Auditoria e rastreabilidade
 
@@ -42,9 +43,10 @@ Objetivo: sistema web funcional, operando em produção, com as fundações arqu
 ### Operacional
 
 - [x] Deploy automatizado (dev + prod via GitHub Actions)
-- [ ] Backup automatizado do MySQL
+- [x] Backup automatizado do MySQL (sidecar diário, retenção 7d)
 - [ ] Monitoramento de uptime
 - [ ] Página de manutenção
+- [ ] Estilizar login + PDV + forms (follow-up do design system)
 
 **Critério de saída:** sistema rodando em produção com pelo menos um estabelecimento real operando todos os módulos.
 

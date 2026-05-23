@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { apiFetch } from '@/app/lib/api'
 import { Customer, Order, PaginatedResponse } from '@/app/lib/types'
+import { Icon } from '@/app/ui/icons'
 
 interface Props {
   searchParams: Promise<{
@@ -14,15 +15,19 @@ interface Props {
 }
 
 const STATUS_LABEL: Record<string, string> = {
-  pending:  'Pendente',
-  paid:     'Pago',
-  canceled: 'Cancelado',
+  pending: 'Pendente', paid: 'Pago', canceled: 'Cancelado',
+}
+const STATUS_BADGE: Record<string, string> = {
+  pending: 'badge-warning', paid: 'badge-success', canceled: 'badge-danger',
 }
 
-const STATUS_CLASS: Record<string, string> = {
-  pending:  'bg-yellow-100 text-yellow-700',
-  paid:     'bg-green-100 text-green-700',
-  canceled: 'bg-red-100 text-red-700',
+const PAYMENT_LABEL: Record<string, string> = {
+  pix: 'PIX',
+  credit_card: 'Crédito',
+  debit_card: 'Débito',
+  cash: 'Dinheiro',
+  bank_transfer: 'Transferência',
+  other: 'Outro',
 }
 
 function formatDate(iso: string): string {
@@ -32,20 +37,15 @@ function formatDate(iso: string): string {
   })
 }
 
-function formatCurrency(value: string): string {
+function formatCurrency(value: string | number): string {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-    parseFloat(value)
+    typeof value === 'string' ? parseFloat(value) : value,
   )
 }
 
 export default async function SalesPage({ searchParams }: Props) {
   const {
-    status = '',
-    customer_id = '',
-    date_from = '',
-    date_to = '',
-    search = '',
-    page = '1',
+    status = '', customer_id = '', date_from = '', date_to = '', search = '', page = '1',
   } = await searchParams
 
   const params = new URLSearchParams({ page })
@@ -65,143 +65,123 @@ export default async function SalesPage({ searchParams }: Props) {
 
   const hasFilters = status || customer_id || date_from || date_to || search
 
+  const totals = orders.reduce(
+    (acc, o) => {
+      const total = parseFloat(o.total_amount)
+      acc.gross += total + parseFloat(o.discount_amount)
+      acc.discount += parseFloat(o.discount_amount)
+      acc.net += total
+      return acc
+    },
+    { gross: 0, discount: 0, net: 0 },
+  )
+
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-6">
+    <div className="page">
+      <div className="page-head">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900">Vendas</h1>
-          <p className="mt-0.5 text-sm text-zinc-500">{meta.total} venda(s) registrada(s)</p>
+          <h1 className="page-title">Vendas</h1>
+          <p className="page-subtitle">{meta.total} venda(s) registrada(s)</p>
         </div>
-        <Link
-          href="/sales/new"
-          className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 transition-colors"
-        >
-          + Nova venda
+        <Link href="/sales/new" className="btn btn-primary btn-sm">
+          <Icon name="plus" size={13} stroke={2} />
+          Nova venda
         </Link>
       </div>
 
-      <form method="GET" className="flex flex-wrap gap-3 mb-6">
+      <form method="GET" style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
         <input
           type="text"
           name="search"
           defaultValue={search}
-          placeholder="Buscar por número..."
-          className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900 w-48"
+          placeholder="Buscar por número (ORD-...)"
+          className="input input-sm"
+          style={{ width: 220 }}
         />
-
-        <select
-          name="status"
-          defaultValue={status}
-          className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900"
-        >
+        <select name="status" defaultValue={status} className="input input-sm" style={{ width: 160 }}>
           <option value="">Todos os status</option>
           <option value="pending">Pendente</option>
           <option value="paid">Pago</option>
           <option value="canceled">Cancelado</option>
         </select>
-
-        <select
-          name="customer_id"
-          defaultValue={customer_id}
-          className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900"
-        >
+        <select name="customer_id" defaultValue={customer_id} className="input input-sm" style={{ width: 220 }}>
           <option value="">Todos os clientes</option>
           {customers.map((c) => (
             <option key={c.id} value={c.id}>{c.name}</option>
           ))}
         </select>
-
-        <input
-          type="date"
-          name="date_from"
-          defaultValue={date_from}
-          className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900"
-        />
-        <input
-          type="date"
-          name="date_to"
-          defaultValue={date_to}
-          className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900"
-        />
-
-        <button
-          type="submit"
-          className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
-        >
-          Filtrar
+        <input type="date" name="date_from" defaultValue={date_from} className="input input-sm" style={{ width: 150 }} />
+        <input type="date" name="date_to" defaultValue={date_to} className="input input-sm" style={{ width: 150 }} />
+        <button type="submit" className="btn btn-outline btn-sm">
+          <Icon name="filter" size={12} /> Filtrar
         </button>
         {hasFilters && (
-          <a
-            href="/sales"
-            className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-500 hover:bg-zinc-50 transition-colors"
-          >
-            Limpar
-          </a>
+          <a href="/sales" className="btn btn-ghost btn-sm"><Icon name="x" size={12} /> Limpar</a>
         )}
       </form>
 
-      <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden">
+      <div className="card">
         {orders.length === 0 ? (
-          <div className="px-6 py-16 text-center">
-            <p className="text-sm text-zinc-500">Nenhuma venda encontrada.</p>
+          <div style={{ padding: '64px 24px', textAlign: 'center' }}>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Nenhuma venda encontrada.</p>
           </div>
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-zinc-100 bg-zinc-50 text-left">
-                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide">Nº</th>
-                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide">Data</th>
-                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide">Cliente</th>
-                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide">Itens</th>
-                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide text-right">Total</th>
-                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide">Status</th>
-                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide">Vendedor</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100">
-              {orders.map((order) => (
-                <tr key={order.id} className="hover:bg-zinc-50 transition-colors">
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/sales/${order.id}`}
-                      className="font-mono font-semibold text-zinc-900 hover:underline"
-                    >
-                      {order.order_number}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-xs text-zinc-500 whitespace-nowrap">
-                    {formatDate(order.created_at)}
-                  </td>
-                  <td className="px-4 py-3 text-zinc-700">
-                    {order.customer?.name ?? <span className="text-zinc-400">—</span>}
-                  </td>
-                  <td className="px-4 py-3 text-zinc-500 text-xs">
-                    {order.items_count ?? '—'} item(ns)
-                  </td>
-                  <td className="px-4 py-3 text-right font-semibold text-zinc-900">
-                    {formatCurrency(order.total_amount)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_CLASS[order.status]}`}>
-                      {STATUS_LABEL[order.status]}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-xs text-zinc-500">
-                    {order.user?.name ?? '—'}
-                  </td>
+          <>
+            <table className="t-table">
+              <thead>
+                <tr>
+                  <th>Nº</th>
+                  <th>Data</th>
+                  <th>Cliente</th>
+                  <th>Pagamento</th>
+                  <th>Vendedor</th>
+                  <th className="t-num">Total</th>
+                  <th>Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {orders.map((order) => (
+                  <tr key={order.id}>
+                    <td>
+                      <Link href={`/sales/${order.id}`} className="mono" style={{ fontWeight: 500, color: 'var(--accent)' }}>
+                        {order.order_number}
+                      </Link>
+                    </td>
+                    <td style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                      {formatDate(order.created_at)}
+                    </td>
+                    <td>
+                      {order.customer?.name ?? (
+                        <span style={{ color: 'var(--text-faint)' }}>Balcão</span>
+                      )}
+                    </td>
+                    <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                      {order.payment_method ? PAYMENT_LABEL[order.payment_method] ?? order.payment_method : '—'}
+                    </td>
+                    <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>{order.user?.name ?? '—'}</td>
+                    <td className="t-num tnum" style={{ fontWeight: 600 }}>{formatCurrency(order.total_amount)}</td>
+                    <td>
+                      <span className={`badge ${STATUS_BADGE[order.status]}`}>{STATUS_LABEL[order.status]}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 32, padding: '14px 18px', borderTop: '1px solid var(--border-soft)', background: 'var(--surface-2)' }}>
+              <Total label="Bruto" value={formatCurrency(totals.gross)} muted />
+              <Total label="Descontos" value={formatCurrency(totals.discount)} muted />
+              <Total label="Líquido" value={formatCurrency(totals.net)} />
+            </div>
+          </>
         )}
       </div>
 
       {meta.last_page > 1 && (
-        <div className="flex items-center justify-between mt-6">
-          <p className="text-sm text-zinc-500">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 20 }}>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>
             Página {meta.current_page} de {meta.last_page}
           </p>
-          <div className="flex gap-2">
+          <div style={{ display: 'flex', gap: 8 }}>
             {meta.current_page > 1 && (
               <PaginationLink page={meta.current_page - 1} {...{ status, customer_id, date_from, date_to, search }} label="← Anterior" />
             )}
@@ -211,6 +191,15 @@ export default async function SalesPage({ searchParams }: Props) {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+function Total({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
+  return (
+    <div>
+      <div className="mono" style={{ fontSize: 10.5, letterSpacing: '0.06em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>{label}</div>
+      <div className="tnum" style={{ fontWeight: 600, fontSize: 14, marginTop: 4, color: muted ? 'var(--text-soft)' : 'var(--text)' }}>{value}</div>
     </div>
   )
 }
@@ -225,8 +214,6 @@ function PaginationLink({ page, status, customer_id, date_from, date_to, search,
   if (date_to)     p.set('date_to', date_to)
   if (search)      p.set('search', search)
   return (
-    <Link href={`/sales?${p}`} className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors">
-      {label}
-    </Link>
+    <Link href={`/sales?${p}`} className="btn btn-outline btn-sm">{label}</Link>
   )
 }

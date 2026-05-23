@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { apiFetch } from '@/app/lib/api'
 import { Category, PaginatedResponse } from '@/app/lib/types'
+import { Icon } from '@/app/ui/icons'
 
 interface Props {
   searchParams: Promise<{ search?: string; page?: string; is_active?: string }>
@@ -17,102 +18,76 @@ export default async function CategoriesPage({ searchParams }: Props) {
   const { data: categories, meta }: PaginatedResponse<Category> = await res.json()
 
   return (
-    <div className="p-8">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+    <div className="page">
+      <div className="page-head">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900">Categories</h1>
-          <p className="mt-0.5 text-sm text-zinc-500">{meta.total} categories registered</p>
+          <h1 className="page-title">Categorias</h1>
+          <p className="page-subtitle">{meta.total} categoria(s) cadastrada(s)</p>
         </div>
-        <Link
-          href="/categories/new"
-          className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 transition-colors"
-        >
-          + New category
+        <Link href="/categories/new" className="btn btn-primary btn-sm">
+          <Icon name="plus" size={13} stroke={2} /> Nova categoria
         </Link>
       </div>
 
-      {/* Filters */}
-      <form method="GET" className="flex gap-3 mb-6">
+      <form method="GET" style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
         <input
           name="search"
           type="text"
           defaultValue={search}
-          placeholder="Search by name..."
-          className="flex-1 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900"
+          placeholder="Buscar por nome..."
+          className="input input-sm"
+          style={{ flex: 1, minWidth: 240 }}
         />
-        <select
-          name="is_active"
-          defaultValue={is_active}
-          className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900"
-        >
-          <option value="">All</option>
-          <option value="true">Active</option>
-          <option value="false">Inactive</option>
+        <select name="is_active" defaultValue={is_active} className="input input-sm" style={{ width: 160 }}>
+          <option value="">Todos</option>
+          <option value="true">Ativos</option>
+          <option value="false">Inativos</option>
         </select>
-        <button
-          type="submit"
-          className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
-        >
-          Search
+        <button type="submit" className="btn btn-outline btn-sm">
+          <Icon name="filter" size={12} /> Filtrar
         </button>
         {(search || is_active) && (
-          <a
-            href="/categories"
-            className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-500 hover:bg-zinc-50 transition-colors"
-          >
-            Clear
-          </a>
+          <a href="/categories" className="btn btn-ghost btn-sm"><Icon name="x" size={12} /> Limpar</a>
         )}
       </form>
 
-      {/* Table */}
-      <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden">
+      <div className="card">
         {categories.length === 0 ? (
-          <div className="px-6 py-16 text-center">
-            <p className="text-sm text-zinc-500">No categories found.</p>
+          <div style={{ padding: '64px 24px', textAlign: 'center' }}>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Nenhuma categoria encontrada.</p>
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <table className="t-table">
             <thead>
-              <tr className="border-b border-zinc-100 bg-zinc-50 text-left">
-                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide">Name</th>
-                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide">Parent</th>
-                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide">Order</th>
-                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide">Status</th>
-                <th className="px-4 py-3"></th>
+              <tr>
+                <th>Nome</th>
+                <th>Pai</th>
+                <th className="t-num">Ordem</th>
+                <th>Status</th>
+                <th></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100">
+            <tbody>
               {categories.map((category) => (
-                <tr key={category.id} className="hover:bg-zinc-50 transition-colors">
-                  <td className="px-4 py-3">
-                    <p className="font-medium text-zinc-900">{category.name}</p>
+                <tr key={category.id}>
+                  <td>
+                    <div style={{ fontWeight: 500, color: 'var(--text)' }}>{category.name}</div>
                     {category.description && (
-                      <p className="text-xs text-zinc-400 truncate max-w-xs">{category.description}</p>
+                      <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 2, maxWidth: 360, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {category.description}
+                      </div>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-zinc-500">
-                    {category.parent?.name ?? '—'}
-                  </td>
-                  <td className="px-4 py-3 text-zinc-500">{category.sort_order}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
-                        category.is_active
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-zinc-100 text-zinc-500'
-                      }`}
-                    >
-                      {category.is_active ? 'Active' : 'Inactive'}
+                  <td style={{ color: 'var(--text-muted)' }}>{category.parent?.name ?? '—'}</td>
+                  <td className="t-num tnum" style={{ color: 'var(--text-muted)' }}>{category.sort_order}</td>
+                  <td>
+                    <span className={`badge ${category.is_active ? 'badge-success' : ''}`}>
+                      {category.is_active ? 'Ativa' : 'Inativa'}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link
-                      href={`/categories/${category.id}/edit`}
-                      className="text-xs font-medium text-zinc-500 hover:text-zinc-900 transition-colors"
-                    >
-                      Edit
+                  <td style={{ textAlign: 'right' }}>
+                    <Link href={`/categories/${category.id}/edit`} className="btn btn-ghost btn-sm">
+                      <Icon name="edit" size={12} /> Editar
                     </Link>
                   </td>
                 </tr>
@@ -122,18 +97,17 @@ export default async function CategoriesPage({ searchParams }: Props) {
         )}
       </div>
 
-      {/* Pagination */}
       {meta.last_page > 1 && (
-        <div className="flex items-center justify-between mt-6">
-          <p className="text-sm text-zinc-500">
-            Page {meta.current_page} of {meta.last_page}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 20 }}>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+            Página {meta.current_page} de {meta.last_page}
           </p>
-          <div className="flex gap-2">
+          <div style={{ display: 'flex', gap: 8 }}>
             {meta.current_page > 1 && (
-              <PaginationLink page={meta.current_page - 1} search={search} isActive={is_active} label="← Previous" />
+              <PaginationLink page={meta.current_page - 1} search={search} isActive={is_active} label="← Anterior" />
             )}
             {meta.current_page < meta.last_page && (
-              <PaginationLink page={meta.current_page + 1} search={search} isActive={is_active} label="Next →" />
+              <PaginationLink page={meta.current_page + 1} search={search} isActive={is_active} label="Próxima →" />
             )}
           </div>
         </div>
@@ -142,27 +116,9 @@ export default async function CategoriesPage({ searchParams }: Props) {
   )
 }
 
-function PaginationLink({
-  page,
-  search,
-  isActive,
-  label,
-}: {
-  page: number
-  search: string
-  isActive: string
-  label: string
-}) {
+function PaginationLink({ page, search, isActive, label }: { page: number; search: string; isActive: string; label: string }) {
   const params = new URLSearchParams({ page: String(page) })
   if (search) params.set('search', search)
   if (isActive !== '') params.set('is_active', isActive)
-
-  return (
-    <Link
-      href={`/categories?${params}`}
-      className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
-    >
-      {label}
-    </Link>
-  )
+  return <Link href={`/categories?${params}`} className="btn btn-outline btn-sm">{label}</Link>
 }

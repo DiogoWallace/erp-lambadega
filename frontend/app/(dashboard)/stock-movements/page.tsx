@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { apiFetch } from '@/app/lib/api'
 import { PaginatedResponse, Product, StockMovement } from '@/app/lib/types'
+import { Icon } from '@/app/ui/icons'
 
 interface Props {
   searchParams: Promise<{
@@ -12,21 +13,12 @@ interface Props {
   }>
 }
 
-const TYPE_LABEL: Record<string, string> = {
-  in:         'Entrada',
-  out:        'Saída',
-  adjustment: 'Ajuste',
-}
-
-const TYPE_CLASS: Record<string, string> = {
-  in:         'bg-green-100 text-green-700',
-  out:        'bg-red-100 text-red-700',
-  adjustment: 'bg-blue-100 text-blue-700',
-}
+const TYPE_LABEL: Record<string, string> = { in: 'Entrada', out: 'Saída', adjustment: 'Ajuste' }
+const TYPE_BADGE: Record<string, string> = { in: 'badge-success', out: 'badge-danger', adjustment: 'badge-info' }
 
 function formatQty(movement: StockMovement): string {
-  if (movement.type === 'in')         return `+${movement.quantity}`
-  if (movement.type === 'out')        return `−${movement.quantity}`
+  if (movement.type === 'in')  return `+${movement.quantity}`
+  if (movement.type === 'out') return `−${movement.quantity}`
   return `→ ${movement.quantity}`
 }
 
@@ -38,13 +30,7 @@ function formatDate(iso: string): string {
 }
 
 export default async function StockMovementsPage({ searchParams }: Props) {
-  const {
-    product_id = '',
-    type = '',
-    date_from = '',
-    date_to = '',
-    page = '1',
-  } = await searchParams
+  const { product_id = '', type = '', date_from = '', date_to = '', page = '1' } = await searchParams
 
   const params = new URLSearchParams({ page })
   if (product_id) params.set('product_id', product_id)
@@ -63,117 +49,64 @@ export default async function StockMovementsPage({ searchParams }: Props) {
   const hasFilters = product_id || type || date_from || date_to
 
   return (
-    <div className="p-8">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+    <div className="page">
+      <div className="page-head">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900">Movimentações de estoque</h1>
-          <p className="mt-0.5 text-sm text-zinc-500">{meta.total} movimentação(ões) registrada(s)</p>
+          <h1 className="page-title">Movimentações de estoque</h1>
+          <p className="page-subtitle">{meta.total} movimentação(ões) registrada(s) · log imutável</p>
         </div>
-        <Link
-          href="/stock-movements/new"
-          className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 transition-colors"
-        >
-          + Registrar
+        <Link href="/stock-movements/new" className="btn btn-primary btn-sm">
+          <Icon name="plus" size={13} stroke={2} /> Registrar
         </Link>
       </div>
 
-      {/* Filters */}
-      <form method="GET" className="flex flex-wrap gap-3 mb-6">
-        <select
-          name="product_id"
-          defaultValue={product_id}
-          className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900"
-        >
+      <form method="GET" style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
+        <select name="product_id" defaultValue={product_id} className="input input-sm" style={{ width: 280 }}>
           <option value="">Todos os produtos</option>
-          {products.map((p) => (
-            <option key={p.id} value={p.id}>{p.name}</option>
-          ))}
+          {products.map((p) => (<option key={p.id} value={p.id}>{p.name}</option>))}
         </select>
-
-        <select
-          name="type"
-          defaultValue={type}
-          className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900"
-        >
+        <select name="type" defaultValue={type} className="input input-sm" style={{ width: 160 }}>
           <option value="">Todos os tipos</option>
           <option value="in">Entrada</option>
           <option value="out">Saída</option>
           <option value="adjustment">Ajuste</option>
         </select>
-
-        <input
-          type="date"
-          name="date_from"
-          defaultValue={date_from}
-          className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900"
-        />
-        <input
-          type="date"
-          name="date_to"
-          defaultValue={date_to}
-          className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900"
-        />
-
-        <button
-          type="submit"
-          className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
-        >
-          Filtrar
-        </button>
-        {hasFilters && (
-          <a
-            href="/stock-movements"
-            className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-500 hover:bg-zinc-50 transition-colors"
-          >
-            Limpar
-          </a>
-        )}
+        <input type="date" name="date_from" defaultValue={date_from} className="input input-sm" style={{ width: 150 }} />
+        <input type="date" name="date_to" defaultValue={date_to} className="input input-sm" style={{ width: 150 }} />
+        <button type="submit" className="btn btn-outline btn-sm"><Icon name="filter" size={12} /> Filtrar</button>
+        {hasFilters && (<a href="/stock-movements" className="btn btn-ghost btn-sm"><Icon name="x" size={12} /> Limpar</a>)}
       </form>
 
-      {/* Table */}
-      <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden">
+      <div className="card">
         {movements.length === 0 ? (
-          <div className="px-6 py-16 text-center">
-            <p className="text-sm text-zinc-500">Nenhuma movimentação encontrada.</p>
+          <div style={{ padding: '64px 24px', textAlign: 'center' }}>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Nenhuma movimentação encontrada.</p>
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <table className="t-table">
             <thead>
-              <tr className="border-b border-zinc-100 bg-zinc-50 text-left">
-                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide">Data</th>
-                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide">Produto</th>
-                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide">Tipo</th>
-                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide text-right">Qtd</th>
-                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide text-right">Antes → Depois</th>
-                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide">Usuário</th>
-                <th className="px-4 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wide">Descrição</th>
+              <tr>
+                <th>Data</th>
+                <th>Produto</th>
+                <th>Tipo</th>
+                <th className="t-num">Qtd</th>
+                <th className="t-num">Antes → Depois</th>
+                <th>Usuário</th>
+                <th>Descrição</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100">
+            <tbody>
               {movements.map((m) => (
-                <tr key={m.id} className="hover:bg-zinc-50 transition-colors">
-                  <td className="px-4 py-3 text-xs text-zinc-500 whitespace-nowrap">
-                    {formatDate(m.created_at)}
-                  </td>
-                  <td className="px-4 py-3 font-medium text-zinc-900">
-                    {m.product?.name ?? '—'}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${TYPE_CLASS[m.type]}`}>
-                      {TYPE_LABEL[m.type]}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right font-mono font-semibold text-zinc-900">
-                    {formatQty(m)}
-                  </td>
-                  <td className="px-4 py-3 text-right text-zinc-500 text-xs font-mono">
+                <tr key={m.id}>
+                  <td style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{formatDate(m.created_at)}</td>
+                  <td style={{ fontWeight: 500 }}>{m.product?.name ?? '—'}</td>
+                  <td><span className={`badge ${TYPE_BADGE[m.type]}`}>{TYPE_LABEL[m.type]}</span></td>
+                  <td className="t-num mono" style={{ fontWeight: 600 }}>{formatQty(m)}</td>
+                  <td className="t-num mono" style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                     {m.stock_before} → {m.stock_after}
                   </td>
-                  <td className="px-4 py-3 text-zinc-500 text-xs">
-                    {m.user?.name ?? '—'}
-                  </td>
-                  <td className="px-4 py-3 text-zinc-400 text-xs max-w-xs truncate">
+                  <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>{m.user?.name ?? '—'}</td>
+                  <td style={{ fontSize: 12, color: 'var(--text-faint)', maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {m.description ?? '—'}
                   </td>
                 </tr>
@@ -183,13 +116,10 @@ export default async function StockMovementsPage({ searchParams }: Props) {
         )}
       </div>
 
-      {/* Pagination */}
       {meta.last_page > 1 && (
-        <div className="flex items-center justify-between mt-6">
-          <p className="text-sm text-zinc-500">
-            Página {meta.current_page} de {meta.last_page}
-          </p>
-          <div className="flex gap-2">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 20 }}>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Página {meta.current_page} de {meta.last_page}</p>
+          <div style={{ display: 'flex', gap: 8 }}>
             {meta.current_page > 1 && (
               <PaginationLink page={meta.current_page - 1} productId={product_id} type={type} dateFrom={date_from} dateTo={date_to} label="← Anterior" />
             )}
@@ -211,9 +141,5 @@ function PaginationLink({ page, productId, type, dateFrom, dateTo, label }: {
   if (type)      p.set('type', type)
   if (dateFrom)  p.set('date_from', dateFrom)
   if (dateTo)    p.set('date_to', dateTo)
-  return (
-    <Link href={`/stock-movements?${p}`} className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors">
-      {label}
-    </Link>
-  )
+  return <Link href={`/stock-movements?${p}`} className="btn btn-outline btn-sm">{label}</Link>
 }
