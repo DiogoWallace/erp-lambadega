@@ -138,12 +138,15 @@ erp-comercial/
 │   ├── proxy.ts                          auth check na borda (antigo middleware)
 │   ├── vitest.config.ts                  testes unitários (node environment)
 │   ├── app/
+│   │   ├── layout.tsx                    root layout; force-dynamic; lê cookie 'theme' e aplica theme-light/theme-dark no <html>; Geist sans + mono via next/font
+│   │   ├── global-error.tsx              root error boundary do Next.js (renderiza <html> próprio, fora do dashboard)
+│   │   ├── globals.css                   tokens do design system (oklch) — :root, .theme-light, .theme-dark; sombras em rgba (lightning CSS dropa oklch em shadow)
 │   │   ├── (dashboard)/                  ROUTE GROUP — não aparece na URL
 │   │   │   ├── __tests__/
 │   │   │   │   └── build-body.test.ts    21 testes unitários (vitest) para os 5 módulos
-│   │   │   ├── layout.tsx                async; faz fetch /auth/me p/ determinar canAudit; passa prop p/ SidebarNav
-│   │   │   ├── sidebar-nav.tsx           client component (usePathname); aceita canAudit prop
-│   │   │   ├── sidebar-user.tsx          async; usa apiFetch('/auth/me'), redireciona se 401
+│   │   │   ├── layout.tsx                async; force-dynamic; carrega /auth/me + tema; renderiza SidebarNav + Topbar (sem mais sidebar-user.tsx)
+│   │   │   ├── sidebar-nav.tsx           client (usePathname); navegação com pin/favoritos/colapso de seções; aceita canAudit prop
+│   │   │   ├── topbar.tsx                client; breadcrumbs derivadas do pathname; botão de toggle de tema (chama toggleThemeAction); logout
 │   │   │   ├── actions.ts                logoutAction
 │   │   │   ├── dashboard/                rota: /dashboard
 │   │   │   │   ├── page.tsx              server component; usa ?period=today|week|month|custom + date_from/date_to
@@ -217,8 +220,11 @@ erp-comercial/
 │   │   │   └── reports/export/route.ts   proxy de download CSV (busca da API com ?format=csv e repassa headers)
 │   │   ├── lib/
 │   │   │   ├── api.ts                    apiFetch (token do cookie; 401→clear, 403→dashboard, 5xx→throw)
+│   │   │   ├── theme.ts                  getTheme() + toggleThemeAction() (cookie 'theme'; revalida layout)
 │   │   │   └── types.ts                  Customer, Category, Supplier, Product, StockMovement, AuditLog, PaginatedResponse
-│   │   ├── ui/skeletons.tsx              TableSkeleton, FormSkeleton, etc.
+│   │   ├── ui/
+│   │   │   ├── icons.tsx                 componente Icon (SVG inline; IconName tipado — dashboard, pos, sales, customers, ..., sun, moon, etc.)
+│   │   │   └── skeletons.tsx             TableSkeleton, FormSkeleton, etc.
 │   │   ├── login/
 │   │   │   ├── page.tsx
 │   │   │   └── actions.ts                loginAction (seta cookie token)
@@ -409,6 +415,13 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - **CSV export no frontend usa route handler proxy** — `app/api/reports/export/route.ts` (GET) recebe `?type=sales|top-products|cash-flow|accounts` + filtros, chama a API com `Bearer ${token}` do cookie e repassa o stream com `Content-Disposition`. O browser não acessa `API_BASE_URL` (interno), por isso o proxy.
 - **`ReportController` retorna `JsonResponse|StreamedResponse`** — quando `?format=csv` está presente, devolve `streamDownload` com BOM UTF-8 (`\xEF\xBB\xBF`) para o Excel renderizar acentos. Cada relatório define cabeçalhos e callback de linha próprios.
 - **Backup do MySQL é um sidecar em `docker-compose.prod.yml`** — serviço `db-backup` (mesma imagem `mysql:8.0`) monta `scripts/backup-mysql.sh` como entrypoint e o volume nomeado `db_backups`. Roda loop diário em shell puro (sem cron) calculando o sleep até `BACKUP_HOUR_UTC`. Dumps usam `--single-transaction --no-tablespaces` (não precisa do privilégio PROCESS). Off-site ainda não configurado — backups vivem só no volume da VPS. Ver `docs/tutoriais/backup.md` para restauração.
+- **Layouts com cookie precisam de `export const dynamic = 'force-dynamic'`** — `app/layout.tsx` lê `theme` e `app/(dashboard)/layout.tsx` lê `token` + `theme`. Sem o `force-dynamic` o Next.js tenta pré-renderizar e o cookie/token não estão disponíveis em build. Aplica a qualquer layout/page novo que consuma `cookies()`.
+- **Tema light/dark via cookie `theme`** — resolvido server-side em `app/layout.tsx`, aplicado como classe `theme-light`/`theme-dark` no `<html>` (sem flash). `toggleThemeAction` em `app/lib/theme.ts` alterna e chama `revalidatePath('/', 'layout')` — a página inteira re-renderiza com o novo tema. Cookie tem `httpOnly: false` (precisa ser lido pelo `next/font` no SSR), `maxAge` 1 ano.
+- **Design tokens em `app/globals.css`** — `:root`/`.theme-light`/`.theme-dark` definem cores em `oklch`, raios, sombras (em `rgba` — o lightning CSS do Tailwind v4 dropa `oklch` em shadows), ring. Para criar componente novo, prefira `var(--token)` ou utilitários Tailwind que mapeiem para tokens em vez de cores hard-coded.
+- **Ícones inline em `app/ui/icons.tsx`** — não há dependência externa (lucide, heroicons). Componente `Icon` com `name: IconName` tipado e SVGs definidos em um `PATHS` interno. Para adicionar: estender `type IconName` + entrada em `PATHS` (24×24, `stroke="currentColor"`, sem `fill`).
+- **Escopo do design system** — aplicado em todas as listas (dashboard, sales, customers, suppliers, products, categories, stock-movements, finance, audit-logs), no detalhe de venda e nos 4 relatórios. Login, PDV (`/sales/new`) e forms (novo/editar) ainda usam o estilo antigo — follow-up explícito no roadmap.
+- **`sidebar-user.tsx` foi removido** no commit do design (`08e1b6d`). O `layout.tsx` agora carrega o usuário direto via `apiFetch('/auth/me')` e passa `userName`/`userRole`/`canAudit` por props para `SidebarNav` e `Topbar`.
+- **Root error boundary em `app/global-error.tsx`** — Next.js exige que esse arquivo renderize a própria `<html>` (fora do shell do dashboard). Para erros dentro do dashboard, o boundary continua sendo `(dashboard)/error.tsx`, que mantém sidebar/topbar visíveis.
 
 ---
 
@@ -433,7 +446,8 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - Layout do dashboard com sidebar, route group, loading skeletons
 - Auth check na borda via `proxy.ts`
 - **Testes automatizados**: 118 feature tests PHPUnit (backend, inclui `OrderTest` cobrindo create/pay/cancel + disparo de eventos) + 21 testes unitários Vitest (frontend) — `make test` roda a suite completa. Backend cobre auth, permissões, CRUD e isolamento multi-tenant. CI (`tests.yml`) roda a suíte + Deptrac e **trava o deploy** se algo quebrar.
-- Error boundary no dashboard (`error.tsx`) + proteção 5xx no `apiFetch`
+- Error boundary no dashboard (`error.tsx`) + root error boundary (`global-error.tsx`) + proteção 5xx no `apiFetch`
+- **Design system Inovabi** (tokens oklch em `globals.css`, tema light/dark via cookie, sidebar com pin/favoritos/colapso, topbar com breadcrumbs e toggle de tema, ícones inline em `app/ui/icons.tsx`, tipografia Geist; aplicado em todas as listas + relatórios + detalhe de venda; login/PDV/forms ainda no estilo antigo). Ver [`docs/arquitetura/design-system.md`](../arquitetura/design-system.md).
 - Documentação completa em `docs/arquitetura/`
 
 **Pendente (próximos passos):**
@@ -442,6 +456,8 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - ~~Contas a pagar / receber (financeiro)~~ ✓ (backend + frontend + `finance:mark-overdue`)
 - ~~Relatórios básicos~~ ✓ (vendas por período, top produtos, fluxo de caixa, contas a pagar/receber com CSV)
 - ~~Backup automatizado do MySQL em produção~~ ✓ (sidecar `db-backup` em prod; diário às 03:00 UTC; retenção 7d em volume `db_backups`; `make backup-now`/`backup-list`/`backup-restore`)
+- ~~Design system aplicado em listas, relatórios e detalhe de venda~~ ✓
+- **Estilizar login + PDV (`/sales/new`) + forms (novo/editar)** com o design system (follow-up explícito)
 - Middleware `AuditModuleAccess` para rotas sensíveis (relatórios, exportações)
 - Comando `audit:prune` para retenção configurável (12 meses em prod via `AUDIT_RETENTION_DAYS`)
 
