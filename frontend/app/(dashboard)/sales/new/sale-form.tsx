@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useState, useMemo } from 'react'
+import { useActionState, useEffect, useMemo, useState } from 'react'
 import { Customer, Product } from '@/app/lib/types'
 import { Icon } from '@/app/ui/icons'
 
@@ -40,6 +40,62 @@ function FieldError({ errors, field }: { errors?: Record<string, string[]>; fiel
   const msg = errors?.[field]?.[0]
   if (!msg) return null
   return <p style={{ marginTop: 6, fontSize: 12, color: 'var(--danger)' }}>{msg}</p>
+}
+
+/**
+ * Input numérico com estado local enquanto o usuário edita — permite limpar
+ * o campo sem disparar onCommit(0). Só comita quando o valor é válido (≥ min).
+ * Reverte para o último valor válido no blur se ficar vazio/inválido.
+ */
+function NumericInput({
+  value,
+  min,
+  step,
+  onCommit,
+  className,
+  title,
+  ariaLabel,
+}: {
+  value: number
+  min: number
+  step: number
+  onCommit: (n: number) => void
+  className?: string
+  title?: string
+  ariaLabel?: string
+}) {
+  const [text, setText] = useState(() => String(value))
+
+  // Sincroniza se a fonte externa mudar (ex: +1 ao re-adicionar produto).
+  useEffect(() => {
+    const parsed = parseFloat(text)
+    if (!Number.isFinite(parsed) || parsed !== value) {
+      setText(String(value))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value])
+
+  return (
+    <input
+      type="number"
+      min={min}
+      step={step}
+      value={text}
+      onChange={(e) => {
+        const raw = e.target.value
+        setText(raw)
+        const n = parseFloat(raw)
+        if (Number.isFinite(n) && n >= min) onCommit(n)
+      }}
+      onBlur={() => {
+        const n = parseFloat(text)
+        if (!Number.isFinite(n) || n < min) setText(String(value))
+      }}
+      className={className}
+      title={title}
+      aria-label={ariaLabel}
+    />
+  )
 }
 
 export function SaleForm({ action, products, customers }: Props) {
@@ -86,10 +142,6 @@ export function SaleForm({ action, products, customers }: Props) {
   }
 
   function updateQty(productId: string, qty: number) {
-    if (qty <= 0) {
-      setCart((prev) => prev.filter((i) => i.productId !== productId))
-      return
-    }
     setCart((prev) =>
       prev.map((i) => (i.productId === productId ? { ...i, quantity: qty } : i))
     )
@@ -260,26 +312,24 @@ export function SaleForm({ action, products, customers }: Props) {
                     </div>
 
                     <div className="pdv-cart-ctrl">
-                      <input
-                        type="number"
-                        min="0.01"
-                        step="0.01"
+                      <NumericInput
                         value={item.unitPrice}
-                        onChange={(e) => updatePrice(item.productId, parseFloat(e.target.value) || 0)}
+                        min={0.01}
+                        step={0.01}
+                        onCommit={(n) => updatePrice(item.productId, n)}
                         className="input input-sm pdv-cart-price"
                         title="Preço unitário"
-                        aria-label="Preço unitário"
+                        ariaLabel="Preço unitário"
                       />
 
-                      <input
-                        type="number"
-                        min="1"
-                        step="1"
+                      <NumericInput
                         value={item.quantity}
-                        onChange={(e) => updateQty(item.productId, parseInt(e.target.value, 10) || 0)}
+                        min={1}
+                        step={1}
+                        onCommit={(n) => updateQty(item.productId, n)}
                         className="input input-sm pdv-cart-qty"
                         title="Quantidade"
-                        aria-label="Quantidade"
+                        ariaLabel="Quantidade"
                       />
 
                       <span className="tnum pdv-cart-total">
