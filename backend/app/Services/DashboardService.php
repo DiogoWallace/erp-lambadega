@@ -8,14 +8,23 @@ use Carbon\Carbon;
 
 class DashboardService
 {
-    public function metrics(string $period = 'month', ?string $dateFrom = null, ?string $dateTo = null): array
-    {
+    /**
+     * Métricas do painel. Se $forUserId for informado, escopa receita/pedidos
+     * para vendas geradas por esse usuário (útil para o cargo vendedor, que
+     * só vê os próprios números). Low stock segue sempre do estabelecimento.
+     */
+    public function metrics(
+        string $period = 'month',
+        ?string $dateFrom = null,
+        ?string $dateTo = null,
+        ?string $forUserId = null,
+    ): array {
         [$currentFrom, $currentTo, $previousFrom, $previousTo, $label] = $this->resolvePeriod(
             $period, $dateFrom, $dateTo
         );
 
-        $currentOrders  = $this->queryOrders($currentFrom, $currentTo);
-        $previousOrders = $previousFrom ? $this->queryOrders($previousFrom, $previousTo) : null;
+        $currentOrders  = $this->queryOrders($currentFrom, $currentTo, $forUserId);
+        $previousOrders = $previousFrom ? $this->queryOrders($previousFrom, $previousTo, $forUserId) : null;
 
         $currentRevenue  = $currentOrders->where('status', 'paid')->sum('total_amount');
         $previousRevenue = $previousOrders ? $previousOrders->where('status', 'paid')->sum('total_amount') : null;
@@ -33,6 +42,7 @@ class DashboardService
             ->get(['id', 'name', 'sku', 'stock_quantity', 'min_stock_quantity', 'unit']);
 
         $recentOrders = Order::with(['customer:id,name', 'user:id,name'])
+            ->when($forUserId, fn ($q) => $q->where('user_id', $forUserId))
             ->latest()
             ->limit(8)
             ->get(['id', 'order_number', 'status', 'total_amount', 'customer_id', 'user_id', 'created_at']);
@@ -44,6 +54,7 @@ class DashboardService
                 'date_from' => $currentFrom->toDateString(),
                 'date_to'   => $currentTo->toDateString(),
             ],
+            'scope' => $forUserId ? 'self' : 'all',
             'revenue' => [
                 'current'        => number_format((float) $currentRevenue, 2, '.', ''),
                 'previous'       => $previousRevenue !== null ? number_format((float) $previousRevenue, 2, '.', '') : null,
@@ -82,12 +93,14 @@ class DashboardService
         ];
     }
 
-    private function queryOrders(Carbon $from, Carbon $to)
+    private function queryOrders(Carbon $from, Carbon $to, ?string $forUserId = null)
     {
         return Order::whereBetween('created_at', [
             $from->copy()->startOfDay(),
             $to->copy()->endOfDay(),
-        ])->get(['id', 'status', 'total_amount']);
+        ])
+            ->when($forUserId, fn ($q) => $q->where('user_id', $forUserId))
+            ->get(['id', 'status', 'total_amount']);
     }
 
     private function resolvePeriod(string $period, ?string $dateFrom, ?string $dateTo): array

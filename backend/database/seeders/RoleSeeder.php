@@ -45,6 +45,7 @@ class RoleSeeder extends Seeder
 
             // Dashboard
             'dashboard.view',
+            'dashboard.view_all',
 
             // Auditoria
             'audit.view',
@@ -63,6 +64,7 @@ class RoleSeeder extends Seeder
         Role::firstOrCreate(['name' => 'gerente', 'guard_name' => 'web'])
             ->syncPermissions([
                 'dashboard.view',
+                'dashboard.view_all',
                 'users.view',
                 'customers.view', 'customers.create', 'customers.edit',
                 'suppliers.view', 'suppliers.create', 'suppliers.edit', 'suppliers.delete',
@@ -86,6 +88,7 @@ class RoleSeeder extends Seeder
         Role::firstOrCreate(['name' => 'financeiro', 'guard_name' => 'web'])
             ->syncPermissions([
                 'dashboard.view',
+                'dashboard.view_all',
                 'customers.view',
                 'suppliers.view',
                 'stock.view',
