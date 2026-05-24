@@ -211,6 +211,7 @@ export interface DashboardRecentOrder {
 
 export interface DashboardData {
   period: { key: string; label: string; date_from: string; date_to: string }
+  scope: 'self' | 'all'
   revenue: DashboardMetric
   orders: DashboardOrders
   avg_ticket: { current: string; change_percent: number | null }

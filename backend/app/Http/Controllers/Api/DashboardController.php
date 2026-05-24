@@ -19,7 +19,13 @@ class DashboardController extends Controller
         $dateFrom = $request->input('date_from');
         $dateTo   = $request->input('date_to');
 
-        $data = $this->service->metrics($period, $dateFrom, $dateTo);
+        // Quem tem `dashboard.view_all` (admin/gerente/financeiro) vê números
+        // do estabelecimento inteiro. Os demais (vendedor) só veem os próprios.
+        $forUserId = $request->user()->can('dashboard.view_all')
+            ? null
+            : $request->user()->id;
+
+        $data = $this->service->metrics($period, $dateFrom, $dateTo, $forUserId);
 
         return response()->json(['data' => $data]);
     }
