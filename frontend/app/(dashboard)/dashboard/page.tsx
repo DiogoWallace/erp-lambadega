@@ -95,7 +95,9 @@ export default async function DashboardPage({ searchParams }: Props) {
       <div className="page-head">
         <div>
           <h1 className="page-title">Painel</h1>
-          <p className="page-subtitle">Resumo da operação · {data.period.label}</p>
+          <p className="page-subtitle">
+            {data.scope === 'self' ? 'Suas vendas' : 'Resumo da operação'} · {data.period.label}
+          </p>
         </div>
         <PeriodSelector
           currentPeriod={period}
