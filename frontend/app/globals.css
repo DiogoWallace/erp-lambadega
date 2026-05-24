@@ -1019,6 +1019,9 @@ select.input { appearance: none; background-image: url("data:image/svg+xml;utf8,
 }
 
 .form-banner-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 10px 14px;
   background: var(--danger-soft);
   color: var(--danger);
@@ -1027,6 +1030,9 @@ select.input { appearance: none; background-image: url("data:image/svg+xml;utf8,
 }
 
 .form-banner-success {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 10px 14px;
   background: var(--success-soft);
   color: var(--success);
@@ -1217,6 +1223,187 @@ select.input { appearance: none; background-image: url("data:image/svg+xml;utf8,
 }
 
 /* ============================================================== */
+/* Login — split layout (brand + form)                            */
+/* ============================================================== */
+.auth-shell {
+  display: grid;
+  grid-template-columns: 1fr;
+  min-height: 100dvh;
+  background: var(--bg);
+}
+
+@media (min-width: 900px) {
+  .auth-shell {
+    grid-template-columns: minmax(360px, 1fr) minmax(420px, 1fr);
+  }
+}
+
+/* Painel esquerdo (brand) — escondido em mobile, marca-pillar em desktop */
+.auth-brand {
+  display: none;
+}
+@media (min-width: 900px) {
+  .auth-brand {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 56px 56px 40px;
+    background: linear-gradient(180deg, var(--surface-2) 0%, var(--surface) 100%);
+    border-right: 1px solid var(--border);
+  }
+}
+
+.auth-brand-row { display: flex; align-items: center; gap: 12px; }
+.auth-brand-mark {
+  width: 36px; height: 36px;
+  border-radius: var(--r-md);
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  color: var(--accent-ink);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+}
+.auth-brand-name {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+.auth-brand-tag {
+  margin: 10px 0 0;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.auth-brand-pitch { max-width: 380px; }
+.auth-brand-headline {
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin: 0 0 26px;
+}
+.auth-brand-features {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.auth-brand-features li {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  font-size: 13.5px;
+  color: var(--text-soft);
+  line-height: 1.45;
+}
+.auth-brand-icon {
+  width: 26px; height: 26px;
+  border-radius: var(--r-sm);
+  background: var(--accent-soft);
+  color: var(--accent);
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.auth-brand-foot {
+  font-size: 11.5px;
+  color: var(--text-faint);
+  margin: 0;
+  letter-spacing: 0.04em;
+}
+
+/* Painel direito (form) */
+.auth-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  position: relative;
+}
+
+.auth-topbar {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 32px 28px;
+  box-shadow: var(--shadow-md);
+}
+
+.auth-mobile-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 22px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+.auth-mobile-brand .auth-brand-mark {
+  width: 28px; height: 28px;
+  font-size: 14px;
+  border-radius: var(--r-sm);
+}
+@media (min-width: 900px) {
+  .auth-mobile-brand { display: none; }
+}
+
+.auth-title {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--text);
+  margin: 0 0 4px;
+}
+.auth-sub {
+  font-size: 13.5px;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.45;
+}
+
+.auth-submit {
+  width: 100%;
+  margin-top: 4px;
+  height: 42px;
+  font-size: 14px;
+  justify-content: center;
+}
+
+.auth-help {
+  margin: 22px 0 0;
+  font-size: 12px;
+  color: var(--text-faint);
+  text-align: center;
+  line-height: 1.45;
+}
+
+.auth-foot-mobile {
+  margin-top: 24px;
+  font-size: 11.5px;
+  color: var(--text-faint);
+  letter-spacing: 0.04em;
+}
+@media (min-width: 900px) {
+  .auth-foot-mobile { display: none; }
+}
+
+/* ============================================================== */
 /* Responsivo — mobile (<768px) e tablet (768–1023px)             */
 /* ============================================================== */
 
@@ -1341,3 +1528,8 @@ select.input { appearance: none; background-image: url("data:image/svg+xml;utf8,
   .dash-bottom { grid-template-columns: 1fr; }
 }
 
+/* ──────────────────────────────────────────────────────────────────
+   FIM DO ARQUIVO — NÃO ADICIONE REGRAS DEPOIS DESTE BLOCO!
+   O Lightning CSS / Tailwind v4 descarta regras posicionadas após o
+   último @media. Sempre insira CSS novo ANTES da seção "Responsivo".
+   ────────────────────────────────────────────────────────────────── */

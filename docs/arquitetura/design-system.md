@@ -34,6 +34,7 @@ Notas:
 - **Cores em `oklch`** — paletas com matiz/croma calculados em espaço perceptualmente uniforme.
 - **Sombras em `rgba`** — o bundler do Tailwind v4 (lightning CSS) descarta sombras com `oklch`; por isso `--shadow-*` usa `rgba`.
 - **Regras fora de `@layer`** — algumas regras críticas (p. ex. utilities customizados) ficam fora de `@layer base` porque o lightning CSS pode dropá-las dentro de camadas em certas condições.
+- **Não adicione CSS após o último `@media` do arquivo** — Lightning CSS descarta silenciosamente regras posicionadas após o último bloco `@media` em `globals.css` (testado com Next 16 / Turbopack). Há uma sentinela `FIM DO ARQUIVO` no rodapé do arquivo; sempre insira CSS novo ANTES da seção "Responsivo" no fim.
 
 ---
 
@@ -93,9 +94,20 @@ export function Icon({ name, size = 16, stroke = 1.6, className = '' }: IconProp
 | Relatórios (índice + 4 telas) | ✓ design novo |
 | **Forms (novo/editar) de todos os módulos** | ✓ design novo |
 | Modais (Pagamento e Cancelamento de venda) | ✓ design novo |
-| **Login** | ✗ ainda no estilo antigo |
+| **Login** | ✓ design novo (split brand + form, com toggle de tema) |
 
-Login é o único bloco que segue como follow-up.
+Todos os blocos do app foram migrados para o design system.
+
+---
+
+## Padrão de autenticação (`/login`)
+
+Tela de entrada usa um layout dividido em duas colunas:
+
+- **Painel esquerdo (`.auth-brand`)** — visível apenas em ≥900px. Apresenta o produto: marca + headline + lista de destaques com ícones (PDV, estoque, financeiro, relatórios). Background com gradiente sutil (`surface-2 → surface`) e borda direita pra separar da área funcional.
+- **Painel direito (`.auth-main`)** — centraliza o `.auth-card` (max-width 380px) com título "Entrar na sua conta", subtítulo e formulário (email + senha). Botão "Entrar" usa `.btn-primary.auth-submit` (full width, 42px). No topo direito tem o toggle de tema (form que dispara `toggleThemeAction`).
+- Em mobile (<900px), o painel esquerdo some — o usuário vê apenas o card centralizado, com `.auth-mobile-brand` no topo (marca compacta) e `.auth-foot-mobile` no rodapé (versão).
+- Erros vêm via `.form-banner-error` (agora com `display: flex` para acomodar ícone + texto).
 
 ---
 
