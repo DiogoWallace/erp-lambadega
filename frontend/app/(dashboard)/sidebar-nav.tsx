@@ -17,6 +17,7 @@ interface NavItem {
   id: string
   label: string
   icon: Parameters<typeof Icon>[0]['name']
+  permission?: string
   badge?: string | number
   badgeKind?: 'success' | 'warning' | 'danger' | 'accent'
   children?: NavChild[]
@@ -30,32 +31,34 @@ interface Section {
 const sections: Section[] = [
   {
     items: [
-      { id: 'dashboard',  href: '/dashboard',         label: 'Painel',     icon: 'dashboard' },
-      { id: 'sales',      href: '/sales',             label: 'Vendas',     icon: 'sales' },
+      { id: 'dashboard',  href: '/dashboard',         label: 'Painel',     icon: 'dashboard', permission: 'dashboard.view' },
+      { id: 'sales',      href: '/sales',             label: 'Vendas',     icon: 'sales',     permission: 'sales.view' },
     ],
   },
   {
     title: 'Cadastros',
     items: [
-      { id: 'customers',  href: '/customers',  label: 'Clientes',    icon: 'customers' },
-      { id: 'suppliers',  href: '/suppliers',  label: 'Fornecedores',icon: 'suppliers' },
-      { id: 'products',   href: '/products',   label: 'Produtos',    icon: 'package' },
-      { id: 'categories', href: '/categories', label: 'Categorias',  icon: 'bookmark' },
+      { id: 'customers',  href: '/customers',  label: 'Clientes',    icon: 'customers', permission: 'customers.view' },
+      { id: 'suppliers',  href: '/suppliers',  label: 'Fornecedores',icon: 'suppliers', permission: 'suppliers.view' },
+      { id: 'products',   href: '/products',   label: 'Produtos',    icon: 'package',   permission: 'products.view' },
+      { id: 'categories', href: '/categories', label: 'Categorias',  icon: 'bookmark',  permission: 'categories.view' },
     ],
   },
   {
     title: 'Operação',
     items: [
-      { id: 'stock',     href: '/stock-movements', label: 'Estoque',     icon: 'inventory' },
-      { id: 'finance',   href: '/finance',         label: 'Financeiro',  icon: 'finance' },
-      { id: 'reports',   href: '/reports',         label: 'Relatórios',  icon: 'reports' },
+      { id: 'stock',     href: '/stock-movements', label: 'Estoque',     icon: 'inventory', permission: 'stock.view' },
+      { id: 'finance',   href: '/finance',         label: 'Financeiro',  icon: 'finance',   permission: 'finance.view' },
+      { id: 'reports',   href: '/reports',         label: 'Relatórios',  icon: 'reports',   permission: 'reports.view' },
+    ],
+  },
+  {
+    title: 'Sistema',
+    items: [
+      { id: 'audit', href: '/audit-logs', label: 'Auditoria', icon: 'eye', permission: 'audit.view' },
     ],
   },
 ]
-
-const auditItem: NavItem = {
-  id: 'audit', href: '/audit-logs', label: 'Auditoria', icon: 'eye',
-}
 
 const STORAGE_KEYS = {
   collapsed: 'sidebar-collapsed',
@@ -63,7 +66,7 @@ const STORAGE_KEYS = {
 }
 
 interface Props {
-  canAudit?: boolean
+  permissions: string[]
   tenantName: string
   tenantMeta: string
   userName: string
@@ -73,7 +76,7 @@ interface Props {
 }
 
 export function SidebarNav({
-  canAudit = false,
+  permissions,
   tenantName,
   tenantMeta,
   userName,
@@ -107,11 +110,14 @@ export function SidebarNav({
     })
   }
 
-  const allSections = canAudit
-    ? [...sections, { title: 'Sistema', items: [auditItem] }]
-    : sections
+  // Filtra cada item pelas permissões do usuário; itens sem `permission` são
+  // sempre visíveis. Seções inteiras somem quando ficam vazias.
+  const can = (perm?: string) => !perm || permissions.includes(perm)
+  const visibleSections = sections
+    .map((sec) => ({ ...sec, items: sec.items.filter((it) => can(it.permission)) }))
+    .filter((sec) => sec.items.length > 0)
 
-  const flatItems = allSections.flatMap((s) => s.items)
+  const flatItems = visibleSections.flatMap((s) => s.items)
   const pinnedItems = pinned.map((id) => flatItems.find((i) => i.id === id)).filter(Boolean) as NavItem[]
 
   const isActive = (href?: string) => {
@@ -185,7 +191,7 @@ export function SidebarNav({
           </div>
         )}
 
-        {allSections.map((sec, i) => (
+        {visibleSections.map((sec, i) => (
           <div className="sb-section" key={i}>
             {sec.title && !collapsed && (
               <div className="sb-section-title"><span>{sec.title}</span></div>
