@@ -471,7 +471,7 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - ~~Avatar de usuário (upload de imagem)~~ ✓ (disco `public`, symlink no Dockerfile, JPG/PNG/WEBP até 2MB, mostrado na topbar)
 - ~~CRUD de usuários em `/settings/users`~~ ✓ (UserController/Service/Policy + must_change_password + reset-password com modal copy-to-clipboard)
 - **Backup de uploads** — sidecar `db-backup` só cobre MySQL; estender pra incluir o volume `storage_local` (avatares e futuros uploads)
-- **Estilizar login** com o design system (follow-up restante)
+- ~~Estilizar login com o design system~~ ✓ (split brand+form, tokens oklch, toggle de tema, responsivo)
 - Middleware `AuditModuleAccess` para rotas sensíveis (relatórios, exportações)
 - Comando `audit:prune` para retenção configurável (12 meses em prod via `AUDIT_RETENTION_DAYS`)
 
