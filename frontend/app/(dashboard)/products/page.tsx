@@ -34,11 +34,13 @@ export default async function ProductsPage({ searchParams }: Props) {
 
   const [productsRes, categoriesRes] = await Promise.all([
     apiFetch(`/products?${params}`),
-    apiFetch('/categories?all=1'),
+    apiFetch('/categories?all=1', { optional: true }),
   ])
 
   const { data: products, meta }: PaginatedResponse<Product> = await productsRes.json()
-  const { data: categories }: { data: Category[] } = await categoriesRes.json()
+  const categories: Category[] = categoriesRes.ok
+    ? (await categoriesRes.json()).data ?? []
+    : []
 
   const hasFilters = search || is_active || category_id || low_stock
 
@@ -63,10 +65,12 @@ export default async function ProductsPage({ searchParams }: Props) {
           className="input input-sm"
           style={{ flex: 1, minWidth: 240 }}
         />
-        <select name="category_id" defaultValue={category_id} className="input input-sm" style={{ width: 220 }}>
-          <option value="">Todas as categorias</option>
-          {categories.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
-        </select>
+        {categories.length > 0 && (
+          <select name="category_id" defaultValue={category_id} className="input input-sm" style={{ width: 220 }}>
+            <option value="">Todas as categorias</option>
+            {categories.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
+          </select>
+        )}
         <select name="is_active" defaultValue={is_active} className="input input-sm" style={{ width: 140 }}>
           <option value="">Todos</option>
           <option value="true">Ativos</option>
