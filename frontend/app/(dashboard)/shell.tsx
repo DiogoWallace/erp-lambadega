@@ -13,9 +13,7 @@ interface Props {
   userName: string
   userRole: string
   userAvatar: string | null
-  canAudit: boolean
-  canBroadcast: boolean
-  canSettings: boolean
+  permissions: string[]
   tenantName: string
   tenantMeta: string
   theme: 'light' | 'dark'
@@ -26,14 +24,14 @@ export function DashboardShell({
   userName,
   userRole,
   userAvatar,
-  canAudit,
-  canBroadcast,
-  canSettings,
+  permissions,
   tenantName,
   tenantMeta,
   theme,
   children,
 }: Props) {
+  const canBroadcast = permissions.includes('notification.broadcast')
+  const canSettings = permissions.includes('settings.view')
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [lastPath, setLastPath] = useState(pathname)
@@ -52,7 +50,7 @@ export function DashboardShell({
   return (
     <div className={`app-shell ${mobileOpen ? 'mobile-open' : ''}`}>
       <SidebarNav
-        canAudit={canAudit}
+        permissions={permissions}
         tenantName={tenantName}
         tenantMeta={tenantMeta}
         userName={userName}
