@@ -34,6 +34,7 @@ Notas:
 - **Cores em `oklch`** — paletas com matiz/croma calculados em espaço perceptualmente uniforme.
 - **Sombras em `rgba`** — o bundler do Tailwind v4 (lightning CSS) descarta sombras com `oklch`; por isso `--shadow-*` usa `rgba`.
 - **Regras fora de `@layer`** — algumas regras críticas (p. ex. utilities customizados) ficam fora de `@layer base` porque o lightning CSS pode dropá-las dentro de camadas em certas condições.
+- **Não adicione CSS após o último `@media` do arquivo** — Lightning CSS descarta silenciosamente regras posicionadas após o último bloco `@media` em `globals.css` (testado com Next 16 / Turbopack). Há uma sentinela `FIM DO ARQUIVO` no rodapé do arquivo; sempre insira CSS novo ANTES da seção "Responsivo" no fim.
 
 ---
 

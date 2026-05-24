@@ -1223,131 +1223,6 @@ select.input { appearance: none; background-image: url("data:image/svg+xml;utf8,
 }
 
 /* ============================================================== */
-/* Responsivo — mobile (<768px) e tablet (768–1023px)             */
-/* ============================================================== */
-
-/* Mobile: drawer off-canvas, sem search no topbar, paddings menores */
-@media (max-width: 767px) {
-  .sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 100dvh;
-    width: 280px;
-    flex-basis: 280px;
-    z-index: 100;
-    transform: translateX(-100%);
-    transition: transform 0.22s ease;
-    box-shadow: var(--shadow-lg);
-  }
-  .sidebar.mobile-open { transform: translateX(0); }
-  /* No mobile, ignora o estado "collapsed" do desktop — drawer sempre full */
-  .sidebar.collapsed {
-    width: 280px;
-    flex-basis: 280px;
-  }
-  .sidebar.collapsed .sb-brand-name,
-  .sidebar.collapsed .sb-brand-tag,
-  .sidebar.collapsed .sb-tenant-info,
-  .sidebar.collapsed .sb-section-title span,
-  .sidebar.collapsed .sb-label,
-  .sidebar.collapsed .sb-pin,
-  .sidebar.collapsed .sb-user-info,
-  .sidebar.collapsed .sb-badge { display: revert; }
-  .sidebar.collapsed .sb-item { justify-content: flex-start; padding: 0 10px; width: 100%; margin: 0; }
-  .sidebar.collapsed .sb-tenant { justify-content: flex-start; padding: 8px 10px; margin: 10px; width: auto; }
-  /* Esconde o botão "Recolher" no rodapé — só faz sentido no desktop */
-  .sb-foot > .sb-item:first-child { display: none; }
-
-  .app-shell.mobile-open .app-overlay { display: block; }
-
-  .topbar {
-    padding: 0 14px;
-    gap: 10px;
-  }
-  .topbar-burger { display: inline-flex; }
-  .topbar-search { display: none; }
-  .topbar-actions { gap: 2px; }
-  .topbar-ico-btn { width: 36px; height: 36px; }
-
-  /* Breadcrumb compacto: só o último segmento */
-  .breadcrumbs { flex: 1 1 auto; min-width: 0; overflow: hidden; }
-  .breadcrumbs > a:first-child,
-  .breadcrumbs > span:not(:last-child) { display: none; }
-  .breadcrumbs > span:last-child .sep { display: none; }
-  .breadcrumbs > span:last-child .current {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text);
-  }
-
-  .page { padding: 18px 14px 28px; }
-  .page-head { margin-bottom: 18px; gap: 12px; }
-  .page-title { font-size: 20px; }
-  .page-subtitle { font-size: 12.5px; }
-
-  /* Filtros das listas: inputs/selects ocupam espaço fluido em vez do width fixo inline */
-  .page > form > .input,
-  .page > form > .input-sm {
-    flex: 1 1 140px;
-    width: auto !important;
-    min-width: 0 !important;
-  }
-
-  /* Dashboard: 2 colunas para KPIs e status, 1 coluna no bottom */
-  .dash-kpis   { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-  .dash-stats  { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-  .dash-bottom { grid-template-columns: 1fr; }
-
-  /* Totais do rodapé da lista de vendas: empilham com gap menor */
-  .sales-totals { flex-wrap: wrap; gap: 18px !important; justify-content: flex-start !important; }
-
-  /* Forms mobile: botões ocupam largura disponível (auto-fit já dá 1 col) */
-  .form-grid { gap: 12px; }
-  .form-actions { gap: 8px; }
-  .form-actions .btn { flex: 1 1 auto; justify-content: center; }
-  /* Em mobile, ignora span-2 (cai pra 1 col por linha) */
-  .form-field-span-2 { grid-column: auto; }
-
-  /* PDV mobile: linha do carrinho em 2 níveis (nome em cima, controles embaixo) */
-  .pdv-card-body { padding: 0 14px 14px; }
-  .pdv-cart-row { padding: 12px 14px; gap: 10px; }
-  .pdv-cart-info { flex: 1 1 100%; }
-  .pdv-cart-ctrl { flex: 1 1 100%; flex-wrap: wrap; gap: 12px; }
-  .pdv-cart-field { flex: 1 1 auto; }
-  .pdv-cart-field-total { flex: 0 0 auto; margin-left: auto; }
-  .pdv-discount, .pdv-totals { padding-left: 14px; padding-right: 14px; }
-
-  /* Botão Registrar venda fica sticky no rodapé do viewport */
-  .pdv-submit-wrap {
-    position: sticky;
-    bottom: 0;
-    margin: 4px -14px -28px;
-    padding: 10px 14px 14px;
-    background: linear-gradient(to top, var(--bg) 70%, transparent);
-    z-index: 5;
-  }
-  .pdv-submit { height: 46px; font-size: 14.5px; }
-}
-
-/* PDV: empilha em coluna única para tablets também (carrinho 400px não cabe) */
-@media (max-width: 1023px) {
-  .pdv-grid { grid-template-columns: 1fr; gap: 14px; }
-}
-
-/* Tablet: encolhe paddings e tipografia, sidebar inline (default desktop) */
-@media (min-width: 768px) and (max-width: 1023px) {
-  .topbar { padding: 0 18px; gap: 14px; }
-  .topbar-search { max-width: 280px; }
-  .page { padding: 22px 22px 32px; }
-  .page-title { font-size: 22px; }
-
-  /* Dashboard: 2x2 KPIs, status em linha, bottom em coluna única */
-  .dash-kpis   { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .dash-bottom { grid-template-columns: 1fr; }
-}
-
-/* ============================================================== */
 /* Login — split layout (brand + form)                            */
 /* ============================================================== */
 .auth-shell {
@@ -1528,3 +1403,133 @@ select.input { appearance: none; background-image: url("data:image/svg+xml;utf8,
   .auth-foot-mobile { display: none; }
 }
 
+/* ============================================================== */
+/* Responsivo — mobile (<768px) e tablet (768–1023px)             */
+/* ============================================================== */
+
+/* Mobile: drawer off-canvas, sem search no topbar, paddings menores */
+@media (max-width: 767px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100dvh;
+    width: 280px;
+    flex-basis: 280px;
+    z-index: 100;
+    transform: translateX(-100%);
+    transition: transform 0.22s ease;
+    box-shadow: var(--shadow-lg);
+  }
+  .sidebar.mobile-open { transform: translateX(0); }
+  /* No mobile, ignora o estado "collapsed" do desktop — drawer sempre full */
+  .sidebar.collapsed {
+    width: 280px;
+    flex-basis: 280px;
+  }
+  .sidebar.collapsed .sb-brand-name,
+  .sidebar.collapsed .sb-brand-tag,
+  .sidebar.collapsed .sb-tenant-info,
+  .sidebar.collapsed .sb-section-title span,
+  .sidebar.collapsed .sb-label,
+  .sidebar.collapsed .sb-pin,
+  .sidebar.collapsed .sb-user-info,
+  .sidebar.collapsed .sb-badge { display: revert; }
+  .sidebar.collapsed .sb-item { justify-content: flex-start; padding: 0 10px; width: 100%; margin: 0; }
+  .sidebar.collapsed .sb-tenant { justify-content: flex-start; padding: 8px 10px; margin: 10px; width: auto; }
+  /* Esconde o botão "Recolher" no rodapé — só faz sentido no desktop */
+  .sb-foot > .sb-item:first-child { display: none; }
+
+  .app-shell.mobile-open .app-overlay { display: block; }
+
+  .topbar {
+    padding: 0 14px;
+    gap: 10px;
+  }
+  .topbar-burger { display: inline-flex; }
+  .topbar-search { display: none; }
+  .topbar-actions { gap: 2px; }
+  .topbar-ico-btn { width: 36px; height: 36px; }
+
+  /* Breadcrumb compacto: só o último segmento */
+  .breadcrumbs { flex: 1 1 auto; min-width: 0; overflow: hidden; }
+  .breadcrumbs > a:first-child,
+  .breadcrumbs > span:not(:last-child) { display: none; }
+  .breadcrumbs > span:last-child .sep { display: none; }
+  .breadcrumbs > span:last-child .current {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .page { padding: 18px 14px 28px; }
+  .page-head { margin-bottom: 18px; gap: 12px; }
+  .page-title { font-size: 20px; }
+  .page-subtitle { font-size: 12.5px; }
+
+  /* Filtros das listas: inputs/selects ocupam espaço fluido em vez do width fixo inline */
+  .page > form > .input,
+  .page > form > .input-sm {
+    flex: 1 1 140px;
+    width: auto !important;
+    min-width: 0 !important;
+  }
+
+  /* Dashboard: 2 colunas para KPIs e status, 1 coluna no bottom */
+  .dash-kpis   { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .dash-stats  { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .dash-bottom { grid-template-columns: 1fr; }
+
+  /* Totais do rodapé da lista de vendas: empilham com gap menor */
+  .sales-totals { flex-wrap: wrap; gap: 18px !important; justify-content: flex-start !important; }
+
+  /* Forms mobile: botões ocupam largura disponível (auto-fit já dá 1 col) */
+  .form-grid { gap: 12px; }
+  .form-actions { gap: 8px; }
+  .form-actions .btn { flex: 1 1 auto; justify-content: center; }
+  /* Em mobile, ignora span-2 (cai pra 1 col por linha) */
+  .form-field-span-2 { grid-column: auto; }
+
+  /* PDV mobile: linha do carrinho em 2 níveis (nome em cima, controles embaixo) */
+  .pdv-card-body { padding: 0 14px 14px; }
+  .pdv-cart-row { padding: 12px 14px; gap: 10px; }
+  .pdv-cart-info { flex: 1 1 100%; }
+  .pdv-cart-ctrl { flex: 1 1 100%; flex-wrap: wrap; gap: 12px; }
+  .pdv-cart-field { flex: 1 1 auto; }
+  .pdv-cart-field-total { flex: 0 0 auto; margin-left: auto; }
+  .pdv-discount, .pdv-totals { padding-left: 14px; padding-right: 14px; }
+
+  /* Botão Registrar venda fica sticky no rodapé do viewport */
+  .pdv-submit-wrap {
+    position: sticky;
+    bottom: 0;
+    margin: 4px -14px -28px;
+    padding: 10px 14px 14px;
+    background: linear-gradient(to top, var(--bg) 70%, transparent);
+    z-index: 5;
+  }
+  .pdv-submit { height: 46px; font-size: 14.5px; }
+}
+
+/* PDV: empilha em coluna única para tablets também (carrinho 400px não cabe) */
+@media (max-width: 1023px) {
+  .pdv-grid { grid-template-columns: 1fr; gap: 14px; }
+}
+
+/* Tablet: encolhe paddings e tipografia, sidebar inline (default desktop) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .topbar { padding: 0 18px; gap: 14px; }
+  .topbar-search { max-width: 280px; }
+  .page { padding: 22px 22px 32px; }
+  .page-title { font-size: 22px; }
+
+  /* Dashboard: 2x2 KPIs, status em linha, bottom em coluna única */
+  .dash-kpis   { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dash-bottom { grid-template-columns: 1fr; }
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   FIM DO ARQUIVO — NÃO ADICIONE REGRAS DEPOIS DESTE BLOCO!
+   O Lightning CSS / Tailwind v4 descarta regras posicionadas após o
+   último @media. Sempre insira CSS novo ANTES da seção "Responsivo".
+   ────────────────────────────────────────────────────────────────── */
