@@ -7,10 +7,10 @@ import type { UserFormState } from './actions'
 const INITIAL: UserFormState = { error: null, errors: undefined }
 
 const ROLES = [
-  { value: 'admin',      label: 'Admin — acesso total' },
-  { value: 'gerente',    label: 'Gerente — gerencia operação' },
+  { value: 'admin', label: 'Admin — acesso total' },
+  { value: 'gerente', label: 'Gerente — gerencia operação' },
   { value: 'financeiro', label: 'Financeiro — contas e relatórios' },
-  { value: 'vendedor',   label: 'Vendedor — PDV e clientes' },
+  { value: 'vendedor', label: 'Vendedor — PDV e clientes' },
 ]
 
 interface Props {

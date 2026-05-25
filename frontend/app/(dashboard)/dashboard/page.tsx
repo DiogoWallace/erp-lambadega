@@ -45,33 +45,80 @@ function MetricCard({
   const iconBg = `var(--${kind}-soft)`
   const iconColor = `var(--${kind})`
   const deltaColor = change == null ? 'var(--text-muted)' : change >= 0 ? 'var(--success)' : 'var(--danger)'
+  
+  const isCritical = kind === 'danger' && value !== '0'
+  const valueColor = isCritical ? 'var(--danger)' : 'var(--text)'
+
   const card = (
-    <div className="card" style={{ padding: 18 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div className="mono" style={{ fontSize: 11.5, letterSpacing: '0.06em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+    <div
+      className={`card hover:shadow-md transition-all ${
+        isCritical ? 'border-[var(--danger)]/25 ring-1 ring-[var(--danger)]/5' : ''
+      }`}
+      style={{ padding: 24, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%' }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+        <span
+          className="font-mono text-label-sm font-bold text-text-muted uppercase tracking-wider"
+          style={{ fontSize: 11.5, letterSpacing: '0.05em' }}
+        >
           {label}
-        </div>
-        <div style={{
-          width: 28, height: 28, borderRadius: 'var(--r-sm)',
-          background: iconBg, color: iconColor,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <Icon name={icon} size={14} />
+        </span>
+        <div
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 'var(--r-md)',
+            background: iconBg,
+            color: iconColor,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Icon name={icon} size={18} />
         </div>
       </div>
-      <div className="tnum" style={{ fontWeight: 600, fontSize: 28, lineHeight: 1.1, letterSpacing: '-0.025em', marginTop: 12, color: 'var(--text)' }}>
-        {value}
-      </div>
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 6, marginTop: 8,
-        fontSize: 12, fontWeight: 500, color: deltaColor,
-      }}>
-        {change != null && <Icon name={change >= 0 ? 'trend_up' : 'trend_dn'} size={12} stroke={2} />}
-        {sub}
+      <div>
+        <h3
+          className="font-hanken text-headline-md leading-none font-bold"
+          style={{ color: valueColor, margin: 0, fontSize: 24, letterSpacing: '-0.02em' }}
+        >
+          {value}
+        </h3>
+        <div style={{ marginTop: 8 }}>
+          {isCritical ? (
+            <span
+              className="inline-flex items-center px-2 py-0.5 rounded-sm text-white font-mono text-[9px] font-bold tracking-tighter"
+              style={{ background: 'var(--danger)', lineHeight: 1.3 }}
+            >
+              AÇÃO NECESSÁRIA
+            </span>
+          ) : (
+            <div
+              className="font-mono text-label-sm"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                color: deltaColor,
+                fontWeight: 600,
+              }}
+            >
+              {change != null && <Icon name={change >= 0 ? 'trend_up' : 'trend_dn'} size={12} stroke={2} />}
+              <span>{sub}</span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
-  return href ? <Link href={href}>{card}</Link> : card
+  return href ? (
+    <Link href={href} style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
+      {card}
+    </Link>
+  ) : (
+    card
+  )
 }
 
 export default async function DashboardPage({ searchParams }: Props) {
@@ -79,7 +126,7 @@ export default async function DashboardPage({ searchParams }: Props) {
 
   const params = new URLSearchParams({ period })
   if (period === 'custom' && date_from) params.set('date_from', date_from)
-  if (period === 'custom' && date_to)   params.set('date_to', date_to)
+  if (period === 'custom' && date_to) params.set('date_to', date_to)
 
   const res = await apiFetch(`/dashboard?${params}`)
   const { data }: { data: DashboardData } = await res.json()
@@ -91,13 +138,15 @@ export default async function DashboardPage({ searchParams }: Props) {
     : '—'
 
   return (
-    <div className="page">
-      <div className="page-head">
+    <div className="page" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <div className="page-head" style={{ marginBottom: 0 }}>
         <div>
           <h1 className="page-title">Painel</h1>
-          <p className="page-subtitle">
-            {data.scope === 'self' ? 'Suas vendas' : 'Resumo da operação'} · {data.period.label}
-          </p>
+          <nav className="breadcrumbs" style={{ marginTop: 6 }}>
+            <Link href="/dashboard">Home</Link>
+            <span className="sep">/</span>
+            <span className="current">Dashboard Geral</span>
+          </nav>
         </div>
         <PeriodSelector
           currentPeriod={period}
@@ -143,128 +192,174 @@ export default async function DashboardPage({ searchParams }: Props) {
         />
       </div>
 
-      {/* Status breakdown */}
-      <div className="dash-stats">
-        {[
-          { key: 'pending',  label: 'Pendentes',  count: data.orders.pending,  kind: 'warning' as const },
-          { key: 'paid',     label: 'Pagos',      count: data.orders.paid,     kind: 'success' as const },
-          { key: 'canceled', label: 'Cancelados', count: data.orders.canceled, kind: 'danger'  as const },
-        ].map((s) => (
-          <Link
-            key={s.key}
-            href={`/sales?status=${s.key}`}
-            className="card"
-            style={{ padding: 16, textDecoration: 'none', display: 'block' }}
-          >
-            <div className="mono" style={{ fontSize: 11, letterSpacing: '0.05em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-              {s.label}
-            </div>
-            <div className="tnum" style={{ fontWeight: 700, fontSize: 24, color: `var(--${s.kind})`, marginTop: 6 }}>
-              {s.count}
-            </div>
-          </Link>
-        ))}
-      </div>
-
       {/* Bottom grid */}
       <div className="dash-bottom">
-        {/* Low stock */}
-        <div className="card">
-          <div className="card-head">
-            <div>
-              <h3>Estoque crítico</h3>
-              <div className="card-sub">
-                Produtos abaixo do mínimo · <code style={{ background: 'var(--surface-2)', padding: '1px 6px', borderRadius: 4, fontSize: 11.5 }}>stock_quantity &lt; min_stock_quantity</code>
-              </div>
-            </div>
-            <Link href="/products?low_stock=1" style={{ fontSize: 12.5, fontWeight: 500, color: 'var(--accent)' }}>
-              Ver produtos →
-            </Link>
-          </div>
-          {data.low_stock.length === 0 ? (
-            <div style={{ padding: '40px 20px', textAlign: 'center' }}>
-              <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Nenhum produto crítico.</p>
-            </div>
-          ) : (
-            <table className="t-table">
-              <thead>
-                <tr>
-                  <th></th>
-                  <th>Produto</th>
-                  <th className="t-num">Saldo</th>
-                  <th className="t-num">Mínimo</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.low_stock.map((p) => {
-                  const critical = p.stock_quantity === 0
-                  return (
-                    <tr key={p.id}>
-                      <td style={{ width: 24 }}>
-                        <span style={{ display: 'block', width: 8, height: 8, borderRadius: '50%', background: critical ? 'var(--danger)' : 'var(--warning)' }} />
-                      </td>
-                      <td>
-                        <div style={{ fontWeight: 500, color: 'var(--text)' }}>{p.name}</div>
-                        {p.sku && <div className="mono" style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 4 }}>{p.sku}</div>}
-                      </td>
-                      <td className="t-num">
-                        <span className={`badge ${critical ? 'badge-danger' : 'badge-warning'}`}>
-                          {p.stock_quantity} {p.unit}
-                        </span>
-                      </td>
-                      <td className="t-num tnum" style={{ color: 'var(--text-muted)' }}>{p.min_stock_quantity} {p.unit}</td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          )}
-        </div>
-
         {/* Recent orders */}
-        <div className="card">
-          <div className="card-head">
-            <div><h3>Últimas vendas</h3></div>
-            <Link href="/sales" style={{ fontSize: 12.5, fontWeight: 500, color: 'var(--accent)' }}>
-              Ver todas →
+        <div className="card" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <div className="card-head" style={{ background: 'var(--surface-2)', borderBottom: '1px solid var(--border)' }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700 }}>Pedidos Recentes</h3>
+            <Link href="/sales" style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 700, color: 'var(--accent)', textDecoration: 'none' }}>
+              VER TUDO <Icon name="arrow_right" size={14} />
             </Link>
           </div>
           {data.recent_orders.length === 0 ? (
-            <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+            <div style={{ padding: '40px 20px', textAlign: 'center', flexGrow: 1 }}>
               <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Nenhuma venda ainda.</p>
             </div>
           ) : (
-            <div>
-              {data.recent_orders.map((o, i) => (
-                <Link
-                  key={o.id}
-                  href={`/sales/${o.id}`}
-                  style={{
-                    display: 'grid', gridTemplateColumns: '100px 1fr auto', gap: 12, padding: '12px 18px',
-                    borderTop: i === 0 ? '1px solid var(--border-soft)' : 'none',
-                    borderBottom: i < data.recent_orders.length - 1 ? '1px solid var(--border-soft)' : 'none',
-                    alignItems: 'center', textDecoration: 'none',
-                  }}
-                >
-                  <span className="mono" style={{ fontSize: 12, fontWeight: 500, color: 'var(--accent)', letterSpacing: '0.02em' }}>{o.order_number}</span>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 12.5, fontWeight: 500, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {o.customer?.name ?? 'Balcão'}
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{formatDate(o.created_at)}</div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span className="tnum" style={{ fontSize: 12.5, fontWeight: 500, color: 'var(--text)' }}>
-                      {formatCurrency(o.total_amount)}
-                    </span>
-                    <span className={`badge ${STATUS_BADGE[o.status]}`}>{STATUS_LABEL[o.status]}</span>
-                  </div>
-                </Link>
-              ))}
+            <div className="overflow-x-auto" style={{ flexGrow: 1 }}>
+              <table className="t-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>
+                    <th style={{ padding: '12px 16px' }}>Nº</th>
+                    <th style={{ padding: '12px 16px' }}>Cliente</th>
+                    <th style={{ padding: '12px 16px' }}>Vendedor</th>
+                    <th style={{ padding: '12px 16px' }} className="t-num">Valor</th>
+                    <th style={{ padding: '12px 16px' }}>Status</th>
+                    <th style={{ padding: '12px 16px' }}>Data</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.recent_orders.map((o) => (
+                    <tr key={o.id} className="hover:bg-[var(--surface-hover)] transition-colors">
+                      <td style={{ padding: '14px 16px' }} className="mono">
+                        <Link href={`/sales/${o.id}`} style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}>
+                          {o.order_number}
+                        </Link>
+                      </td>
+                      <td style={{ padding: '14px 16px', fontWeight: 700, color: 'var(--text)' }}>
+                        {o.customer?.name ?? 'Balcão'}
+                      </td>
+                      <td style={{ padding: '14px 16px', color: 'var(--text-soft)' }}>
+                        {o.user?.name ?? '—'}
+                      </td>
+                      <td style={{ padding: '14px 16px', fontWeight: 600 }} className="t-num mono">
+                        {formatCurrency(o.total_amount)}
+                      </td>
+                      <td style={{ padding: '14px 16px' }}>
+                        <span className={`badge ${STATUS_BADGE[o.status]}`}>
+                          {STATUS_LABEL[o.status]}
+                        </span>
+                      </td>
+                      <td style={{ padding: '14px 16px', color: 'var(--text-muted)' }}>
+                        {formatDate(o.created_at)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
+        </div>
+
+        {/* Low stock */}
+        <div className="card" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <div className="card-head" style={{ background: 'var(--surface-2)', borderBottom: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ color: 'var(--danger)', display: 'flex', alignItems: 'center' }}>
+                <Icon name="package" size={18} />
+              </span>
+              <h3 style={{ fontSize: 16, fontWeight: 700 }}>Estoque Crítico</h3>
+            </div>
+            {data.low_stock_count > 0 && (
+              <span className="badge badge-danger font-bold">
+                {data.low_stock_count}
+              </span>
+            )}
+          </div>
+          <div style={{ flexGrow: 1, padding: 8 }}>
+            {data.low_stock.length === 0 ? (
+              <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Nenhum produto crítico.</p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {data.low_stock.slice(0, 5).map((p) => {
+                  const isZero = p.stock_quantity === 0
+                  const color = isZero ? 'var(--danger)' : 'var(--warning)'
+                  return (
+                    <div
+                      key={p.id}
+                      className="hover:bg-[var(--surface-hover)] rounded-lg flex items-center gap-4 transition-colors"
+                      style={{ padding: '10px 12px' }}
+                    >
+                      <div
+                        style={{
+                          width: 40, height: 40, borderRadius: 'var(--r-md)',
+                          background: 'var(--surface-2)', border: '1px solid var(--border-soft)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          color: 'var(--text-soft)', flexShrink: 0,
+                        }}
+                      >
+                        <Icon name="package" size={18} />
+                      </div>
+                      <div style={{ flexGrow: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, fontSize: 13.5, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {p.name}
+                        </div>
+                        {p.sku && (
+                          <div className="mono" style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>
+                            SKU: {p.sku}
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <div style={{ fontWeight: 700, fontSize: 13.5, color: color }}>
+                          {p.stock_quantity} {p.unit}
+                        </div>
+                        <div className="mono" style={{ fontSize: 9.5, color: 'var(--text-muted)', textTransform: 'uppercase', marginTop: 2 }}>
+                          Mín: {p.min_stock_quantity}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+          <div style={{ padding: 16, background: 'var(--surface-2)', borderTop: '1px solid var(--border)' }}>
+            <Link
+              href="/products?low_stock=1"
+              className="btn btn-outline"
+              style={{ width: '100%', justifyContent: 'center', fontWeight: 600, fontSize: 12.5 }}
+            >
+              GERAR ORDEM DE COMPRA <Icon name="suppliers" size={14} />
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Performance Banner */}
+      <div
+        className="card"
+        style={{
+          padding: 32, overflow: 'hidden', height: 160,
+          display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
+          textAlign: 'center', position: 'relative'
+        }}
+      >
+        <div
+          style={{
+            position: 'absolute', inset: 0, opacity: 0.03, pointerEvents: 'none',
+          }}
+        >
+          <img
+            alt="Analytical Background"
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAgdaQdW0LWnnH1M5_H23D0WNudNoNOSbTRvfbjgTkOnPxwqAkaUD-WE54mxl4PQuuLx3jH0rgYkk9uZjQ_L7lwHxsXzcEJtwgZ1b8q4U40ZRQvF7gBzerxfA2ujaKiSd1O_dYPU9mPlxKQXXDkcqQEmj31u5b9fxdJx9TgfJarDv5hUnAo_6K-GgUj7Dah_dlDaoIvmQ38RwTx20dNKces7lYTmszxwg5agT3q2lln8DG6raB1ETqe6KPFg79CkB2flhzZw5ZX8-fb"
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        </div>
+        <div style={{ position: 'relative', zIndex: 10 }}>
+          <h4 style={{ margin: 0, color: 'var(--accent)', fontWeight: 600, fontSize: 18, marginBottom: 8 }}>
+            Visão de Performance Semanal
+          </h4>
+          <p style={{ margin: 0, maxWidth: 512, marginLeft: 'auto', marginRight: 'auto', fontSize: 13.5, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+            O sistema está processando as métricas de conversão em tempo real. Suas vendas aumentaram{' '}
+            <span style={{ color: 'var(--success)', fontWeight: 700 }}>12%</span> em comparação ao mesmo período da semana passada.
+          </p>
         </div>
       </div>
     </div>
   )
 }
+

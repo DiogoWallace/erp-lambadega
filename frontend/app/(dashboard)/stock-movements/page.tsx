@@ -17,7 +17,7 @@ const TYPE_LABEL: Record<string, string> = { in: 'Entrada', out: 'Saída', adjus
 const TYPE_BADGE: Record<string, string> = { in: 'badge-success', out: 'badge-danger', adjustment: 'badge-info' }
 
 function formatQty(movement: StockMovement): string {
-  if (movement.type === 'in')  return `+${movement.quantity}`
+  if (movement.type === 'in') return `+${movement.quantity}`
   if (movement.type === 'out') return `−${movement.quantity}`
   return `→ ${movement.quantity}`
 }
@@ -34,17 +34,21 @@ export default async function StockMovementsPage({ searchParams }: Props) {
 
   const params = new URLSearchParams({ page })
   if (product_id) params.set('product_id', product_id)
-  if (type)       params.set('type', type)
-  if (date_from)  params.set('date_from', date_from)
-  if (date_to)    params.set('date_to', date_to)
+  if (type) params.set('type', type)
+  if (date_from) params.set('date_from', date_from)
+  if (date_to) params.set('date_to', date_to)
 
-  const [movementsRes, productsRes] = await Promise.all([
+  const [movementsRes, productsRes, meRes] = await Promise.all([
     apiFetch(`/stock-movements?${params}`),
     apiFetch('/products?all=1'),
+    apiFetch('/auth/me'),
   ])
 
   const { data: movements, meta }: PaginatedResponse<StockMovement> = await movementsRes.json()
   const { data: products }: { data: Product[] } = await productsRes.json()
+  const { data: me } = await meRes.json()
+  const perms: string[] = me?.permissions ?? []
+  const canCreate = perms.includes('stock.create')
 
   const hasFilters = product_id || type || date_from || date_to
 
@@ -55,9 +59,11 @@ export default async function StockMovementsPage({ searchParams }: Props) {
           <h1 className="page-title">Movimentações de estoque</h1>
           <p className="page-subtitle">{meta.total} movimentação(ões) registrada(s) · log imutável</p>
         </div>
-        <Link href="/stock-movements/new" className="btn btn-primary btn-sm">
-          <Icon name="plus" size={13} stroke={2} /> Registrar
-        </Link>
+        {canCreate && (
+          <Link href="/stock-movements/new" className="btn btn-primary btn-sm">
+            <Icon name="plus" size={13} stroke={2} /> Registrar
+          </Link>
+        )}
       </div>
 
       <form method="GET" style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
@@ -138,8 +144,8 @@ function PaginationLink({ page, productId, type, dateFrom, dateTo, label }: {
 }) {
   const p = new URLSearchParams({ page: String(page) })
   if (productId) p.set('product_id', productId)
-  if (type)      p.set('type', type)
-  if (dateFrom)  p.set('date_from', dateFrom)
-  if (dateTo)    p.set('date_to', dateTo)
+  if (type) p.set('type', type)
+  if (dateFrom) p.set('date_from', dateFrom)
+  if (dateTo) p.set('date_to', dateTo)
   return <Link href={`/stock-movements?${p}`} className="btn btn-outline btn-sm">{label}</Link>
 }

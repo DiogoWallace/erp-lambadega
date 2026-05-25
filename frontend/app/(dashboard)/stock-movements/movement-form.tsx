@@ -35,7 +35,7 @@ function Field({
 }) {
   const cls =
     span === 'full' ? 'form-field-full' :
-    span === 2 ? 'form-field-span-2' : ''
+      span === 2 ? 'form-field-span-2' : ''
   return (
     <div className={`form-field ${cls}`}>
       <label className="field-label" htmlFor={name}>{label}</label>

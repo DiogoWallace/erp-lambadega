@@ -34,8 +34,15 @@ function formatCurrency(value: string): string {
 
 export default async function SaleDetailPage({ params }: Props) {
   const { id } = await params
-  const res = await apiFetch(`/orders/${id}`)
+  const [res, meRes] = await Promise.all([
+    apiFetch(`/orders/${id}`),
+    apiFetch('/auth/me'),
+  ])
   const { data: order }: { data: Order } = await res.json()
+  const { data: me } = await meRes.json()
+  const perms: string[] = me?.permissions ?? []
+  const canEdit = perms.includes('sales.edit')
+  const canDelete = perms.includes('sales.delete')
 
   return (
     <div className="page" style={{ maxWidth: 980 }}>
@@ -50,10 +57,10 @@ export default async function SaleDetailPage({ params }: Props) {
             <p className="page-subtitle">{formatDate(order.created_at)}</p>
           </div>
         </div>
-        {order.status === 'pending' && (
+        {order.status === 'pending' && (canEdit || canDelete) && (
           <div style={{ display: 'flex', gap: 8 }}>
-            <PayForm orderId={order.id} />
-            <CancelForm orderId={order.id} />
+            {canEdit && <PayForm orderId={order.id} />}
+            {canDelete && <CancelForm orderId={order.id} />}
           </div>
         )}
       </div>

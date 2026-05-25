@@ -15,6 +15,7 @@ export default async function DashboardLayout({
   let userAvatar: string | null = null
   let permissions: string[] = []
   let tenantId = '—'
+  let pinned: string[] = []
 
   try {
     const res = await apiFetch('/auth/me')
@@ -24,6 +25,8 @@ export default async function DashboardLayout({
     userAvatar = user?.avatar_url ?? null
     permissions = user?.permissions ?? []
     tenantId = (user?.establishment_id ?? '').slice(0, 8) || '—'
+    const storedPinned = user?.preferences?.sidebar_pinned
+    if (Array.isArray(storedPinned)) pinned = storedPinned.filter((x: unknown): x is string => typeof x === 'string')
   } catch {
     // fail silently — layout still renders with placeholders
   }
@@ -36,6 +39,7 @@ export default async function DashboardLayout({
       userRole={userRole}
       userAvatar={userAvatar}
       permissions={permissions}
+      initialPinned={pinned}
       tenantName="Estabelecimento"
       tenantMeta={`#${tenantId}`}
       theme={theme}

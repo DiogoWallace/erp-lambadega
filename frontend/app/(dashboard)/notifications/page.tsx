@@ -35,9 +35,9 @@ function iconForType(type: string): IconName {
 }
 
 function severityClass(severity: NotificationSeverity): string {
-  if (severity === 'critical') return 'notif-icon-critical'
-  if (severity === 'warning') return 'notif-icon-warning'
-  return 'notif-icon-info'
+  if (severity === 'critical') return 'bg-red-50 text-red-600 border border-red-200'
+  if (severity === 'warning') return 'bg-amber-50 text-amber-600 border border-amber-200'
+  return 'bg-blue-50 text-blue-600 border border-blue-200'
 }
 
 function formatDate(iso: string): string {
@@ -53,8 +53,21 @@ export default async function NotificationsPage({ searchParams }: Props) {
   if (status) params.set('status', status)
   if (type)   params.set('type', type)
 
-  const res = await apiFetch(`/notifications?${params}`)
+  const [res, meRes] = await Promise.all([
+    apiFetch(`/notifications?${params}`),
+    apiFetch('/auth/me'),
+  ])
+
   const { data: items, meta }: PaginatedResponse<Notification> = await res.json()
+  const { data: me } = await meRes.json()
+
+  const permissions: string[] = me?.permissions ?? []
+  const canBroadcast = permissions.includes('notification.broadcast')
+
+  // Dynamic calculations for feed stats
+  const totalCount = meta.total
+  const unreadCount = items.filter(item => !item.read_at).length
+  const criticalCount = items.filter(item => item.severity === 'critical').length
 
   function pageUrl(p: number) {
     const q = new URLSearchParams({ page: String(p) })
@@ -65,78 +78,166 @@ export default async function NotificationsPage({ searchParams }: Props) {
 
   return (
     <div className="page">
-      <div className="page-head">
-        <div>
-          <h1 className="page-title">Notificações</h1>
-          <p className="page-subtitle">{meta.total} registro(s)</p>
+      {/* Breadcrumb & Header */}
+      <div className="mb-8">
+        <nav className="flex items-center gap-2 text-[var(--text-muted)] mb-2">
+          <span className="text-xs font-semibold uppercase tracking-wider">Sistema</span>
+          <Icon name="chevron_r" size={10} />
+          <span className="text-xs font-bold text-[var(--accent)] uppercase tracking-wider text-primary">Notificações</span>
+        </nav>
+        <div className="flex justify-between items-end flex-wrap gap-4">
+          <div>
+            <h1 className="page-title text-[32px] font-bold text-[var(--text)]">Notificações</h1>
+            <p className="page-subtitle text-[var(--text-soft)]">Acompanhe alertas importantes de estoque, finanças e atualizações do sistema.</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <MarkAllButton />
+            {canBroadcast && (
+              <Link href="/notifications/admin/new" className="btn btn-primary px-6 py-2.5 rounded-xl font-bold bg-primary text-white shadow-sm flex items-center gap-1.5 hover:opacity-90 active:scale-95 transition-all">
+                <Icon name="plus" size={16} stroke={2.5} /> Enviar Mensagem
+              </Link>
+            )}
+          </div>
         </div>
-        <MarkAllButton />
       </div>
 
-      <form method="GET" style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
-        <select name="status" defaultValue={status} className="input input-sm" style={{ width: 180 }}>
-          <option value="">Todos os status</option>
-          {Object.entries(STATUS_LABEL).map(([v, l]) => (<option key={v} value={v}>{l}</option>))}
-        </select>
-        <select name="type" defaultValue={type} className="input input-sm" style={{ width: 220 }}>
-          <option value="">Todos os tipos</option>
-          {Object.entries(TYPE_LABEL).map(([v, l]) => (<option key={v} value={v}>{l}</option>))}
-        </select>
-        <button type="submit" className="btn btn-outline btn-sm"><Icon name="filter" size={12} /> Filtrar</button>
-        {(status || type) && (
-          <a href="/notifications" className="btn btn-ghost btn-sm"><Icon name="x" size={12} /> Limpar</a>
-        )}
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="bg-[var(--surface)] p-5 rounded-2xl border border-[var(--border)] shadow-sm">
+          <p className="text-[10px] font-bold text-[var(--text-muted)] mb-1 uppercase tracking-wider">Total de Alertas</p>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-bold text-[var(--text)]">{totalCount}</span>
+            <span className="text-xs text-[var(--text-soft)]">registrados</span>
+          </div>
+        </div>
+        <div className="bg-[var(--surface)] p-5 rounded-2xl border border-[var(--border)] shadow-sm">
+          <p className="text-[10px] font-bold text-[var(--text-muted)] mb-1 uppercase tracking-wider">Não Lidas (Pág)</p>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-bold text-[var(--accent)]">{unreadCount}</span>
+            <span className="text-xs text-[var(--text-soft)]">mensagens</span>
+          </div>
+        </div>
+        <div className="bg-[var(--surface)] p-5 rounded-2xl border border-[var(--border)] shadow-sm">
+          <p className="text-[10px] font-bold text-[var(--text-muted)] mb-1 uppercase tracking-wider">Críticas (Pág)</p>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-bold text-[var(--danger)]">{criticalCount}</span>
+            <span className="text-xs text-[var(--text-soft)]">alertas</span>
+          </div>
+        </div>
+        <div className="bg-[var(--surface)] p-5 rounded-2xl border border-[var(--border)] shadow-sm">
+          <p className="text-[10px] font-bold text-[var(--text-muted)] mb-1 uppercase tracking-wider">Status das Filas</p>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-bold text-[var(--success)]">Online</span>
+            <span className="text-xs font-bold text-[var(--success)] flex items-center gap-0.5">
+              <Icon name="check" size={12} /> OK
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Filter Row */}
+      <form method="GET" className="bg-[var(--surface)] p-4 rounded-t-2xl flex items-center justify-between border border-[var(--border)] border-b-0 flex-wrap gap-4">
+        <div className="flex items-center gap-3 flex-wrap flex-1">
+          <select name="status" defaultValue={status} className="input input-sm bg-[var(--surface-2)] border-none" style={{ width: 180 }}>
+            <option value="">Todos os status</option>
+            {Object.entries(STATUS_LABEL).map(([v, l]) => (<option key={v} value={v}>{l}</option>))}
+          </select>
+          <select name="type" defaultValue={type} className="input input-sm bg-[var(--surface-2)] border-none" style={{ width: 220 }}>
+            <option value="">Todos os tipos</option>
+            {Object.entries(TYPE_LABEL).map(([v, l]) => (<option key={v} value={v}>{l}</option>))}
+          </select>
+          <button type="submit" className="btn btn-outline btn-sm flex items-center gap-1.5">
+            <Icon name="filter" size={13} /> Filtrar
+          </button>
+          {(status || type) && (
+            <a href="/notifications" className="btn btn-ghost btn-sm flex items-center gap-1">
+              <Icon name="x" size={13} /> Limpar
+            </a>
+          )}
+        </div>
+        <div className="text-sm font-medium text-[var(--text-soft)]">
+          Mostrando {items.length} de {meta.total} registros
+        </div>
       </form>
 
-      <div className="card">
+      {/* Notifications Feed Card List */}
+      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-b-2xl shadow-sm overflow-hidden divide-y divide-[var(--border-soft)]">
         {items.length === 0 ? (
-          <div style={{ padding: '64px 24px', textAlign: 'center' }}>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Nenhuma notificação encontrada.</p>
+          <div className="py-16 text-center">
+            <p className="text-sm text-[var(--text-muted)]">Nenhuma notificação encontrada.</p>
           </div>
         ) : (
-          <div className="notif-list" style={{ maxHeight: 'none' }}>
-            {items.map((item) => {
-              const unread = !item.read_at
-              return (
-                <div key={item.id} className={`notif-item ${unread ? 'notif-item-unread' : ''}`} style={{ cursor: 'default' }}>
-                  <span className={`notif-icon ${severityClass(item.severity)}`}>
-                    <Icon name={iconForType(item.type)} size={14} />
-                  </span>
-                  <span className="notif-content">
-                    <span className="notif-title">{item.title}</span>
-                    {item.body && <span className="notif-body">{item.body}</span>}
-                    <span className="notif-meta">
-                      {TYPE_LABEL[item.type] ?? item.type} · {formatDate(item.created_at)}
-                      {item.broadcast && ' · broadcast'}
-                    </span>
-                    {(item.action_url || unread) && (
-                      <span style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-                        {item.action_url && (
-                          <Link href={item.action_url} className="btn btn-ghost btn-sm">
-                            <Icon name="arrow_right" size={12} /> Abrir
-                          </Link>
-                        )}
-                        {unread && <MarkReadButton id={item.id} />}
-                      </span>
-                    )}
-                  </span>
-                  {unread && <span className="notif-dot" aria-hidden="true" />}
+          items.map((item) => {
+            const unread = !item.read_at
+            return (
+              <div key={item.id} className={`flex items-start gap-4 p-6 transition-colors hover:bg-[var(--surface-2)]/30 ${unread ? 'bg-[var(--accent-soft)]/20' : ''}`}>
+                {/* Severity Icon */}
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${severityClass(item.severity)}`}>
+                  <Icon name={iconForType(item.type)} size={18} />
                 </div>
-              )
-            })}
-          </div>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-4">
+                    <h4 className="text-sm font-bold text-[var(--text)] leading-tight">{item.title}</h4>
+                    {unread && (
+                      <span className="w-2.5 h-2.5 rounded-full bg-[var(--accent)] shrink-0 shadow-[0_0_8px_rgba(43,108,176,0.4)]" title="Não lida"></span>
+                    )}
+                  </div>
+                  {item.body && (
+                    <p className="text-xs text-[var(--text-soft)] mt-1.5 leading-relaxed">{item.body}</p>
+                  )}
+                  <div className="flex items-center gap-2 text-[10px] text-[var(--text-muted)] font-medium mt-3">
+                    <span className="uppercase font-semibold text-[var(--text-soft)]">{TYPE_LABEL[item.type] ?? item.type}</span>
+                    <span>·</span>
+                    <span>{formatDate(item.created_at)}</span>
+                    {item.broadcast && (
+                      <>
+                        <span>·</span>
+                        <span className="bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider text-[9px]">Geral</span>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Actions inside row */}
+                  {(item.action_url || unread) && (
+                    <div className="flex items-center gap-3 mt-4">
+                      {item.action_url && (
+                        <Link href={item.action_url} className="btn btn-outline btn-sm flex items-center gap-1">
+                          <Icon name="arrow_right" size={13} /> Abrir
+                        </Link>
+                      )}
+                      {unread && <MarkReadButton id={item.id} />}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          })
         )}
       </div>
 
+      {/* Pagination */}
       {meta.last_page > 1 && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 20 }}>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Página {meta.current_page} de {meta.last_page}</p>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {meta.current_page > 1 && (<Link href={pageUrl(meta.current_page - 1)} className="btn btn-outline btn-sm">← Anterior</Link>)}
-            {meta.current_page < meta.last_page && (<Link href={pageUrl(meta.current_page + 1)} className="btn btn-outline btn-sm">Próxima →</Link>)}
+        <div className="mt-6 flex items-center justify-between px-2">
+          <p className="text-sm text-[var(--text-soft)]">
+            Página {meta.current_page} de {meta.last_page}
+          </p>
+          <div className="flex items-center gap-2">
+            {meta.current_page > 1 && (
+              <Link href={pageUrl(meta.current_page - 1)} className="btn btn-outline btn-sm">
+                ← Anterior
+              </Link>
+            )}
+            {meta.current_page < meta.last_page && (
+              <Link href={pageUrl(meta.current_page + 1)} className="btn btn-outline btn-sm">
+                Próxima →
+              </Link>
+            )}
           </div>
         </div>
       )}
     </div>
   )
 }
+

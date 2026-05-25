@@ -24,12 +24,12 @@ interface Props {
 }
 
 const PAYMENT_LABELS: Record<string, string> = {
-  cash:          'Dinheiro',
-  pix:           'Pix',
-  credit_card:   'Cartão de crédito',
-  debit_card:    'Cartão de débito',
+  cash: 'Dinheiro',
+  pix: 'Pix',
+  credit_card: 'Cartão de crédito',
+  debit_card: 'Cartão de débito',
   bank_transfer: 'Transferência bancária',
-  other:         'Outro',
+  other: 'Outro',
 }
 
 function formatCurrency(value: number): string {

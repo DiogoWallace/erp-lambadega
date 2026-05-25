@@ -6,8 +6,8 @@ import { Category, Product, Supplier } from '@/app/lib/types'
 const UNITS = [
   { value: 'un', label: 'Unidade (un)' },
   { value: 'kg', label: 'Quilograma (kg)' },
-  { value: 'g',  label: 'Grama (g)' },
-  { value: 'l',  label: 'Litro (l)' },
+  { value: 'g', label: 'Grama (g)' },
+  { value: 'l', label: 'Litro (l)' },
   { value: 'ml', label: 'Mililitro (ml)' },
   { value: 'cx', label: 'Caixa (cx)' },
 ]
@@ -46,7 +46,7 @@ function Field({
 }) {
   const cls =
     span === 'full' ? 'form-field-full' :
-    span === 2 ? 'form-field-span-2' : ''
+      span === 2 ? 'form-field-span-2' : ''
   return (
     <div className={`form-field ${cls}`}>
       <label className="field-label" htmlFor={name}>{label}</label>

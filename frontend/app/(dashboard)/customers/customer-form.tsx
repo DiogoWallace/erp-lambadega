@@ -4,9 +4,9 @@ import { useActionState, useState } from 'react'
 import { Customer } from '@/app/lib/types'
 
 const STATES = [
-  'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA',
-  'MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN',
-  'RS','RO','RR','SC','SP','SE','TO',
+  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
+  'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
+  'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO',
 ]
 
 interface FormState {
@@ -41,7 +41,7 @@ function Field({
 }) {
   const cls =
     span === 'full' ? 'form-field-full' :
-    span === 2 ? 'form-field-span-2' : ''
+      span === 2 ? 'form-field-span-2' : ''
   return (
     <div className={`form-field ${cls}`}>
       <label className="field-label" htmlFor={name}>{label}</label>

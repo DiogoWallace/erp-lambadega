@@ -44,20 +44,20 @@ export default async function AuditLogsPage({ searchParams }: Props) {
   const { event = '', module = '', date_from = '', date_to = '', page = '1' } = await searchParams
 
   const params = new URLSearchParams({ page })
-  if (event)     params.set('event', event)
-  if (module)    params.set('module', module)
+  if (event) params.set('event', event)
+  if (module) params.set('module', module)
   if (date_from) params.set('date_from', date_from)
-  if (date_to)   params.set('date_to', date_to)
+  if (date_to) params.set('date_to', date_to)
 
   const res = await apiFetch(`/audit-logs?${params}`)
   const { data: logs, meta }: PaginatedResponse<AuditLog> = await res.json()
 
   function pageUrl(p: number) {
     const q = new URLSearchParams({ page: String(p) })
-    if (event)     q.set('event', event)
-    if (module)    q.set('module', module)
+    if (event) q.set('event', event)
+    if (module) q.set('module', module)
     if (date_from) q.set('date_from', date_from)
-    if (date_to)   q.set('date_to', date_to)
+    if (date_to) q.set('date_to', date_to)
     return `/audit-logs?${q}`
   }
 

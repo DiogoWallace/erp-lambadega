@@ -9,6 +9,7 @@ export async function loginAction(_prevState: unknown, formData: FormData) {
   const apiUrl = process.env.API_BASE_URL ?? 'http://webserver:8001'
 
   let token: string | null = null
+  let preferredTheme: 'light' | 'dark' | null = null
 
   try {
     const response = await fetch(`${apiUrl}/api/auth/login`, {
@@ -24,6 +25,10 @@ export async function loginAction(_prevState: unknown, formData: FormData) {
     }
 
     token = data.data.token
+    const theme = data.data.user?.preferences?.theme
+    if (theme === 'light' || theme === 'dark') {
+      preferredTheme = theme
+    }
   } catch {
     return { error: 'Não foi possível conectar ao servidor. Tente novamente.' }
   }
@@ -35,6 +40,15 @@ export async function loginAction(_prevState: unknown, formData: FormData) {
     maxAge: 60 * 60 * 24,
     path: '/',
   })
+
+  if (preferredTheme) {
+    cookieStore.set('theme', preferredTheme, {
+      path: '/',
+      httpOnly: false,
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 365,
+    })
+  }
 
   redirect('/dashboard')
 }

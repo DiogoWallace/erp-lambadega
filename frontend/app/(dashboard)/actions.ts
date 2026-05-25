@@ -2,6 +2,14 @@
 
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { apiFetch } from '@/app/lib/api'
+
+export async function updateSidebarPinnedAction(pinned: string[]): Promise<void> {
+  await apiFetch('/me/preferences', {
+    method: 'PATCH',
+    body: JSON.stringify({ preferences: { sidebar_pinned: pinned } }),
+  })
+}
 
 export async function logoutAction() {
   const cookieStore = await cookies()

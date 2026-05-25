@@ -66,6 +66,24 @@ class MeController extends Controller
         return response()->json(['ok' => true]);
     }
 
+    public function updatePreferences(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'preferences'                  => ['required', 'array'],
+            'preferences.sidebar_pinned'   => ['sometimes', 'array'],
+            'preferences.sidebar_pinned.*' => ['string'],
+            'preferences.theme'            => ['sometimes', 'in:light,dark'],
+            'preferences.language'         => ['sometimes', 'string', 'max:10'],
+        ]);
+
+        $user = $request->user();
+        $current = $user->preferences ?? [];
+        $user->preferences = array_replace($current, $validated['preferences']);
+        $user->save();
+
+        return response()->json(['data' => ['preferences' => $user->preferences]]);
+    }
+
     public function changePassword(ChangePasswordRequest $request): JsonResponse
     {
         $ok = $this->service->changePassword(

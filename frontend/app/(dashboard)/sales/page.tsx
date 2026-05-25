@@ -49,19 +49,23 @@ export default async function SalesPage({ searchParams }: Props) {
   } = await searchParams
 
   const params = new URLSearchParams({ page })
-  if (status)      params.set('status', status)
+  if (status) params.set('status', status)
   if (customer_id) params.set('customer_id', customer_id)
-  if (date_from)   params.set('date_from', date_from)
-  if (date_to)     params.set('date_to', date_to)
-  if (search)      params.set('search', search)
+  if (date_from) params.set('date_from', date_from)
+  if (date_to) params.set('date_to', date_to)
+  if (search) params.set('search', search)
 
-  const [ordersRes, customersRes] = await Promise.all([
+  const [ordersRes, customersRes, meRes] = await Promise.all([
     apiFetch(`/orders?${params}`),
     apiFetch('/customers?all=1'),
+    apiFetch('/auth/me'),
   ])
 
   const { data: orders, meta }: PaginatedResponse<Order> = await ordersRes.json()
   const { data: customers }: { data: Customer[] } = await customersRes.json()
+  const { data: me } = await meRes.json()
+  const perms: string[] = me?.permissions ?? []
+  const canCreate = perms.includes('sales.create')
 
   const hasFilters = status || customer_id || date_from || date_to || search
 
@@ -83,10 +87,12 @@ export default async function SalesPage({ searchParams }: Props) {
           <h1 className="page-title">Vendas</h1>
           <p className="page-subtitle">{meta.total} venda(s) registrada(s)</p>
         </div>
-        <Link href="/sales/new" className="btn btn-primary btn-sm">
-          <Icon name="plus" size={13} stroke={2} />
-          Nova venda
-        </Link>
+        {canCreate && (
+          <Link href="/sales/new" className="btn btn-primary btn-sm">
+            <Icon name="plus" size={13} stroke={2} />
+            Nova venda
+          </Link>
+        )}
       </div>
 
       <form method="GET" style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
@@ -128,46 +134,46 @@ export default async function SalesPage({ searchParams }: Props) {
         ) : (
           <>
             <div className="t-table-wrap">
-            <table className="t-table">
-              <thead>
-                <tr>
-                  <th>Nº</th>
-                  <th>Data</th>
-                  <th>Cliente</th>
-                  <th>Pagamento</th>
-                  <th>Vendedor</th>
-                  <th className="t-num">Total</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map((order) => (
-                  <tr key={order.id}>
-                    <td>
-                      <Link href={`/sales/${order.id}`} className="mono" style={{ fontWeight: 500, color: 'var(--accent)' }}>
-                        {order.order_number}
-                      </Link>
-                    </td>
-                    <td style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                      {formatDate(order.created_at)}
-                    </td>
-                    <td>
-                      {order.customer?.name ?? (
-                        <span style={{ color: 'var(--text-faint)' }}>Balcão</span>
-                      )}
-                    </td>
-                    <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                      {order.payment_method ? PAYMENT_LABEL[order.payment_method] ?? order.payment_method : '—'}
-                    </td>
-                    <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>{order.user?.name ?? '—'}</td>
-                    <td className="t-num tnum" style={{ fontWeight: 600 }}>{formatCurrency(order.total_amount)}</td>
-                    <td>
-                      <span className={`badge ${STATUS_BADGE[order.status]}`}>{STATUS_LABEL[order.status]}</span>
-                    </td>
+              <table className="t-table">
+                <thead>
+                  <tr>
+                    <th>Nº</th>
+                    <th>Data</th>
+                    <th>Cliente</th>
+                    <th>Pagamento</th>
+                    <th>Vendedor</th>
+                    <th className="t-num">Total</th>
+                    <th>Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {orders.map((order) => (
+                    <tr key={order.id}>
+                      <td>
+                        <Link href={`/sales/${order.id}`} className="mono" style={{ fontWeight: 500, color: 'var(--accent)' }}>
+                          {order.order_number}
+                        </Link>
+                      </td>
+                      <td style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                        {formatDate(order.created_at)}
+                      </td>
+                      <td>
+                        {order.customer?.name ?? (
+                          <span style={{ color: 'var(--text-faint)' }}>Balcão</span>
+                        )}
+                      </td>
+                      <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                        {order.payment_method ? PAYMENT_LABEL[order.payment_method] ?? order.payment_method : '—'}
+                      </td>
+                      <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>{order.user?.name ?? '—'}</td>
+                      <td className="t-num tnum" style={{ fontWeight: 600 }}>{formatCurrency(order.total_amount)}</td>
+                      <td>
+                        <span className={`badge ${STATUS_BADGE[order.status]}`}>{STATUS_LABEL[order.status]}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
             <div className="sales-totals" style={{ display: 'flex', justifyContent: 'flex-end', gap: 32, padding: '14px 18px', borderTop: '1px solid var(--border-soft)', background: 'var(--surface-2)' }}>
               <Total label="Bruto" value={formatCurrency(totals.gross)} muted />
@@ -210,11 +216,11 @@ function PaginationLink({ page, status, customer_id, date_from, date_to, search,
   page: number; status: string; customer_id: string; date_from: string; date_to: string; search: string; label: string
 }) {
   const p = new URLSearchParams({ page: String(page) })
-  if (status)      p.set('status', status)
+  if (status) p.set('status', status)
   if (customer_id) p.set('customer_id', customer_id)
-  if (date_from)   p.set('date_from', date_from)
-  if (date_to)     p.set('date_to', date_to)
-  if (search)      p.set('search', search)
+  if (date_from) p.set('date_from', date_from)
+  if (date_to) p.set('date_to', date_to)
+  if (search) p.set('search', search)
   return (
     <Link href={`/sales?${p}`} className="btn btn-outline btn-sm">{label}</Link>
   )

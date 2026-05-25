@@ -19,7 +19,7 @@ export default async function LoginPage() {
       <aside className="auth-brand" aria-hidden="true">
         <div className="auth-brand-top">
           <div className="auth-brand-row">
-            <span className="auth-brand-mark">i</span>
+            <span className="auth-brand-mark">I</span>
             <span className="auth-brand-name">Inovabi</span>
           </div>
           <p className="auth-brand-tag">ERP comercial multi-tenant</p>
@@ -56,7 +56,7 @@ export default async function LoginPage() {
 
         <div className="auth-card">
           <div className="auth-mobile-brand">
-            <span className="auth-brand-mark">i</span>
+            <span className="auth-brand-mark">I</span>
             <span>Inovabi ERP</span>
           </div>
 

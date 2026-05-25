@@ -30,8 +30,8 @@ export function PeriodSelector({ currentPeriod, currentDateFrom, currentDateTo }
   }
 
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
-      <div style={{ display: 'flex', borderRadius: 'var(--r-md)', border: '1px solid var(--border)', background: 'var(--surface)', overflow: 'hidden' }}>
+    <div className="flex flex-wrap items-center gap-2">
+      <div className="flex gap-1 p-1 rounded-lg border border-[var(--border-soft)] bg-[var(--surface-2)] overflow-hidden">
         {PERIODS.map((p) => {
           const active = period === p.value
           return (
@@ -42,13 +42,11 @@ export function PeriodSelector({ currentPeriod, currentDateFrom, currentDateTo }
                 setPeriod(p.value)
                 if (p.value !== 'custom') navigate(p.value)
               }}
-              style={{
-                padding: '7px 12px', fontSize: 12.5, fontWeight: 500,
-                background: active ? 'var(--text)' : 'transparent',
-                color: active ? 'var(--text-invert)' : 'var(--text-soft)',
-                border: 'none', cursor: 'pointer',
-                transition: 'background .12s, color .12s',
-              }}
+              className={`px-4 py-1.5 rounded-md font-mono text-[12px] font-semibold transition-all cursor-pointer border-none ${
+                active
+                  ? 'bg-[var(--surface)] text-[var(--accent)] shadow-xs'
+                  : 'text-[var(--text-soft)] hover:bg-[var(--surface-hover)]'
+              }`}
             >
               {p.label}
             </button>
@@ -57,7 +55,7 @@ export function PeriodSelector({ currentPeriod, currentDateFrom, currentDateTo }
       </div>
 
       {period === 'custom' && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="flex items-center gap-2">
           <input
             type="date"
             value={dateFrom}
@@ -87,3 +85,4 @@ export function PeriodSelector({ currentPeriod, currentDateFrom, currentDateTo }
     </div>
   )
 }
+
