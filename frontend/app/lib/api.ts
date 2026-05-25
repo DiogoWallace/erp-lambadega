@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers'
-import { redirect } from 'next/navigation'
+import { forbidden, redirect } from 'next/navigation'
 
 const API_BASE = process.env.API_BASE_URL ?? 'http://webserver:8001'
 
@@ -33,7 +33,7 @@ export async function apiFetch(path: string, options: ApiFetchOptions = {}) {
   })
 
   if (res.status === 401) redirect('/api/auth/clear')
-  if (!optional && res.status === 403) redirect('/dashboard')
+  if (!optional && res.status === 403) forbidden()
   if (!optional && res.status >= 500) throw new Error(`API unavailable (${res.status})`)
 
   return res

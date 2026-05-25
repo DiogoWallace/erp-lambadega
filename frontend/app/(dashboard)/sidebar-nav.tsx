@@ -2,8 +2,9 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { Icon } from '@/app/ui/icons'
+import { updateSidebarPinnedAction } from './actions'
 
 interface NavChild {
   href: string
@@ -60,13 +61,11 @@ const sections: Section[] = [
   },
 ]
 
-const STORAGE_KEYS = {
-  collapsed: 'sidebar-collapsed',
-  pinned: 'sidebar-pinned',
-}
+const COLLAPSED_KEY = 'sidebar-collapsed'
 
 interface Props {
   permissions: string[]
+  initialPinned: string[]
   tenantName: string
   tenantMeta: string
   userName: string
@@ -77,6 +76,7 @@ interface Props {
 
 export function SidebarNav({
   permissions,
+  initialPinned,
   tenantName,
   tenantMeta,
   userName,
@@ -86,27 +86,27 @@ export function SidebarNav({
 }: Props) {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
-  const [pinned, setPinned] = useState<string[]>([])
+  const [pinned, setPinned] = useState<string[]>(initialPinned)
+  const [, startTransition] = useTransition()
 
   useEffect(() => {
-    setCollapsed(localStorage.getItem(STORAGE_KEYS.collapsed) === '1')
-    const stored = localStorage.getItem(STORAGE_KEYS.pinned)
-    if (stored) {
-      try { setPinned(JSON.parse(stored)) } catch { /* ignore */ }
-    }
+    setCollapsed(localStorage.getItem(COLLAPSED_KEY) === '1')
   }, [])
 
   const toggleCollapse = () => {
     const next = !collapsed
     setCollapsed(next)
-    localStorage.setItem(STORAGE_KEYS.collapsed, next ? '1' : '0')
+    localStorage.setItem(COLLAPSED_KEY, next ? '1' : '0')
   }
 
   const togglePin = (id: string) => {
-    setPinned((p) => {
-      const next = p.includes(id) ? p.filter((x) => x !== id) : [...p, id]
-      localStorage.setItem(STORAGE_KEYS.pinned, JSON.stringify(next))
-      return next
+    const next = pinned.includes(id) ? pinned.filter((x) => x !== id) : [...pinned, id]
+    setPinned(next)
+    startTransition(() => {
+      updateSidebarPinnedAction(next).catch(() => {
+        // se falhar, reverte o estado local para refletir o servidor
+        setPinned(pinned)
+      })
     })
   }
 
