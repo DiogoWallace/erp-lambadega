@@ -68,7 +68,8 @@ erp-comercial/
 │   │   │   │       ├── StockMovementController.php  só index/store/show (log imutável)
 │   │   │   │       ├── AuditLogController.php  só index/show; restrito ao role admin
 │   │   │   │       ├── OrderController.php   index/store/show + pay/cancel; sales.* permissions
-│   │   │   │       └── DashboardController.php  GET /api/dashboard; requer dashboard.view; retorna JSON direto (sem Resource — endpoint de agregação sem model)
+│   │   │   │       ├── DashboardController.php  GET /api/dashboard; requer dashboard.view; retorna JSON direto (sem Resource — endpoint de agregação sem model)
+│   │   │   │       └── MeController.php         /me/profile, /me/password, /me/avatar, /me/preferences (PATCH; array_replace mescla sidebar_pinned/theme/language)
 │   │   │   ├── Requests/
 │   │   │   │   ├── Auth/LoginRequest.php
 │   │   │   │   ├── Customer/{Store,Update}CustomerRequest.php
@@ -144,10 +145,13 @@ erp-comercial/
 │   │   ├── (dashboard)/                  ROUTE GROUP — não aparece na URL
 │   │   │   ├── __tests__/
 │   │   │   │   └── build-body.test.ts    21 testes unitários (vitest) para os 5 módulos
-│   │   │   ├── layout.tsx                async; force-dynamic; carrega /auth/me + tema; renderiza SidebarNav + Topbar (sem mais sidebar-user.tsx)
-│   │   │   ├── sidebar-nav.tsx           client (usePathname); navegação com pin/favoritos/colapso de seções; aceita canAudit prop
-│   │   │   ├── topbar.tsx                client; breadcrumbs derivadas do pathname; botão de toggle de tema (chama toggleThemeAction); logout
-│   │   │   ├── actions.ts                logoutAction
+│   │   │   ├── layout.tsx                async; force-dynamic; carrega /auth/me (extrai preferences.sidebar_pinned) + tema; renderiza SidebarNav + Topbar
+│   │   │   ├── forbidden.tsx             Client Component (Next 16 forbidden()); seta flash em sessionStorage e faz router.back() (fallback /dashboard); useRef evita dupla execução em StrictMode
+│   │   │   ├── flash-toast.tsx           lê sessionStorage 'forbidden_flash' na mudança de pathname e exibe toast vermelho por 5s no canto superior direito
+│   │   │   ├── shell.tsx                 client; monta SidebarNav + Topbar + FlashToast; recebe initialPinned por prop
+│   │   │   ├── sidebar-nav.tsx           client (usePathname); initialPinned por prop (vem do /auth/me); togglePin atualiza state otimista + Server Action updateSidebarPinnedAction (rollback em erro); localStorage só para 'sidebar-collapsed'
+│   │   │   ├── topbar.tsx                client; breadcrumbs; dropdown do usuário: Meu perfil, Notificações, Preferências (link), Configurações (gated), Ajuda/Suporte (placeholder), Enviar feedback (placeholder), Sair; botão sol/lua chama toggleThemeAction (que também faz PATCH /me/preferences)
+│   │   │   ├── actions.ts                logoutAction + updateSidebarPinnedAction (PATCH /me/preferences)
 │   │   │   ├── dashboard/                rota: /dashboard
 │   │   │   │   ├── page.tsx              server component; usa ?period=today|week|month|custom + date_from/date_to
 │   │   │   │   ├── loading.tsx           DashboardSkeleton
@@ -207,6 +211,8 @@ erp-comercial/
 │   │   │   ├── audit-logs/               rota: /audit-logs (visível só para admin)
 │   │   │   │   ├── page.tsx              lista server-side; filtros: evento, módulo, período
 │   │   │   │   └── loading.tsx           TableSkeleton
+│   │   │   ├── preferences/              rota: /preferences (top-level; antes em /settings/preferences)
+│   │   │   │   └── page.tsx              cards Aparência (tema) e Regional (idioma); pronto para futuras opções
 │   │   │   └── reports/                  rota: /reports (requer reports.view)
 │   │   │       ├── page.tsx              índice com 4 cards (sales, top-products, cash-flow, accounts)
 │   │   │       ├── _lib.ts               formatBRL, formatDate, defaultDateRange, buildExportHref
@@ -219,17 +225,17 @@ erp-comercial/
 │   │   │   ├── auth/clear/route.ts       limpa cookie inválido
 │   │   │   └── reports/export/route.ts   proxy de download CSV (busca da API com ?format=csv e repassa headers)
 │   │   ├── lib/
-│   │   │   ├── api.ts                    apiFetch (token do cookie; 401→clear, 403→dashboard, 5xx→throw)
-│   │   │   ├── theme.ts                  getTheme() + toggleThemeAction() (cookie 'theme'; revalida layout)
+│   │   │   ├── api.ts                    apiFetch (token do cookie; 401→clear, 403→forbidden(), 5xx→throw); opção `optional` desabilita throw/forbidden
+│   │   │   ├── theme.ts                  getTheme() + toggleThemeAction() (cookie 'theme' + PATCH /me/preferences se logado; revalida layout) + setThemeCookie
 │   │   │   └── types.ts                  Customer, Category, Supplier, Product, StockMovement, AuditLog, PaginatedResponse
 │   │   ├── ui/
 │   │   │   ├── icons.tsx                 componente Icon (SVG inline; IconName tipado — dashboard, pos, sales, customers, ..., sun, moon, etc.)
 │   │   │   └── skeletons.tsx             TableSkeleton, FormSkeleton, etc.
 │   │   ├── login/
 │   │   │   ├── page.tsx
-│   │   │   └── actions.ts                loginAction (seta cookie token)
+│   │   │   └── actions.ts                loginAction (seta cookie token + cookie theme a partir de preferences.theme do user)
 │   │   └── page.tsx                      home pública (em construção)
-│   └── next.config.ts                    serverActions.allowedOrigins
+│   └── next.config.ts                    experimental.authInterrupts (libera forbidden()) + serverActions.allowedOrigins
 │
 ├── nginx/conf.d/
 │   ├── default.conf                      SSL prod+dev (4 domínios)
@@ -424,6 +430,11 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - **Shell responsivo** — `app/(dashboard)/shell.tsx` (client) envolve sidebar+topbar e gerencia o estado do drawer mobile. Breakpoints: ≥1024 desktop (sidebar inline), 768–1023 tablet (paddings reduzidos, dashboard 2×2, PDV em 1 coluna), <768 mobile (sidebar vira drawer off-canvas, burger no topbar, breadcrumb compacto, tabelas com scroll horizontal, filtros fluidos, botão "Registrar venda" do PDV sticky no rodapé). `height: 100dvh` em vez de `100vh` evita o salto da URL bar mobile. Drawer fecha em mudança de `usePathname` via comparação durante render (padrão React 19, sem `useEffect` em cascata).
 - **`sidebar-user.tsx` foi removido** no commit do design (`08e1b6d`). O `layout.tsx` agora carrega o usuário direto via `apiFetch('/auth/me')` e passa `userName`/`userRole`/`canAudit` por props para `DashboardShell` (que delega a `SidebarNav` e `Topbar`).
 - **Root error boundary em `app/global-error.tsx`** — Next.js exige que esse arquivo renderize a própria `<html>` (fora do shell do dashboard). Para erros dentro do dashboard, o boundary continua sendo `(dashboard)/error.tsx`, que mantém sidebar/topbar visíveis.
+- **UX de 403 (`forbidden()` do Next 16)** — `next.config.ts` habilita `experimental.authInterrupts`. `apiFetch` em 403 chama `forbidden()` (em vez de `redirect('/dashboard')`); pages de `/settings` e `/settings/users` também usam `forbidden()` para checagens manuais de permissão. O `(dashboard)/forbidden.tsx` é Client Component que seta uma flag em `sessionStorage` e dispara `router.back()` (`useRef` evita dupla execução em StrictMode; fallback `router.replace('/dashboard')` quando `document.referrer` não é do mesmo origin). O `FlashToast` (montado no `DashboardShell`) lê a flag em `usePathname` change e exibe toast vermelho por 5s. Resultado: usuário volta para a tela anterior com aviso, sem trocar de página.
+- **Botões de ação escondidos por permissão** — listas e detalhes fazem `apiFetch('/auth/me')` em paralelo às outras chamadas, derivam `perms` e renderizam botões de Novo/Editar/Deletar/Pagar dentro de `{canX && (...)}`. Padrão aplicado em `/products`, `/customers`, `/suppliers`, `/categories`, `/sales`, `/sales/[id]`, `/stock-movements`, `/finance`, `/settings/users`. Isso evita que o usuário sem permissão clique em um link, veja o skeleton da página de edição e seja jogado de volta via `forbidden()`.
+- **`users.preferences` (JSON) + `PATCH /me/preferences`** — coluna nullable; endpoint mescla chaves com `array_replace`. Chaves atuais: `sidebar_pinned` (array de strings), `theme` (`light`/`dark`), `language` (string até 10). Inclui-se automaticamente no payload de `/auth/me` via `User::toArray()`. Para nova chave: ampliar validação em `MeController::updatePreferences` e ler de `me?.preferences?.{chave}` no layout.
+- **Sidebar pin sincroniza entre devices** — `(dashboard)/layout.tsx` extrai `preferences.sidebar_pinned` de `/auth/me` e passa como `initialPinned` ao `DashboardShell`/`SidebarNav`. `togglePin` faz update otimista no state e dispara `updateSidebarPinnedAction(next)` em `useTransition` (rollback do state se a request lançar). `localStorage` é usado apenas para `sidebar-collapsed` (UI puramente local).
+- **Tema persiste entre devices** — `toggleThemeAction` em `lib/theme.ts` atualiza cookie + faz `PATCH /me/preferences { theme }` quando o cookie `token` existe (não bloqueia o toggle visual em caso de falha). `loginAction` lê `data.user.preferences.theme` da resposta de `/auth/login` e seta o cookie `theme` correspondente — ao entrar de outro device, o tema preferido vem do servidor. Sincronização em tempo real entre tabs/abas exige refresh.
 
 ---
 
@@ -454,9 +465,14 @@ const boundUpdate = updateCustomerAction.bind(null, customer.id)
 - **Meu perfil + Configurações** (`MeController` self-only: `GET/PUT /me/profile` para name/email/phone, `POST /me/password` exige `current_password` e revoga os demais tokens Sanctum, `POST/DELETE /me/avatar` para upload/remoção de foto. `EstablishmentController` singleton: `GET/PUT /establishment` gated por `settings.view`/`settings.edit` via `EstablishmentPolicy`. Frontend: dropdown da topbar (`user-menu` em `globals.css`) abre `Meu perfil` + `Configurações` (gated) + `Sair`. `/profile` tem três cards (avatar + dados + senha). `/settings` é índice com cards. `/settings/company` edita o estabelecimento (modo leitura quando usuário só tem `settings.view`). `/settings/preferences` agrupa tema/idioma. Follow-up: CRUD de `/settings/users`).
 - **Avatar de usuário** — coluna `avatar_path` em `users`, salvo em disco `public` (`storage/app/public/users/{uuid}/`). URL pública via `User::avatarUrl()` = `APP_URL/storage/{avatar_path}`. Symlink `public/storage → storage/app/public` é criado no `Dockerfile` (`RUN php artisan storage:link`). Topbar mostra a imagem quando setada, fallback para iniciais. **Limitação**: o sidecar de backup só cobre MySQL; o volume `storage_local` (onde ficam os avatares) ainda não é incluído — registrado como follow-up no roadmap.
 - **CRUD de usuários** (`UserController` em `/users` com apiResource + `POST /users/{id}/reset-password`; `UserService` orquestra create/update/delete/resetPassword com transações; `UserPolicy` impede admin de deletar ou resetar a si mesmo. `User` model agora usa `BelongsToEstablishment` — login funciona porque o trait é no-op sem `auth()`; rotas autenticadas ficam escopadas automaticamente. Nova coluna `must_change_password` é marcada no reset (12 chars random `Str::random(12)`) e limpa quando o user troca via `POST /me/password`. Tokens são revogados em reset, soft delete e desativação. Frontend: `/settings/users` (lista com filtros), `/settings/users/new`, `/settings/users/{id}/edit` com modal de reset que exibe a senha gerada uma única vez + copy-to-clipboard. Banner em `/profile` quando `must_change_password=true`).
+- **Preferências do usuário persistidas no DB** (coluna `users.preferences` JSON; endpoint `PATCH /me/preferences` mescla chaves com `array_replace`. `sidebar_pinned` substituiu o `localStorage` — favoritos sincronizam entre dispositivos com optimistic update + rollback. `theme` também persiste: `toggleThemeAction` faz PATCH em paralelo, `loginAction` restaura o cookie `theme` a partir de `preferences.theme` ao logar em outro device. Estrutura pronta para `language` e novas chaves).
+- **UX de 403 + permission-aware UI** (Next 16 `forbidden()` habilitado via `experimental.authInterrupts`; `(dashboard)/forbidden.tsx` Client Component faz `router.back()` + flash via sessionStorage; `FlashToast` no shell exibe toast por 5s. `apiFetch` e checks manuais usam `forbidden()` em vez de redirect. Todas as listas e detalhe de venda escondem botões Novo/Editar/Deletar/Pagar baseado em `auth.me.permissions` — evita clique que dispararia o skeleton de uma página proibida).
+- **Reorganização do dropdown da topbar** (Meu perfil, Notificações, Preferências, Configurações, Ajuda/Suporte e Enviar feedback (placeholders "Em breve"), Sair. `/settings` enxugado a Empresa, Usuários e Permissões/Cargos (placeholder); cards Preferências/Integrações removidos. Página `/preferences` movida para rota top-level fora de `/settings`).
 - Documentação completa em `docs/arquitetura/`
 
 **Pendente (próximos passos):**
+- Persistir `language` em `preferences` (estrutura já existe; só falta o seletor real no `/preferences`)
+- Sincronização de tema entre tabs/devices em tempo real (hoje exige re-login para refletir alterações feitas em outro device)
 - ~~PDV web / Vendas~~ ✓ (concluído — carrinho, busca de produto, desconto, pagamento, parcelamento, cancelamento)
 - ~~Dashboard~~ ✓ (concluído — métricas de vendas, estoque crítico, seletor de período)
 - ~~Contas a pagar / receber (financeiro)~~ ✓ (backend + frontend + `finance:mark-overdue`)

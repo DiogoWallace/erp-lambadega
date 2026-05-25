@@ -12,6 +12,9 @@ Usuários do sistema. Autenticação via Laravel Sanctum com tokens de API.
 | `email` | VARCHAR UNIQUE | E-mail de acesso |
 | `password` | VARCHAR | Hash bcrypt |
 | `phone` | VARCHAR(20) nullable | Telefone de contato |
+| `avatar_path` | VARCHAR nullable | Caminho relativo do avatar em `storage/app/public/` |
+| `preferences` | JSON nullable | Preferências do usuário (chaves atuais: `sidebar_pinned`, `theme`, `language`) — atualizado via `PATCH /me/preferences` com `array_replace` |
+| `must_change_password` | BOOLEAN default false | Marcado em reset de senha; limpa quando o user troca via `POST /me/password` |
 | `is_active` | BOOLEAN default true | Conta ativa/desativada |
 | `email_verified_at` | TIMESTAMP nullable | Data de verificação do e-mail |
 | `remember_token` | VARCHAR nullable | Token de sessão web |
@@ -71,6 +74,8 @@ Permissões granulares por ação. Gerenciadas pelo Spatie Laravel Permission (s
 | `reports` | view |
 | `settings` | view, edit |
 | `audit` | view (**somente admin**) |
+| `dashboard` | view, view_all |
+| `notification` | broadcast (**somente admin**) |
 
 ---
 
