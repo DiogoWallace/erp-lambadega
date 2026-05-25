@@ -22,8 +22,15 @@ export default async function SuppliersPage({ searchParams }: Props) {
   if (search) params.set('search', search)
   if (is_active !== '') params.set('is_active', is_active)
 
-  const res = await apiFetch(`/suppliers?${params}`)
+  const [res, meRes] = await Promise.all([
+    apiFetch(`/suppliers?${params}`),
+    apiFetch('/auth/me'),
+  ])
   const { data: suppliers, meta }: PaginatedResponse<Supplier> = await res.json()
+  const { data: me } = await meRes.json()
+  const perms: string[] = me?.permissions ?? []
+  const canCreate = perms.includes('suppliers.create')
+  const canEdit = perms.includes('suppliers.edit')
 
   return (
     <div className="page">
@@ -32,9 +39,11 @@ export default async function SuppliersPage({ searchParams }: Props) {
           <h1 className="page-title">Fornecedores</h1>
           <p className="page-subtitle">{meta.total} fornecedor(es) cadastrado(s)</p>
         </div>
-        <Link href="/suppliers/new" className="btn btn-primary btn-sm">
-          <Icon name="plus" size={13} stroke={2} /> Novo fornecedor
-        </Link>
+        {canCreate && (
+          <Link href="/suppliers/new" className="btn btn-primary btn-sm">
+            <Icon name="plus" size={13} stroke={2} /> Novo fornecedor
+          </Link>
+        )}
       </div>
 
       <form method="GET" style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
@@ -98,9 +107,11 @@ export default async function SuppliersPage({ searchParams }: Props) {
                     </span>
                   </td>
                   <td style={{ textAlign: 'right' }}>
-                    <Link href={`/suppliers/${supplier.id}/edit`} className="btn btn-ghost btn-sm">
-                      <Icon name="edit" size={12} /> Editar
-                    </Link>
+                    {canEdit && (
+                      <Link href={`/suppliers/${supplier.id}/edit`} className="btn btn-ghost btn-sm">
+                        <Icon name="edit" size={12} /> Editar
+                      </Link>
+                    )}
                   </td>
                 </tr>
               ))}

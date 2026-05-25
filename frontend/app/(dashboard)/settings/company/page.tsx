@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation'
+import { forbidden } from 'next/navigation'
 import { apiFetch } from '@/app/lib/api'
 import { CompanyForm } from './company-form'
 
@@ -24,7 +24,7 @@ export default async function CompanySettingsPage() {
   const permissions: string[] = user?.permissions ?? []
 
   if (!permissions.includes('settings.view')) {
-    redirect('/dashboard')
+    forbidden()
   }
 
   const canEdit = permissions.includes('settings.edit')

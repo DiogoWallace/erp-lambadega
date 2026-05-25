@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
+import { forbidden } from 'next/navigation'
 import { apiFetch } from '@/app/lib/api'
 import { Icon, type IconName } from '@/app/ui/icons'
 
@@ -18,7 +18,7 @@ export default async function SettingsPage() {
   const permissions: string[] = user?.permissions ?? []
 
   if (!permissions.includes('settings.view')) {
-    redirect('/dashboard')
+    forbidden()
   }
 
   const canEditCompany = permissions.includes('settings.edit')

@@ -32,15 +32,21 @@ export default async function ProductsPage({ searchParams }: Props) {
   if (category_id) params.set('category_id', category_id)
   if (low_stock) params.set('low_stock', low_stock)
 
-  const [productsRes, categoriesRes] = await Promise.all([
+  const [productsRes, categoriesRes, meRes] = await Promise.all([
     apiFetch(`/products?${params}`),
     apiFetch('/categories?all=1', { optional: true }),
+    apiFetch('/auth/me'),
   ])
 
   const { data: products, meta }: PaginatedResponse<Product> = await productsRes.json()
   const categories: Category[] = categoriesRes.ok
     ? (await categoriesRes.json()).data ?? []
     : []
+  const { data: me } = await meRes.json()
+  const perms: string[] = me?.permissions ?? []
+  const canCreateProduct = perms.includes('products.create')
+  const canEditProduct = perms.includes('products.edit')
+  const canCreateStock = perms.includes('stock.create')
 
   const hasFilters = search || is_active || category_id || low_stock
 
@@ -51,9 +57,11 @@ export default async function ProductsPage({ searchParams }: Props) {
           <h1 className="page-title">Produtos</h1>
           <p className="page-subtitle">{meta.total} produto(s) cadastrado(s)</p>
         </div>
-        <Link href="/products/new" className="btn btn-primary btn-sm">
-          <Icon name="plus" size={13} stroke={2} /> Novo produto
-        </Link>
+        {canCreateProduct && (
+          <Link href="/products/new" className="btn btn-primary btn-sm">
+            <Icon name="plus" size={13} stroke={2} /> Novo produto
+          </Link>
+        )}
       </div>
 
       <form method="GET" style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
@@ -134,12 +142,16 @@ export default async function ProductsPage({ searchParams }: Props) {
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
-                        <Link href={`/stock-movements/new?product_id=${p.id}`} className="btn btn-ghost btn-sm">
-                          <Icon name="plus" size={11} /> Mov.
-                        </Link>
-                        <Link href={`/products/${p.id}/edit`} className="btn btn-ghost btn-sm">
-                          <Icon name="edit" size={11} /> Editar
-                        </Link>
+                        {canCreateStock && (
+                          <Link href={`/stock-movements/new?product_id=${p.id}`} className="btn btn-ghost btn-sm">
+                            <Icon name="plus" size={11} /> Mov.
+                          </Link>
+                        )}
+                        {canEditProduct && (
+                          <Link href={`/products/${p.id}/edit`} className="btn btn-ghost btn-sm">
+                            <Icon name="edit" size={11} /> Editar
+                          </Link>
+                        )}
                       </div>
                     </td>
                   </tr>

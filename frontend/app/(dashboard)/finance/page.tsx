@@ -41,8 +41,15 @@ export default async function FinancePage({ searchParams }: Props) {
   if (type)   params.set('type', type)
   if (status) params.set('status', status)
 
-  const res = await apiFetch(`/financial-transactions?${params}`)
+  const [res, meRes] = await Promise.all([
+    apiFetch(`/financial-transactions?${params}`),
+    apiFetch('/auth/me'),
+  ])
   const { data: transactions, meta }: PaginatedResponse<FinancialTransaction> = await res.json()
+  const { data: me } = await meRes.json()
+  const perms: string[] = me?.permissions ?? []
+  const canCreate = perms.includes('finance.create')
+  const canEdit = perms.includes('finance.edit')
 
   return (
     <div className="page">
@@ -51,9 +58,11 @@ export default async function FinancePage({ searchParams }: Props) {
           <h1 className="page-title">Financeiro</h1>
           <p className="page-subtitle">{meta.total} lançamento(s) · contas a pagar e receber</p>
         </div>
-        <Link href="/finance/new" className="btn btn-primary btn-sm">
-          <Icon name="plus" size={13} stroke={2} /> Novo lançamento
-        </Link>
+        {canCreate && (
+          <Link href="/finance/new" className="btn btn-primary btn-sm">
+            <Icon name="plus" size={13} stroke={2} /> Novo lançamento
+          </Link>
+        )}
       </div>
 
       <form method="GET" style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
@@ -121,10 +130,12 @@ export default async function FinancePage({ searchParams }: Props) {
                     <td><span className={`badge ${STATUS_BADGE[tx.status]}`}>{STATUS_LABELS[tx.status]}</span></td>
                     <td style={{ textAlign: 'right' }}>
                       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
-                        {canPay && <PayTransactionButton action={payTransactionAction.bind(null, tx.id)} />}
-                        <Link href={`/finance/${tx.id}/edit`} className="btn btn-ghost btn-sm">
-                          <Icon name="edit" size={11} /> Editar
-                        </Link>
+                        {canPay && canEdit && <PayTransactionButton action={payTransactionAction.bind(null, tx.id)} />}
+                        {canEdit && (
+                          <Link href={`/finance/${tx.id}/edit`} className="btn btn-ghost btn-sm">
+                            <Icon name="edit" size={11} /> Editar
+                          </Link>
+                        )}
                       </div>
                     </td>
                   </tr>

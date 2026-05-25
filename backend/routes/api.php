@@ -30,11 +30,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index']);
 
     Route::prefix('me')->group(function () {
-        Route::get('profile',     [MeController::class, 'profile']);
-        Route::put('profile',     [MeController::class, 'updateProfile']);
-        Route::post('password',   [MeController::class, 'changePassword']);
-        Route::post('avatar',     [MeController::class, 'uploadAvatar']);
-        Route::delete('avatar',   [MeController::class, 'deleteAvatar']);
+        Route::get('profile',       [MeController::class, 'profile']);
+        Route::put('profile',       [MeController::class, 'updateProfile']);
+        Route::post('password',     [MeController::class, 'changePassword']);
+        Route::post('avatar',       [MeController::class, 'uploadAvatar']);
+        Route::delete('avatar',     [MeController::class, 'deleteAvatar']);
+        Route::patch('preferences', [MeController::class, 'updatePreferences']);
     });
 
     Route::get('establishment',  [EstablishmentController::class, 'show']);
