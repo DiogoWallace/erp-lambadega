@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { FlashToast } from './flash-toast'
 import { SidebarNav } from './sidebar-nav'
 import { Topbar } from './topbar'
 
@@ -14,6 +15,7 @@ interface Props {
   userRole: string
   userAvatar: string | null
   permissions: string[]
+  initialPinned: string[]
   tenantName: string
   tenantMeta: string
   theme: 'light' | 'dark'
@@ -25,6 +27,7 @@ export function DashboardShell({
   userRole,
   userAvatar,
   permissions,
+  initialPinned,
   tenantName,
   tenantMeta,
   theme,
@@ -51,6 +54,7 @@ export function DashboardShell({
     <div className={`app-shell ${mobileOpen ? 'mobile-open' : ''}`}>
       <SidebarNav
         permissions={permissions}
+        initialPinned={initialPinned}
         tenantName={tenantName}
         tenantMeta={tenantMeta}
         userName={userName}
@@ -78,6 +82,7 @@ export function DashboardShell({
         />
         {children}
       </main>
+      <FlashToast />
     </div>
   )
 }

@@ -49,10 +49,6 @@ export default async function PreferencesPage() {
           </div>
         </div>
       </section>
-
-      <div className="form-actions" style={{ marginTop: 16 }}>
-        <a href="/settings" className="btn btn-outline">Voltar</a>
-      </div>
     </div>
   )
 }

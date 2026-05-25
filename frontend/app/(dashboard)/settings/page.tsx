@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
+import { forbidden } from 'next/navigation'
 import { apiFetch } from '@/app/lib/api'
 import { Icon, type IconName } from '@/app/ui/icons'
 
@@ -18,7 +18,7 @@ export default async function SettingsPage() {
   const permissions: string[] = user?.permissions ?? []
 
   if (!permissions.includes('settings.view')) {
-    redirect('/dashboard')
+    forbidden()
   }
 
   const canEditCompany = permissions.includes('settings.edit')
@@ -40,17 +40,10 @@ export default async function SettingsPage() {
       available: canViewUsers,
     },
     {
-      title: 'Preferências',
-      description: 'Tema (claro/escuro) e outras opções pessoais.',
-      href: '/settings/preferences',
-      icon: 'settings',
-      available: true,
-    },
-    {
-      title: 'Integrações',
-      description: 'Conectores externos (pagamentos, fiscal, banco) — futuro.',
+      title: 'Permissões / Cargos',
+      description: 'Gerenciar papéis (admin, gerente, vendedor) e suas permissões.',
       href: null,
-      icon: 'package',
+      icon: 'settings',
       available: false,
       badge: 'Em breve',
     },

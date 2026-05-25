@@ -55,13 +55,17 @@ export default async function SalesPage({ searchParams }: Props) {
   if (date_to)     params.set('date_to', date_to)
   if (search)      params.set('search', search)
 
-  const [ordersRes, customersRes] = await Promise.all([
+  const [ordersRes, customersRes, meRes] = await Promise.all([
     apiFetch(`/orders?${params}`),
     apiFetch('/customers?all=1'),
+    apiFetch('/auth/me'),
   ])
 
   const { data: orders, meta }: PaginatedResponse<Order> = await ordersRes.json()
   const { data: customers }: { data: Customer[] } = await customersRes.json()
+  const { data: me } = await meRes.json()
+  const perms: string[] = me?.permissions ?? []
+  const canCreate = perms.includes('sales.create')
 
   const hasFilters = status || customer_id || date_from || date_to || search
 
@@ -83,10 +87,12 @@ export default async function SalesPage({ searchParams }: Props) {
           <h1 className="page-title">Vendas</h1>
           <p className="page-subtitle">{meta.total} venda(s) registrada(s)</p>
         </div>
-        <Link href="/sales/new" className="btn btn-primary btn-sm">
-          <Icon name="plus" size={13} stroke={2} />
-          Nova venda
-        </Link>
+        {canCreate && (
+          <Link href="/sales/new" className="btn btn-primary btn-sm">
+            <Icon name="plus" size={13} stroke={2} />
+            Nova venda
+          </Link>
+        )}
       </div>
 
       <form method="GET" style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>

@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
+import { forbidden } from 'next/navigation'
 import { apiFetch } from '@/app/lib/api'
 import type { PaginatedResponse, UserAccount } from '@/app/lib/types'
 import { Icon } from '@/app/ui/icons'
@@ -37,10 +37,11 @@ export default async function UsersPage({ searchParams }: Props) {
   const permissions: string[] = me?.permissions ?? []
 
   if (!permissions.includes('users.view')) {
-    redirect('/settings')
+    forbidden()
   }
 
   const canCreate = permissions.includes('users.create')
+  const canEdit = permissions.includes('users.edit')
 
   const { search = '', is_active = '', role = '', page = '1' } = await searchParams
 
@@ -146,9 +147,11 @@ export default async function UsersPage({ searchParams }: Props) {
                     </span>
                   </td>
                   <td style={{ textAlign: 'right' }}>
-                    <Link href={`/settings/users/${user.id}/edit`} className="btn btn-ghost btn-sm">
-                      <Icon name="edit" size={12} /> Editar
-                    </Link>
+                    {canEdit && (
+                      <Link href={`/settings/users/${user.id}/edit`} className="btn btn-ghost btn-sm">
+                        <Icon name="edit" size={12} /> Editar
+                      </Link>
+                    )}
                   </td>
                 </tr>
               ))}
