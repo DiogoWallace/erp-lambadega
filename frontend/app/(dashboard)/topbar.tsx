@@ -58,6 +58,8 @@ export function Topbar({ userName, userRole, userAvatar, theme, canBroadcast, ca
     return () => document.removeEventListener('mousedown', onDocClick)
   }, [menuOpen])
 
+  const closeMenu = () => setMenuOpen(false)
+
   const segments = pathname.split('/').filter(Boolean)
   const crumbs = segments.map((seg, i) => ({
     label: humanize(seg),
@@ -146,17 +148,39 @@ export function Topbar({ userName, userRole, userAvatar, theme, canBroadcast, ca
                 <div className="user-menu-role">{userRole}</div>
               </div>
 
-              <Link href="/profile" className="user-menu-item" onClick={() => setMenuOpen(false)}>
+              <Link href="/profile" className="user-menu-item" onClick={closeMenu}>
                 <Icon name="customers" size={14} />
                 <span>Meu perfil</span>
               </Link>
 
+              <Link href="/notifications" className="user-menu-item" onClick={closeMenu}>
+                <Icon name="bell" size={14} />
+                <span>Notificações</span>
+              </Link>
+
+              <Link href="/preferences" className="user-menu-item" onClick={closeMenu}>
+                <Icon name={theme === 'dark' ? 'moon' : 'sun'} size={14} />
+                <span>Preferências</span>
+              </Link>
+
               {canSettings && (
-                <Link href="/settings" className="user-menu-item" onClick={() => setMenuOpen(false)}>
+                <Link href="/settings" className="user-menu-item" onClick={closeMenu}>
                   <Icon name="settings" size={14} />
                   <span>Configurações</span>
                 </Link>
               )}
+
+              <div className="user-menu-item user-menu-item-disabled" aria-disabled="true">
+                <Icon name="package" size={14} />
+                <span style={{ flex: 1 }}>Ajuda / Suporte</span>
+                <span className="badge badge-info">Em breve</span>
+              </div>
+
+              <div className="user-menu-item user-menu-item-disabled" aria-disabled="true">
+                <Icon name="edit" size={14} />
+                <span style={{ flex: 1 }}>Enviar feedback</span>
+                <span className="badge badge-info">Em breve</span>
+              </div>
 
               <div className="user-menu-sep" />
 
