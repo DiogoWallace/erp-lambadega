@@ -28,22 +28,13 @@ export default async function EditProductPage({ params }: Props) {
   const boundDelete = deleteProductAction.bind(null, product.id)
 
   return (
-    <div className="page page-form">
-      <div className="page-head">
-        <div>
-          <h1 className="page-title">{product.name}</h1>
-          <p className="page-subtitle">Editar dados do produto</p>
-        </div>
-        <DeleteProductButton action={boundDelete} />
-      </div>
-
-      <ProductForm
-        action={boundUpdate}
-        product={product}
-        categories={categories}
-        suppliers={suppliers}
-        submitLabel="Salvar alterações"
-      />
-    </div>
+    <ProductForm
+      action={boundUpdate}
+      product={product}
+      categories={categories}
+      suppliers={suppliers}
+      submitLabel="Salvar alterações"
+      deleteButton={<DeleteProductButton action={boundDelete} />}
+    />
   )
 }

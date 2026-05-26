@@ -22,20 +22,13 @@ export default async function EditCustomerPage({ params }: Props) {
   const boundDelete = deleteCustomerAction.bind(null, customer.id)
 
   return (
-    <div className="page page-form">
-      <div className="page-head">
-        <div>
-          <h1 className="page-title">{customer.name}</h1>
-          <p className="page-subtitle">Editar dados do cliente</p>
-        </div>
-        <DeleteCustomerButton action={boundDelete} />
-      </div>
-
-      <CustomerForm
-        action={boundUpdate}
-        customer={customer}
-        submitLabel="Salvar alterações"
-      />
-    </div>
+    <CustomerForm
+      action={boundUpdate}
+      customer={customer}
+      submitLabel="Salvar Alterações"
+      title="Editar Cliente"
+      subtitle={`Gerencie os dados cadastrais de ${customer.name}`}
+      deleteButton={<DeleteCustomerButton action={boundDelete} />}
+    />
   )
 }

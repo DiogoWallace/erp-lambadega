@@ -22,20 +22,13 @@ export default async function EditSupplierPage({ params }: Props) {
   const boundDelete = deleteSupplierAction.bind(null, supplier.id)
 
   return (
-    <div className="page page-form">
-      <div className="page-head">
-        <div>
-          <h1 className="page-title">{supplier.company_name}</h1>
-          <p className="page-subtitle">Editar dados do fornecedor</p>
-        </div>
-        <DeleteSupplierButton action={boundDelete} />
-      </div>
-
-      <SupplierForm
-        action={boundUpdate}
-        supplier={supplier}
-        submitLabel="Salvar alterações"
-      />
-    </div>
+    <SupplierForm
+      action={boundUpdate}
+      supplier={supplier}
+      submitLabel="Salvar Alterações"
+      title="Editar Fornecedor"
+      subtitle={`Gerencie os dados cadastrais de ${supplier.company_name}`}
+      deleteButton={<DeleteSupplierButton action={boundDelete} />}
+    />
   )
 }

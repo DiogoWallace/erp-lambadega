@@ -13,20 +13,11 @@ export default async function NewProductPage() {
   const { data: suppliers }: { data: Supplier[] } = await suppliersRes.json()
 
   return (
-    <div className="page page-form">
-      <div className="page-head">
-        <div>
-          <h1 className="page-title">Novo produto</h1>
-          <p className="page-subtitle">Preencha os dados do produto abaixo.</p>
-        </div>
-      </div>
-
-      <ProductForm
-        action={createProductAction}
-        categories={categories}
-        suppliers={suppliers}
-        submitLabel="Criar produto"
-      />
-    </div>
+    <ProductForm
+      action={createProductAction}
+      categories={categories}
+      suppliers={suppliers}
+      submitLabel="Criar produto"
+    />
   )
 }
