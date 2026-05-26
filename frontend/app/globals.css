@@ -230,6 +230,58 @@
     --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.44);
     --shadow-lg: 0 24px 48px -12px rgba(0, 0, 0, 0.56);
     --ring: 0 0 0 3px oklch(0.72 0.14 252 / 0.25);
+
+    /* Overrides das variáveis --color-* do @theme (Tailwind v4).
+       Sem isso, classes como bg-surface, bg-primary, text-primary,
+       border-border-soft etc. continuam claras no modo escuro. */
+    --color-bg: var(--bg);
+    --color-bg-soft: var(--bg-soft);
+    --color-background: var(--bg);
+    --color-surface: var(--surface);
+    --color-surface-2: var(--surface-2);
+    --color-surface-hover: var(--surface-hover);
+    --color-surface-bright: var(--surface-2);
+    --color-surface-dim: var(--bg);
+    --color-surface-variant: var(--surface-2);
+    --color-surface-container: var(--surface);
+    --color-surface-container-low: var(--surface);
+    --color-surface-container-lowest: var(--bg);
+    --color-surface-container-high: var(--surface-hover);
+    --color-surface-container-highest: var(--surface-hover);
+    --color-surface-tint: var(--accent);
+    --color-text: var(--text);
+    --color-text-soft: var(--text-soft);
+    --color-text-muted: var(--text-muted);
+    --color-text-faint: var(--text-faint);
+    --color-on-surface: var(--text);
+    --color-on-surface-variant: var(--text-soft);
+    --color-on-background: var(--text);
+    --color-border: var(--border);
+    --color-border-soft: var(--border-soft);
+    --color-border-strong: var(--border-strong);
+    --color-outline: var(--border-strong);
+    --color-outline-variant: var(--border);
+    --color-accent: var(--accent);
+    --color-accent-soft: var(--accent-soft);
+    --color-primary: var(--accent);
+    --color-on-primary: var(--accent-ink);
+    --color-primary-container: var(--accent-soft);
+    --color-on-primary-container: var(--text);
+    --color-inverse-primary: var(--accent-hover);
+    --color-secondary: var(--text-soft);
+    --color-secondary-container: var(--surface-2);
+    --color-on-secondary: var(--text-invert);
+    --color-on-secondary-container: var(--text);
+    --color-success: var(--success);
+    --color-warning: var(--warning);
+    --color-danger: var(--danger);
+    --color-error: var(--danger);
+    --color-error-container: var(--danger-soft);
+    --color-on-error: var(--text-invert);
+    --color-on-error-container: var(--danger);
+    --color-info: var(--info);
+    --color-inverse-surface: var(--text);
+    --color-inverse-on-surface: var(--text-invert);
   }
 
   html {

@@ -35,9 +35,9 @@ function iconForType(type: string): IconName {
 }
 
 function severityClass(severity: NotificationSeverity): string {
-  if (severity === 'critical') return 'bg-red-50 text-red-600 border border-red-200'
-  if (severity === 'warning') return 'bg-amber-50 text-amber-600 border border-amber-200'
-  return 'bg-blue-50 text-blue-600 border border-blue-200'
+  if (severity === 'critical') return 'bg-[var(--danger-soft)] text-[var(--danger)] border border-[var(--danger)]/20'
+  if (severity === 'warning') return 'bg-[var(--warning-soft)] text-[var(--warning)] border border-[var(--warning)]/20'
+  return 'bg-[var(--info-soft)] text-[var(--info)] border border-[var(--info)]/20'
 }
 
 function formatDate(iso: string): string {
@@ -194,7 +194,7 @@ export default async function NotificationsPage({ searchParams }: Props) {
                     {item.broadcast && (
                       <>
                         <span>·</span>
-                        <span className="bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider text-[9px]">Geral</span>
+                        <span className="bg-[var(--info-soft)] text-[var(--info)] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider text-[9px]">Geral</span>
                       </>
                     )}
                   </div>

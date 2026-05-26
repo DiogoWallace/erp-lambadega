@@ -64,7 +64,7 @@ export default async function FinancePage({ searchParams }: Props) {
   }
 
   return (
-    <div className="page flex flex-col gap-6 w-full max-w-[1200px] mx-auto">
+    <div className="page flex flex-col gap-6 w-full">
 
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
