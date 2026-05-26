@@ -96,7 +96,8 @@ export function CustomerForm({ action, customer, submitLabel, title, subtitle, d
         </div>
 
         {/* Top actions (Hidden on mobile) */}
-        <div className="hidden md:flex gap-3">
+        <div className="hidden md:flex items-center gap-3">
+          {deleteButton}
           <a href="/customers" className="btn btn-outline" style={{ height: 40, borderRadius: 10 }}>
             Cancelar
           </a>
@@ -463,8 +464,8 @@ export function CustomerForm({ action, customer, submitLabel, title, subtitle, d
 
           </div>
 
-          {/* Bottom Actions Form Actions */}
-          <div className="col-span-12 flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-3 pt-6 border-t border-[var(--border-soft)]">
+          {/* Bottom Actions (Mobile only — desktop usa o header) */}
+          <div className="col-span-12 md:hidden flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-3 pt-6 border-t border-[var(--border-soft)]">
             <div>
               {deleteButton}
             </div>
