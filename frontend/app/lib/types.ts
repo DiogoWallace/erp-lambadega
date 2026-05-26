@@ -82,6 +82,22 @@ export interface Product {
   updated_at: string
 }
 
+export type ProductCostHistorySource = 'stock_in' | 'product_update' | 'quote'
+
+export interface ProductCostHistory {
+  id: string
+  product_id: string
+  supplier_id: string | null
+  stock_movement_id: string | null
+  cost_price: string
+  source: ProductCostHistorySource
+  notes: string | null
+  effective_at: string
+  created_at: string
+  supplier?: { id: string; company_name: string } | null
+  user?: { id: string; name: string } | null
+}
+
 export type StockMovementType = 'in' | 'out' | 'adjustment'
 
 export interface StockMovement {

@@ -53,6 +53,7 @@ Objetivo: sistema web funcional, operando em produção, com as fundações arqu
 - [x] Meu perfil + Configurações fase 1 (`/profile` dados+senha; `/settings` índice — Empresa, Usuários, Permissões/Cargos placeholder; `/settings/company` editar estabelecimento; `/preferences` rota top-level com tema/idioma)
 - [x] Preferências do usuário persistidas no DB (`users.preferences` JSON; `PATCH /me/preferences`) — sidebar pin e tema sincronizam entre dispositivos
 - [x] UX de 403: `forbidden()` do Next 16 + `forbidden.tsx` (back + flash) + `FlashToast` no shell; botões nas listagens escondidos conforme `auth.me.permissions` para evitar navegação a página proibida
+- [x] Histórico temporal de custo de produtos por fornecedor (`product_cost_history`): auto-populado em stock_in e edição do produto + endpoint manual de cotação (`products.quote`); UI: seção "Histórico de custos" na tela de editar produto. Pendente: relatório consolidado (timeline, comparativo, top variações, sugestão de fornecedor)
 - [x] Avatar de usuário no perfil (disco `public`, symlink no Dockerfile, JPG/PNG/WEBP até 2MB; mostrado na topbar)
 - [x] CRUD de usuários em `/settings/users` (UserController/Service/Policy + atribuição de cargos + reset de senha com `must_change_password`)
 - [ ] Backup de uploads: estender sidecar `db-backup` para incluir o volume `storage_local` (avatares e futuros uploads)

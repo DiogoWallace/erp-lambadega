@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\ProductCostHistoryController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\StockMovementController;
 use App\Http\Controllers\Api\SupplierController;
@@ -48,6 +49,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('categories', CategoryController::class);
     Route::apiResource('suppliers', SupplierController::class);
     Route::apiResource('products', ProductController::class);
+    Route::get('products/{product}/cost-history',  [ProductCostHistoryController::class, 'index']);
+    Route::post('products/{product}/cost-history', [ProductCostHistoryController::class, 'store']);
     Route::apiResource('stock-movements', StockMovementController::class)->only(['index', 'store', 'show']);
     Route::apiResource('audit-logs', AuditLogController::class)->only(['index', 'show']);
     Route::apiResource('orders', OrderController::class)->only(['index', 'store', 'show']);

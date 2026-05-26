@@ -68,7 +68,7 @@ Permissões granulares por ação. Gerenciadas pelo Spatie Laravel Permission (s
 | `customers` | view, create, edit, delete |
 | `suppliers` | view, create, edit, delete |
 | `categories` | view, create, edit, delete |
-| `products` | view, create, edit, delete |
+| `products` | view, create, edit, delete, quote |
 | `stock` | view, create |
 | `sales` | view, create, edit, delete |
 | `reports` | view |

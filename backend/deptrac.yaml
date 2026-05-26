@@ -79,10 +79,17 @@ deptrac:
       collectors:
         - type: classNameRegex
           value: '#^App\\Services\\NotificationService$#'
+    # ProductCostHistoryService é o dono das escritas em product_cost_history;
+    # camada própria para que InventoryService/ProductService/Controllers
+    # possam delegar sem tocar no model.
+    - name: CostHistoryService
+      collectors:
+        - type: classNameRegex
+          value: '#^App\\Services\\ProductCostHistoryService$#'
     - name: Services
       collectors:
         - type: classNameRegex
-          value: '#^App\\Services\\(?!InventoryService$)(?!AuditService$)(?!FinancialTransactionService$)(?!ReportService$)(?!NotificationService$).*#'
+          value: '#^App\\Services\\(?!InventoryService$)(?!AuditService$)(?!FinancialTransactionService$)(?!ReportService$)(?!NotificationService$)(?!ProductCostHistoryService$).*#'
 
     # ── Models ────────────────────────────────────────────────────────────
     - name: ModelConcerns
@@ -98,10 +105,14 @@ deptrac:
       collectors:
         - type: classNameRegex
           value: '#^App\\Models\\FinancialTransaction$#'
+    - name: CostHistoryModel
+      collectors:
+        - type: classNameRegex
+          value: '#^App\\Models\\ProductCostHistory$#'
     - name: Models
       collectors:
         - type: classNameRegex
-          value: '#^App\\Models\\(?!Concerns\\)(?!StockMovement$)(?!FinancialTransaction$)[A-Za-z0-9]+$#'
+          value: '#^App\\Models\\(?!Concerns\\)(?!StockMovement$)(?!FinancialTransaction$)(?!ProductCostHistory$)[A-Za-z0-9]+$#'
 
   ruleset:
     # Controllers só falam com a camada de aplicação (services, requests,
@@ -113,12 +124,14 @@ deptrac:
       - FinancialService
       - ReportService
       - NotificationService
+      - CostHistoryService
       - Requests
       - Resources
       - DTOs
       - Models
       - InventoryModel
       - FinancialModel
+      - CostHistoryModel
 
     Requests: ~
     Resources: ~
@@ -132,11 +145,18 @@ deptrac:
       - Events
       - InventoryService
       - NotificationService
+      - CostHistoryService
 
     InventoryService:
       - Models
       - InventoryModel
       - NotificationService
+      - CostHistoryService
+
+    CostHistoryService:
+      - Models
+      - InventoryModel
+      - CostHistoryModel
 
     NotificationService:
       - Models
@@ -195,3 +215,7 @@ deptrac:
       - Models
       - ModelConcerns
       - AuditService
+
+    CostHistoryModel:
+      - Models
+      - ModelConcerns

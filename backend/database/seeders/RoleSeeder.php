@@ -26,7 +26,7 @@ class RoleSeeder extends Seeder
             'categories.view', 'categories.create', 'categories.edit', 'categories.delete',
 
             // Produtos
-            'products.view', 'products.create', 'products.edit', 'products.delete',
+            'products.view', 'products.create', 'products.edit', 'products.delete', 'products.quote',
 
             // Estoque
             'stock.view', 'stock.create',
@@ -69,7 +69,7 @@ class RoleSeeder extends Seeder
                 'customers.view', 'customers.create', 'customers.edit',
                 'suppliers.view', 'suppliers.create', 'suppliers.edit', 'suppliers.delete',
                 'categories.view', 'categories.create', 'categories.edit',
-                'products.view', 'products.create', 'products.edit',
+                'products.view', 'products.create', 'products.edit', 'products.quote',
                 'stock.view', 'stock.create',
                 'sales.view', 'sales.create', 'sales.edit',
                 'finance.view', 'finance.create', 'finance.edit',

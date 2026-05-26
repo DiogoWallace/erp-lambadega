@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Collection;
 
 class ProductService
 {
+    public function __construct(private ProductCostHistoryService $costHistory) {}
+
     public function paginate(array $filters): LengthAwarePaginator
     {
         $query = Product::query()->with(['category:id,name', 'supplier:id,company_name']);
@@ -49,12 +51,29 @@ class ProductService
 
     public function create(array $data): Product
     {
-        return Product::create($data);
+        $product = Product::create($data);
+
+        if ((float) $product->cost_price > 0) {
+            $this->costHistory->recordFromProductUpdate($product, auth()->user());
+        }
+
+        return $product;
     }
 
     public function update(Product $product, array $data): Product
     {
+        $previousCost = (float) $product->cost_price;
+        $previousSupplier = $product->supplier_id;
+
         $product->update($data);
+
+        $newCost = (float) $product->cost_price;
+        $costChanged = abs($newCost - $previousCost) > 0.0001;
+        $supplierChanged = $product->supplier_id !== $previousSupplier;
+
+        if (($costChanged || $supplierChanged) && $newCost > 0) {
+            $this->costHistory->recordFromProductUpdate($product, auth()->user());
+        }
 
         return $product->fresh(['category:id,name', 'supplier:id,company_name']);
     }

@@ -16,7 +16,10 @@ use Illuminate\Support\Facades\DB;
  */
 class InventoryService
 {
-    public function __construct(private NotificationService $notifications) {}
+    public function __construct(
+        private NotificationService $notifications,
+        private ProductCostHistoryService $costHistory,
+    ) {}
 
     public function paginate(array $filters): LengthAwarePaginator
     {
@@ -79,6 +82,8 @@ class InventoryService
             ]);
 
             $locked->update(['stock_quantity' => $stockAfter]);
+
+            $this->costHistory->recordFromStockIn($movement, $locked, $user);
 
             $this->maybeNotifyStockLevel($locked->fresh());
 
