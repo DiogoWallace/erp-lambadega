@@ -2,7 +2,28 @@
 
 Sistema ERP comercial multi-tenant com arquitetura preparada para evolução **offline-first**. Atende lojas, restaurantes e adegas com módulos de cadastros, estoque, vendas (PDV) e financeiro.
 
-> **Status atual:** Fase 1 em andamento — 5 módulos funcionando em produção. Veja o [roadmap](docs/arquitetura/roadmap.md) completo.
+> **Status atual:** Fase 1 em andamento e em produção — cadastros, estoque, PDV, financeiro, relatórios, auditoria e notificações funcionando. Veja o [roadmap](docs/arquitetura/roadmap.md) completo.
+
+![Painel do ERP: receita, pedidos pagos, ticket médio, estoque baixo, estoque crítico e últimas vendas](docs/telas/dashboard.webp)
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/telas/pdv.webp" alt="PDV: busca de produto, carrinho com três itens, desconto, total e forma de pagamento"></td>
+    <td width="50%"><img src="docs/telas/produtos.webp" alt="Produtos: lista com categoria, fornecedor, preço, estoque contra o mínimo e status"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>PDV</b> — carrinho, desconto e pagamento</td>
+    <td align="center"><b>Produtos</b> — estoque contra o mínimo, por item</td>
+  </tr>
+  <tr>
+    <td colspan="2"><img src="docs/telas/dashboard-escuro.webp" alt="O mesmo painel no tema escuro"></td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center"><b>Tema escuro</b> — tokens oklch, tema claro/escuro guardado em cookie</td>
+  </tr>
+</table>
+
+<sub>Telas do ambiente local com dados de demonstração (produtos, clientes e vendas fictícios de uma adega).</sub>
 
 ---
 
@@ -15,7 +36,7 @@ Sistema ERP comercial multi-tenant com arquitetura preparada para evolução **o
 | Autenticação | Laravel Sanctum (token-based) + Spatie Permission (RBAC) |
 | Infra | Docker Compose, nginx, GitHub Actions (CI/CD) |
 | Identificadores | UUID v7 em todas as tabelas |
-| Testes | PHPUnit — 96 feature tests (backend) · Vitest — 21 unit tests (frontend) |
+| Testes | PHPUnit — 167 testes, 437 asserções (backend) · Vitest — 24 testes (frontend) · Deptrac nas fronteiras de camada |
 
 ---
 
@@ -29,11 +50,14 @@ Sistema ERP comercial multi-tenant com arquitetura preparada para evolução **o
 | Fornecedores | CRUD + `?all=1` + CNPJ único/tenant | lista, novo, editar, excluir | 18 |
 | Produtos | CRUD + `?all=1` + SKU/barcode únicos/tenant | lista, novo, editar, excluir | 21 |
 | Estoque | in/out/adjustment + lock atômico | lista filtrada, registrar mov. | 15 |
-| Vendas / PDV | OrderService + eventos + pay/cancel | lista, PDV, detalhe (pagar/cancelar) | ✓ |
-| Financeiro | contas a pagar/receber + `finance:mark-overdue` | lista, registrar, pagar | ✓ |
-| Auditoria | logs imutáveis + LogsActivity nos models | tela admin com filtros | ✓ |
-| Dashboard | métricas agregadas por período | cards, gráfico, últimas vendas | — |
-| Relatórios | sales, top-products, cash-flow, accounts (+CSV) | 4 telas com export CSV | — |
+| Vendas / PDV | OrderService + eventos + pay/cancel | lista, PDV, detalhe (pagar/cancelar) | 22 |
+| Financeiro | contas a pagar/receber + `finance:mark-overdue` | lista, registrar, pagar | 18 |
+| Auditoria | logs imutáveis + LogsActivity nos models | tela admin com filtros | — |
+| Dashboard | métricas agregadas por período | cards, estoque crítico, últimas vendas | 5 |
+| Relatórios | sales, top-products, cash-flow, accounts (+CSV) | 4 telas com export CSV | 13 |
+| Usuários | CRUD + reset de senha + papéis (RBAC) | lista, novo, editar | 13 |
+| Notificações | estoque crítico/zerado, contas vencidas, broadcast | sino na topbar + `/notifications` | — |
+| Perfil e configurações | perfil, senha, avatar, preferências, estabelecimento | `/profile`, `/settings`, `/preferences` | — |
 | **Design system** | — | tokens oklch, tema light/dark, sidebar/topbar, Geist | — |
 
 ---
@@ -41,7 +65,7 @@ Sistema ERP comercial multi-tenant com arquitetura preparada para evolução **o
 ## Rodando localmente
 
 ```bash
-git clone https://github.com/Sr-Ryuk/erp-lambadega.git
+git clone https://github.com/DiogoWallace/erp-lambadega.git
 cd erp-lambadega
 cp backend/.env.example backend/.env
 docker compose up -d --build
@@ -59,8 +83,8 @@ Acesse:
 
 ```bash
 make test           # roda a suite completa (backend + frontend)
-make test-backend   # 96 feature tests PHPUnit (SQLite in-memory, ~5s)
-make test-frontend  # 21 unit tests Vitest
+make test-backend   # 167 testes PHPUnit (SQLite in-memory, ~15s)
+make test-frontend  # 24 testes Vitest
 make migrate        # php artisan migrate
 make seed           # php artisan db:seed --class=RoleSeeder
 make fresh          # migrate:fresh --seed
